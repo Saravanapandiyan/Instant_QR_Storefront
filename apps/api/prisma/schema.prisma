@@ -1,0 +1,257 @@
+// 1. Prisma Client Generator (generates TypeScript types)
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 2. Database Connection
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 3. User Roles (Tech-standard roles across platform & branches)
+enum Role {
+  SUPER_ADMIN  // Platform Administrator (Admin Panel root access)
+  ADMIN        // Organization / Restaurant Administrator
+  MANAGER      // Branch / Store Manager
+  STAFF        // In-store operations (Cashier, Kitchen)
+}
+
+// 3.1 Order Lifecycle Statuses
+enum OrderStatus {
+  PENDING      // Placed by customer, awaiting restaurant acceptance
+  CONFIRMED    // Accepted by restaurant
+  PREPARING    // Cooking in kitchen
+  READY        // Food prepared, ready for table serve / takeaway pickup
+  COMPLETED    // Fulfilled & closed
+  CANCELLED    // Cancelled by restaurant or customer
+}
+
+// 3.2 Payment Types & States
+enum PaymentMethod {
+  CASH
+  STRIPE
+}
+
+enum PaymentStatus {
+  PENDING      // Cash to be collected at counter
+  PAID         // Cash received / online payment successful
+  FAILED
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+}
+
+// 4. User Model (Preserved 100% intact)
+model User {
+  id                String       @id @default(uuid())
+  email             String       @unique
+  passwordHash      String
+  name              String
+  countryCode       String?      // e.g. "+91", "+1", "+44"
+  phone             String?      // e.g. "9876543210"
+  role              Role         @default(ADMIN)
+  isPlatformAdmin   Boolean      @default(false)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  isDeleted         Boolean      @default(false)
+  deletedAt         DateTime?
+  deletedBy         String?
+
+  // Relations
+  restaurants       Restaurant[]
+  staffProfiles     StaffMember[]
+  deletedUsers      User[]       @relation("UserDeleter")
+  deletedByUser     User?        @relation("UserDeleter", fields: [deletedBy], references: [id])
+
+  @@map("users")
+}
+
+// 5. Restaurant Model (Parent Concept & Master Menu Catalog Holder)
+model Restaurant {
+  id              String      @id @default(uuid())
+  ownerId         String
+  name            String
+  slug            String      @unique
+  description     String?
+  logoUrl         String?
+  defaultCurrency String      @default("INR")
+  themeConfig     Json?
+  paymentConfig   Json?       // e.g. { "enableCash": true, "enableStripe": false }
+  isActive        Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  isDeleted       Boolean     @default(false)
+  deletedAt       DateTime?
+  deletedBy       String?
+
+  // Relations
+  owner         User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  branches      Branch[]
+  categories    Category[]
+  products      Product[]
+  orders        Order[]
+  staffMembers  StaffMember[]
+
+  @@map("restaurants")
+}
+
+// 5.1 Staff Member Model (Role & Granular Permission Management)
+model StaffMember {
+  id               String      @id @default(uuid())
+  restaurantId     String
+  userId           String
+  role             String      @default("CUSTOM") // MANAGER, CASHIER, KITCHEN, CUSTOM
+  assignedBranches Json        @default("[]") // ["ALL"] or list of branch IDs
+  permissions      Json        // Granular permissions map
+  isActive         Boolean     @default(true)
+  pinCode          String?     // Optional 4-digit POS PIN
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  // Relations
+  restaurant       Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, userId])
+  @@index([restaurantId])
+  @@index([userId])
+  @@map("staff_members")
+}
+
+// 6. Branch Model (Physical Storefront Location with QR Code)
+model Branch {
+  id            String          @id @default(uuid())
+  restaurantId  String
+  name          String
+  slug          String          @unique // Customer QR scan storefront slug: /r/:slug
+  address       String?
+  phone         String?
+  countryCode   String?
+  currency      String          @default("INR")
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  isDeleted     Boolean         @default(false)
+  deletedAt     DateTime?
+  deletedBy     String?
+
+  // Relations
+  restaurant     Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  branchProducts BranchProduct[]
+  orders         Order[]
+
+  @@map("branches")
+}
+
+// 7. Category Model (Belongs to Restaurant Master Catalog)
+model Category {
+  id            String      @id @default(uuid())
+  restaurantId  String
+  name          String
+  description   String?
+  sortOrder     Int         @default(0)
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  isDeleted     Boolean     @default(false)
+  deletedAt     DateTime?
+  deletedBy     String?
+
+  // Relations
+  restaurant    Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  products      Product[]
+
+  @@map("categories")
+}
+
+// 8. Product Model (Belongs to Restaurant Master Catalog)
+model Product {
+  id            String          @id @default(uuid())
+  restaurantId  String
+  categoryId    String
+  name          String
+  description   String?
+  basePrice     Decimal         @db.Decimal(10, 2)
+  imageUrl      String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  isDeleted     Boolean         @default(false)
+  deletedAt     DateTime?
+  deletedBy     String?
+
+  // Relations
+  restaurant     Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  category       Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  branchProducts BranchProduct[]
+  orderItems     OrderItem[]
+
+  @@map("products")
+}
+
+// 9. BranchProduct Model (Local Availability & Override Junction Table)
+model BranchProduct {
+  id            String      @id @default(uuid())
+  branchId      String
+  productId     String
+  isAvailable   Boolean     @default(true)  // In Stock / Sold Out at THIS branch
+  priceOverride Decimal?    @db.Decimal(10, 2)
+  isEnabled     Boolean     @default(true)
+
+  // Relations
+  branch        Branch      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, productId])
+  @@map("branch_products")
+}
+
+// 10. Order Model (Customer Order lifecycle)
+model Order {
+  id              String          @id @default(uuid())
+  orderNumber     Int             @default(autoincrement()) // Display number, e.g. #101
+  restaurantId    String
+  branchId        String
+  tableNumber     String?         // e.g. "Table 4", "Counter", etc.
+  customerName    String
+  customerPhone   String
+  orderNotes      String?
+  orderType       OrderType       @default(DINE_IN)
+  status          OrderStatus     @default(PENDING)
+  paymentMethod   PaymentMethod   @default(CASH)
+  paymentStatus   PaymentStatus   @default(PENDING)
+  subtotal        Decimal         @db.Decimal(10, 2)
+  tax             Decimal         @db.Decimal(10, 2)
+  totalAmount     Decimal         @db.Decimal(10, 2)
+  cancelReason    String?
+  cancelledAt     DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  restaurant      Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  branch          Branch          @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  items           OrderItem[]
+
+  @@map("orders")
+}
+
+// 11. OrderItem Model (Products included in an order)
+model OrderItem {
+  id              String      @id @default(uuid())
+  orderId         String
+  productId       String
+  productName     String
+  quantity        Int         @default(1)
+  unitPrice       Decimal     @db.Decimal(10, 2)
+  totalPrice      Decimal     @db.Decimal(10, 2)
+  notes           String?
+
+  // Relations
+  order           Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}

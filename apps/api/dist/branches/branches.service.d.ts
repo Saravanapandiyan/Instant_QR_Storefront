@@ -1,0 +1,196 @@
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateBranchDto } from './dto/create-branch.dto';
+import { UpdateBranchDto } from './dto/update-branch.dto';
+export declare class BranchesService {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    private slugify;
+    private generateUniqueSlug;
+    create(createDto: CreateBranchDto, ownerId: string): Promise<{
+        restaurant: {
+            description: string | null;
+            name: string;
+            slug: string;
+            logoUrl: string | null;
+            defaultCurrency: string;
+            themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
+            id: string;
+            ownerId: string;
+            paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            isDeleted: boolean;
+            deletedAt: Date | null;
+            deletedBy: string | null;
+        };
+    } & {
+        name: string;
+        slug: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        isDeleted: boolean;
+        deletedAt: Date | null;
+        deletedBy: string | null;
+        restaurantId: string;
+        address: string | null;
+        phone: string | null;
+        countryCode: string | null;
+        currency: string;
+    }>;
+    findMine(userId: string): Promise<any[]>;
+    findByRestaurant(restaurantId: string): Promise<({
+        restaurant: {
+            description: string | null;
+            name: string;
+            slug: string;
+            logoUrl: string | null;
+            defaultCurrency: string;
+            themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
+            id: string;
+            ownerId: string;
+            paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            isDeleted: boolean;
+            deletedAt: Date | null;
+            deletedBy: string | null;
+        };
+    } & {
+        name: string;
+        slug: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        isDeleted: boolean;
+        deletedAt: Date | null;
+        deletedBy: string | null;
+        restaurantId: string;
+        address: string | null;
+        phone: string | null;
+        countryCode: string | null;
+        currency: string;
+    })[]>;
+    findBySlug(slug: string): Promise<{
+        restaurant: {
+            description: string | null;
+            name: string;
+            slug: string;
+            logoUrl: string | null;
+            defaultCurrency: string;
+            themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
+            id: string;
+            ownerId: string;
+            paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            isDeleted: boolean;
+            deletedAt: Date | null;
+            deletedBy: string | null;
+        };
+    } & {
+        name: string;
+        slug: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        isDeleted: boolean;
+        deletedAt: Date | null;
+        deletedBy: string | null;
+        restaurantId: string;
+        address: string | null;
+        phone: string | null;
+        countryCode: string | null;
+        currency: string;
+    }>;
+    findOne(id: string): Promise<{
+        restaurant: {
+            description: string | null;
+            name: string;
+            slug: string;
+            logoUrl: string | null;
+            defaultCurrency: string;
+            themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
+            id: string;
+            ownerId: string;
+            paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            isDeleted: boolean;
+            deletedAt: Date | null;
+            deletedBy: string | null;
+        };
+    } & {
+        name: string;
+        slug: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        isDeleted: boolean;
+        deletedAt: Date | null;
+        deletedBy: string | null;
+        restaurantId: string;
+        address: string | null;
+        phone: string | null;
+        countryCode: string | null;
+        currency: string;
+    }>;
+    update(id: string, updateDto: UpdateBranchDto, ownerId: string): Promise<{
+        restaurant: {
+            description: string | null;
+            name: string;
+            slug: string;
+            logoUrl: string | null;
+            defaultCurrency: string;
+            themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
+            id: string;
+            ownerId: string;
+            paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            isDeleted: boolean;
+            deletedAt: Date | null;
+            deletedBy: string | null;
+        };
+    } & {
+        name: string;
+        slug: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        isDeleted: boolean;
+        deletedAt: Date | null;
+        deletedBy: string | null;
+        restaurantId: string;
+        address: string | null;
+        phone: string | null;
+        countryCode: string | null;
+        currency: string;
+    }>;
+    remove(id: string, ownerId: string): Promise<{
+        name: string;
+        slug: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        isDeleted: boolean;
+        deletedAt: Date | null;
+        deletedBy: string | null;
+        restaurantId: string;
+        address: string | null;
+        phone: string | null;
+        countryCode: string | null;
+        currency: string;
+    }>;
+}

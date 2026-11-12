@@ -1,0 +1,39 @@
+import { Controller, Get, Patch, Param, Query, Body, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
+import { AdminRestaurantsService, AdminRestaurantsQuery } from './admin-restaurants.service';
+
+@ApiTags('admin-restaurants')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, SuperAdminGuard)
+@Controller('admin/restaurants')
+export class AdminRestaurantsController {
+  constructor(private readonly restaurantsService: AdminRestaurantsService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'List all restaurant tenants with status filters and search' })
+  @ApiResponse({ status: 200, description: 'Filtered list of restaurants with counts.' })
+  getRestaurants(@Query() query: AdminRestaurantsQuery) {
+    return this.restaurantsService.getRestaurants(query);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get full profile of a restaurant for deep inspection' })
+  @ApiResponse({ status: 200, description: 'Full tenant details with branches and catalog counts.' })
+  @ApiResponse({ status: 404, description: 'Restaurant not found.' })
+  getRestaurantById(@Param('id') id: string) {
+    return this.restaurantsService.getRestaurantById(id);
+  }
+
+  @Patch(':id/status')
+  @ApiOperation({ summary: 'Suspend or reactivate a restaurant tenant' })
+  @ApiResponse({ status: 200, description: 'Updated operational status.' })
+  updateRestaurantStatus(
+    @Param('id') id: string,
+    @Body() body: { isActive: boolean },
+  ) {
+    return this.restaurantsService.updateRestaurantStatus(id, body.isActive);
+  }
+}
+

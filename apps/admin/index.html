@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Instant QR — Platform Control Plane</title>
+    <!-- Google Fonts Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Google Fonts: Figtree, Bricolage Grotesque, Manrope, Fraunces, DM Sans, Inter, Plus Jakarta Sans -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,400..800&family=Figtree:ital,wght@0,300..900;1,300..900&family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@400..800&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+        rel="stylesheet" />
+
+    <!-- Synchronous Admin Theme Initializer to prevent flicker -->
+    <script>
+        (function() {
+            try {
+                var stored = localStorage.getItem('instant-qr-admin-theme');
+                var theme = 'light';
+                if (stored) {
+                    var parsed = JSON.parse(stored);
+                    if (parsed && parsed.state && parsed.state.theme) {
+                        theme = parsed.state.theme;
+                    }
+                }
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.classList.remove('light');
+                } else {
+                    document.documentElement.classList.add('light');
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {
+                document.documentElement.classList.add('light');
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

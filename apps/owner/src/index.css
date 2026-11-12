@@ -1,0 +1,146 @@
+@import "tailwindcss";
+@import "./styles/theme.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ==========================================================================
+   FONT PAIRING PRESETS
+   To switch fonts, simply uncomment the preset you want to try and comment
+   out the current active one (Preset 1 is active by default).
+   ========================================================================== */
+
+/* --- PRESET 1 (Your Pick): Figtree for everything --- */
+/* :root {
+  --font-body: 'Figtree', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Figtree', system-ui, -apple-system, sans-serif;
+  --font-hero: 'Figtree', system-ui, -apple-system, sans-serif;
+} */
+
+/* --- PRESET 2: Bricolage Grotesque (headings & hero) + Figtree (body) --- */
+/* 
+:root {
+  --font-body: 'Figtree', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
+  --font-hero: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
+} */
+
+
+/* --- PRESET 3: Manrope for everything --- */
+
+:root {
+  --font-body: 'Manrope', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Manrope', system-ui, -apple-system, sans-serif;
+  --font-hero: 'Manrope', system-ui, -apple-system, sans-serif;
+}
+
+
+/* --- PRESET 4: Fraunces (serif for login hero) + DM Sans (UI & body) --- */
+/* 
+:root {
+  --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-hero: 'Fraunces', Georgia, serif;
+} */
+
+
+/* --- PRESET 5: Inter for everything --- */
+
+/* :root {
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-hero: 'Inter', system-ui, -apple-system, sans-serif;
+} */
+
+
+/* --- PRESET 6: Plus Jakarta Sans for everything --- */
+/* 
+:root {
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-hero: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+} */
+
+
+
+/* Map to Tailwind v4 Theme */
+@theme {
+  /* --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; */
+  --font-sans: var(--font-body);
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-surface-2: var(--color-surface-2);
+  --color-border: var(--color-border);
+  --color-text: var(--color-text);
+  --color-muted: var(--color-muted);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-primary-soft-text: var(--color-primary-soft-text);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-danger: var(--color-danger);
+  --color-on-primary: var(--color-on-primary);
+  --color-on-danger: var(--color-on-danger);
+  --color-backdrop: var(--color-backdrop);
+}
+
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
+html,
+body {
+  font-family: var(--font-body);
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.015em;
+}
+
+.font-hero {
+  font-family: var(--font-hero);
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 9999px;
+}

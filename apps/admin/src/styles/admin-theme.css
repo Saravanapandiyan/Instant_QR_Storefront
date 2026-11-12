@@ -1,0 +1,105 @@
+/* =========================================================================
+   PLATFORM ADMIN PORTAL — REFINED EXECUTIVE PLATFORM THEME
+   Location: apps/admin/src/styles/admin-theme.css
+
+   Design: Polished Executive Control Plane
+   - Font: Manrope (matching the Restaurant Portal font system)
+   - Colors: Refined Royal Indigo & Slate palette
+   - Clean, modern, high-contrast borders and surfaces
+   ========================================================================= */
+
+/* =========================================================================
+   LIGHT THEME PALETTE
+   ========================================================================= */
+:root,
+html.light {
+  /* Canvas & Containers */
+  --adm-bg: #f8fafc;                   /* Clean light slate canvas */
+  --adm-surface: #ffffff;              /* Crisp white cards, panel, sidebar */
+  --adm-surface-subtle: #f1f5f9;       /* Light grey input & hover states */
+  --adm-surface-elevated: #ffffff;     /* Dropdowns, modals, floating popovers */
+
+  /* Borders & Dividers */
+  --adm-border: #e2e8f0;               /* Hairline divider */
+  --adm-border-subtle: #cbd5e1;        /* Focused border */
+  --adm-border-contrast: #94a3b8;
+
+  /* Primary Brand Action (Executive Indigo) */
+  --adm-primary: #4f46e5;              /* Royal Indigo */
+  --adm-primary-hover: #4338ca;
+  --adm-primary-contrast: #ffffff;
+  --adm-primary-subtle: rgba(79, 70, 229, 0.08);
+
+  /* Typography Hierarchy */
+  --adm-text: #0f172a;                 /* Slate-900 primary text */
+  --adm-text-secondary: #334155;       /* Slate-700 body text */
+  --adm-muted: #64748b;                /* Slate-500 captions & labels */
+  --adm-muted-light: #94a3b8;          /* Slate-400 placeholder text */
+
+  /* Semantic Status Accents */
+  --adm-success: #10b981;              /* Emerald for active/verified */
+  --adm-success-subtle: rgba(16, 185, 129, 0.1);
+  --adm-warning: #f59e0b;              /* Amber */
+  --adm-warning-subtle: rgba(245, 158, 11, 0.1);
+  --adm-error: #ef4444;                /* Rose/Red */
+  --adm-error-subtle: rgba(239, 68, 68, 0.1);
+  --adm-info: #0284c7;                 /* Sky/Blue */
+  --adm-info-subtle: rgba(2, 132, 199, 0.1);
+
+  /* Geometry & Corner Radius */
+  --adm-radius-sm: 6px;
+  --adm-radius: 8px;
+  --adm-radius-lg: 12px;
+
+  /* Scrollbars */
+  --adm-scrollbar-thumb: #cbd5e1;
+  --adm-scrollbar-thumb-hover: #94a3b8;
+}
+
+/* =========================================================================
+   DARK THEME PALETTE (Activated when html has class "dark")
+   ========================================================================= */
+html.dark,
+.dark {
+  /* Canvas & Containers */
+  --adm-bg: #090d16;                   /* Deep obsidian canvas background */
+  --adm-surface: #0f172a;              /* Slate-900 surface */
+  --adm-surface-subtle: #1e293b;       /* Slate-800 hover & inputs */
+  --adm-surface-elevated: #1e293b;     /* Elevated drawers & popovers */
+
+  /* Borders & Dividers */
+  --adm-border: #1e293b;               /* Slate-800 technical divider */
+  --adm-border-subtle: #334155;        /* Slate-700 focus edge */
+  --adm-border-contrast: #475569;
+
+  /* Primary Brand Action */
+  --adm-primary: #6366f1;              /* Electric Indigo */
+  --adm-primary-hover: #4f46e5;
+  --adm-primary-contrast: #ffffff;
+  --adm-primary-subtle: rgba(99, 102, 241, 0.12);
+
+  /* Typography Hierarchy */
+  --adm-text: #f8fafc;                 /* Slate-50 primary text */
+  --adm-text-secondary: #cbd5e1;       /* Slate-300 body text */
+  --adm-muted: #94a3b8;                /* Slate-400 captions */
+  --adm-muted-light: #64748b;          /* Slate-500 placeholder text */
+
+  /* Semantic Status Accents */
+  --adm-success: #10b981;
+  --adm-success-subtle: rgba(16, 185, 129, 0.15);
+  --adm-warning: #fbbf24;
+  --adm-warning-subtle: rgba(251, 191, 36, 0.15);
+  --adm-error: #f87171;
+  --adm-error-subtle: rgba(248, 113, 113, 0.15);
+  --adm-info: #38bdf8;
+  --adm-info-subtle: rgba(56, 189, 248, 0.15);
+
+  /* Geometry & Corner Radius */
+  --adm-radius-sm: 6px;
+  --adm-radius: 8px;
+  --adm-radius-lg: 12px;
+
+  /* Scrollbars */
+  --adm-scrollbar-thumb: #1e293b;
+  --adm-scrollbar-thumb-hover: #334155;
+}
