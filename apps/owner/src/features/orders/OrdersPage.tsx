@@ -25,6 +25,7 @@ import {
   X,
   Lock,
   Calendar,
+  Printer,
 } from 'lucide-react';
 import { getMediaUrl } from '../../lib/utils';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
@@ -36,6 +37,7 @@ import type { Order, OrdersListResponse } from './api/ordersApi';
 import { toast } from '../../components/ui';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { usePermissions } from '../../hooks/usePermissions';
+import { ThermalReceiptModal } from './components/ThermalReceiptModal';
 
 type DatePreset = 'ALL' | 'TODAY' | 'YESTERDAY' | 'THIS_WEEK' | 'THIS_MONTH' | 'CUSTOM';
 
@@ -124,6 +126,19 @@ export const OrdersPage: React.FC = () => {
   const [cancelReason, setCancelReason] = useState<string>('Out of ingredients');
   const [customReason, setCustomReason] = useState<string>('');
   const [isSubmittingAction, setIsSubmittingAction] = useState<boolean>(false);
+
+  // Modal for thermal receipt printing
+  const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
+
+  const printingRestaurant = useMemo(() => {
+    if (!printingOrder) return null;
+    return restaurants.find((r) => r.id === printingOrder.restaurantId) || null;
+  }, [printingOrder, restaurants]);
+
+  const printingBranch = useMemo(() => {
+    if (!printingOrder) return null;
+    return branches.find((b) => b.id === printingOrder.branchId) || null;
+  }, [printingOrder, branches]);
 
   // Sync URL query params if user navigates from Overview branch card
   useEffect(() => {
@@ -534,14 +549,26 @@ export const OrdersPage: React.FC = () => {
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1 text-xs font-semibold text-muted">
-                        <Clock className="w-3.5 h-3.5 text-muted" />
-                        <span>
-                          {new Date(order.createdAt).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPrintingOrder(order)}
+                          className="px-2 py-0.5 rounded-lg text-text bg-surface-2 hover:bg-border transition-colors border border-border flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                          title="Print Thermal Receipt"
+                        >
+                          <Printer className="w-3.5 h-3.5 text-primary" />
+                          <span>Bill</span>
+                        </button>
+
+                        <div className="flex items-center gap-1 text-xs font-semibold text-muted">
+                          <Clock className="w-3.5 h-3.5 text-muted" />
+                          <span>
+                            {new Date(order.createdAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -731,6 +758,16 @@ export const OrdersPage: React.FC = () => {
                           </button>
                         )}
 
+                        {/* Print Receipt Action */}
+                        <button
+                          type="button"
+                          onClick={() => setPrintingOrder(order)}
+                          className="w-full py-2 px-3 rounded-xl border border-border bg-surface-2/70 hover:bg-surface-2 font-bold text-xs text-text flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <Printer className="w-3.5 h-3.5 text-primary" />
+                          <span>Print Receipt</span>
+                        </button>
+
                         {/* Cancel Action */}
                         {order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && can('orders', 'cancel') && (
                           <button
@@ -853,7 +890,17 @@ export const OrdersPage: React.FC = () => {
                           <div className="scale-90 origin-left">{getStatusBadge(order.status)}</div>
                         </td>
                         <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                          {order.status === 'PENDING' && can('orders', 'accept') ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setPrintingOrder(order)}
+                              className="p-1.5 rounded-lg text-text bg-surface-2 hover:bg-border transition-colors border border-border cursor-pointer"
+                              title="Print Thermal Receipt"
+                            >
+                              <Printer className="w-3.5 h-3.5 text-primary" />
+                            </button>
+
+                            {order.status === 'PENDING' && can('orders', 'accept') ? (
                             <button
                               type="button"
                               onClick={() => handleUpdateStatus(order.id, 'PREPARING')}
@@ -885,6 +932,7 @@ export const OrdersPage: React.FC = () => {
                               {order.status === 'COMPLETED' ? 'Done' : order.status === 'CANCELLED' ? 'Cancelled' : 'View only'}
                             </span>
                           )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -970,6 +1018,15 @@ export const OrdersPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Thermal Receipt Print Modal */}
+        <ThermalReceiptModal
+          isOpen={Boolean(printingOrder)}
+          onClose={() => setPrintingOrder(null)}
+          order={printingOrder}
+          restaurant={printingRestaurant}
+          branch={printingBranch}
+        />
       </div>
     </DashboardLayout>
   );

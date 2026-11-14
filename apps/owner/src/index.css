@@ -144,3 +144,40 @@ h6 {
   background: var(--color-border);
   border-radius: 9999px;
 }
+
+/* ==========================================================================
+   THERMAL RECEIPT PRINT MEDIA RULES
+   Ensures only the dedicated thermal receipt portal is sent to the printer,
+   hiding all dashboard UI, sidebars, modals, and toolbars.
+   ========================================================================== */
+#thermal-receipt-portal {
+  display: none;
+}
+
+@media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    width: 100% !important;
+  }
+
+  /* Hide the web application root during printing */
+  #root {
+    display: none !important;
+  }
+
+  /* Show only the thermal receipt */
+  #thermal-receipt-portal {
+    display: block !important;
+    position: static !important;
+    margin: 0 auto !important;
+    padding: 2mm 3mm 8mm 3mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

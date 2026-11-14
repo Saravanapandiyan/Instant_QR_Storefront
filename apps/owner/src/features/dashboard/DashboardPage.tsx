@@ -12,6 +12,7 @@ import {
   Bell,
   XCircle,
   ArrowRight,
+  Printer,
 } from 'lucide-react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Button, toast } from '../../components/ui';
@@ -22,6 +23,7 @@ import { useActiveStore } from '../../store/useActiveStore';
 import { usePermissions } from '../../hooks/usePermissions';
 import { BranchModal } from '../branches/components/BranchModal';
 import { InstagramQRModal } from '../branches/components/InstagramQRModal';
+import { ThermalReceiptModal } from '../orders/components/ThermalReceiptModal';
 import { getProducts, getCategories } from '../menu/api/menu-api';
 import { ordersApi, type Order } from '../orders/api/ordersApi';
 import { getCustomerStorefrontUrl } from '../../lib/urls';
@@ -45,6 +47,7 @@ export const DashboardPage: React.FC = () => {
   const [qrModalBranch, setQrModalBranch] = useState<Branch | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
+  const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const { formatPrice } = useCurrencyStore();
   const { setActiveRestaurantId, setActiveBranchId } = useActiveStore();
   const { can } = usePermissions();
@@ -441,7 +444,7 @@ export const DashboardPage: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                        <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
                           <div className="text-left sm:text-right">
                             <div className="text-sm font-bold text-text">
                               {formatPrice(order.totalAmount)}
@@ -456,6 +459,15 @@ export const DashboardPage: React.FC = () => {
                               {order.paymentStatus === 'PAID' ? 'Cash Paid' : 'Cash Pending'}
                             </div>
                           </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setPrintingOrder(order)}
+                            className="p-1.5 rounded-lg text-text bg-surface-2 hover:bg-border transition-colors border border-border cursor-pointer"
+                            title="Print Thermal Receipt"
+                          >
+                            <Printer size={15} className="text-primary" />
+                          </button>
 
                           {order.status === 'PENDING' && can('orders', 'update') ? (
                             <Button
@@ -713,6 +725,23 @@ export const DashboardPage: React.FC = () => {
         onSubmitBranch={async (data) => {
           await createBranch(data);
         }}
+      />
+
+      {/* Thermal Receipt Print Modal */}
+      <ThermalReceiptModal
+        isOpen={Boolean(printingOrder)}
+        onClose={() => setPrintingOrder(null)}
+        order={printingOrder}
+        restaurant={
+          printingOrder
+            ? restaurants.find((r) => r.id === printingOrder.restaurantId) || null
+            : null
+        }
+        branch={
+          printingOrder
+            ? branches.find((b) => b.id === printingOrder.branchId) || null
+            : null
+        }
       />
     </DashboardLayout>
   );

@@ -26,3 +26,5 @@ yarn-debug.log*
 *.njsproj
 *.sln
 *.sw?
+test/
+apps/api/uploads/

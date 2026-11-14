@@ -16,7 +16,7 @@ export default defineConfig({
         type: 'module',
         navigateFallback: 'index.html',
       },
-      includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'favicon.png', 'favicon.ico', 'icons/apple-touch-icon.png'],
       manifest: {
         id: '/',
         start_url: '/',
@@ -28,6 +28,9 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
+        launch_handler: {
+          client_mode: ['navigate-existing', 'auto'],
+        },
         icons: [
           {
             src: '/icons/pwa-192x192.png',

@@ -26,8 +26,12 @@ export function LandingPage() {
       {/* Top Header */}
       <header className="px-6 py-4 border-b border-zinc-200/80 bg-white/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-orange-600 text-white flex items-center justify-center font-bold text-base shadow-sm shadow-orange-500/20">
-            <UtensilsCrossed className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-xl overflow-hidden shadow-sm shadow-orange-500/20 border border-zinc-200/80 shrink-0 bg-white">
+            <img
+              src="/icons/pwa-192x192.png"
+              alt="Instant QR"
+              className="w-full h-full object-cover"
+            />
           </div>
           <div>
             <span className="font-bold text-base tracking-tight text-zinc-900 block leading-none">

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search,
@@ -19,6 +19,7 @@ import {
   ChefHat,
   ChevronRight,
   Download,
+  QrCode,
 } from 'lucide-react';
 import { usePWAInstall } from '../../hooks/usePWAInstall.ts';
 import { fetchStorefrontBySlug } from '../../api/storefrontApi.ts';
@@ -28,6 +29,7 @@ import { useCartStore } from '../../store/useCartStore.ts';
 import { DishDetailModal } from './DishDetailModal.tsx';
 import { OrderTrackingModal } from '../order/OrderTrackingModal.tsx';
 import { MyOrdersModal } from '../order/MyOrdersModal.tsx';
+import { QRScannerModal } from '../landing/QRScannerModal.tsx';
 import { useCustomerOrders } from '../order/useCustomerOrders.ts';
 import type { StorefrontMenuData, StorefrontItem } from '../../types/storefront.ts';
 
@@ -51,8 +53,40 @@ export function StorefrontPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Mobile category pills ref & centering
+  const mobileCategoryPillsRef = useRef<HTMLDivElement>(null);
+
+  const centerCategoryPill = useCallback((categoryId: string) => {
+    requestAnimationFrame(() => {
+      if (!mobileCategoryPillsRef.current) return;
+      const container = mobileCategoryPillsRef.current;
+      const activePill = container.querySelector<HTMLElement>(`[data-category-id="${categoryId}"]`);
+      if (!activePill) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const pillRect = activePill.getBoundingClientRect();
+      const relativePillLeft = pillRect.left - containerRect.left + container.scrollLeft;
+      const targetScrollLeft = relativePillLeft - container.clientWidth / 2 + pillRect.width / 2;
+
+      container.scrollTo({
+        left: Math.max(0, targetScrollLeft),
+        behavior: 'smooth',
+      });
+    });
+  }, []);
+
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    centerCategoryPill(categoryId);
+  };
+
+  useEffect(() => {
+    centerCategoryPill(selectedCategory);
+  }, [selectedCategory, menuData, centerCategoryPill]);
+
   // Mobile cart drawer open/close
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   // Dish Details & Customization Modal
   const [selectedDishForModal, setSelectedDishForModal] = useState<StorefrontItem | null>(null);
@@ -304,6 +338,21 @@ export function StorefrontPage() {
             )}
           </button>
 
+          {/* Scan another QR Button */}
+          <button
+            onClick={() => setIsScannerOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer shadow-xs hover:border-orange-500/40"
+            style={{
+              backgroundColor: 'var(--sf-surface)',
+              borderColor: 'var(--sf-border)',
+              color: 'var(--sf-text)',
+            }}
+            title="Scan another table or restaurant QR"
+          >
+            <QrCode className="w-3.5 h-3.5 text-orange-500" />
+            <span className="hidden lg:inline">Scan QR</span>
+          </button>
+
           {/* PWA Install Button when prompt is available */}
           {isInstallable && (
             <button
@@ -369,6 +418,20 @@ export function StorefrontPage() {
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Mobile Scan QR Button */}
+            <button
+              onClick={() => setIsScannerOpen(true)}
+              className="p-1.5 rounded-lg border flex items-center justify-center transition-all cursor-pointer hover:border-orange-500/40"
+              style={{
+                backgroundColor: 'var(--sf-surface)',
+                borderColor: 'var(--sf-border)',
+                color: 'var(--sf-text)',
+              }}
+              title="Scan another table or restaurant QR"
+            >
+              <QrCode className="w-4 h-4 text-orange-500" />
+            </button>
+
             <button
               onClick={() => setIsMyOrdersOpen(true)}
               className="p-1.5 rounded-lg border relative flex items-center justify-center transition-all cursor-pointer"
@@ -420,10 +483,14 @@ export function StorefrontPage() {
         </div>
 
         {/* Horizontal Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 mb-2 no-scrollbar">
+        <div
+          ref={mobileCategoryPillsRef}
+          className="flex items-center gap-1.5 overflow-x-auto pb-1 mb-2 no-scrollbar scroll-smooth"
+        >
           <button
-            onClick={() => setSelectedCategory('all')}
-            className="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all border"
+            data-category-id="all"
+            onClick={() => handleCategorySelect('all')}
+            className="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all border shrink-0 cursor-pointer"
             style={
               selectedCategory === 'all'
                 ? {
@@ -444,8 +511,9 @@ export function StorefrontPage() {
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all border"
+              data-category-id={cat.id}
+              onClick={() => handleCategorySelect(cat.id)}
+              className="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all border shrink-0 cursor-pointer"
               style={
                 selectedCategory === cat.id
                   ? {
@@ -492,10 +560,10 @@ export function StorefrontPage() {
             COLUMN 1 (15%): CATEGORY SIDEBAR
            --------------------------------------------------------------------- */}
         <aside className="hidden md:block w-full min-w-0">
-          <div className="space-y-1 sticky top-16">
+          <div className="space-y-1 sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto pr-1">
             <button
-              onClick={() => setSelectedCategory('all')}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              onClick={() => handleCategorySelect('all')}
+              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer"
               style={
                 selectedCategory === 'all'
                   ? {
@@ -516,8 +584,8 @@ export function StorefrontPage() {
             {categories.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                onClick={() => handleCategorySelect(cat.id)}
+                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer"
                 style={
                   selectedCategory === cat.id
                     ? {
@@ -1522,6 +1590,12 @@ export function StorefrontPage() {
         onConfirm={(item, quantity, notes) => {
           addItemWithDetails(item, quantity, notes);
         }}
+      />
+
+      {/* In-App QR Scanner Modal to scan another table or restaurant */}
+      <QRScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
       />
     </div>
   );

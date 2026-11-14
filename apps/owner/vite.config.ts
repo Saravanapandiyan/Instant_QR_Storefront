@@ -16,7 +16,7 @@ export default defineConfig({
         type: 'module',
         navigateFallback: 'index.html',
       },
-      includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'favicon.png', 'favicon.ico', 'icons/apple-touch-icon.png'],
       manifest: {
         id: '/',
         start_url: '/',
