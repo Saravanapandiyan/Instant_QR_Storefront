@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { AdminLayout } from '../../components/layout/AdminLayout.tsx';
 import { adminDashboardApi } from '../../api/adminDashboardApi.ts';
+import { getCustomerStorefrontUrl } from '../../lib/urls.ts';
 
 export function AdminDashboardPage() {
   // Live queries to NestJS Backend
@@ -419,7 +420,7 @@ export function AdminDashboardPage() {
                       </td>
                       <td className="py-3 px-4">
                         <a
-                          href={`http://localhost:5174/r/${tenant.slug}`}
+                          href={getCustomerStorefrontUrl(tenant.slug)}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center gap-1 text-[11px] font-mono text-indigo-500 hover:underline"

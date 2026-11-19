@@ -39,12 +39,21 @@ const swagger_1 = require("@nestjs/swagger");
 const app_module_1 = require("./app.module");
 const express = __importStar(require("express"));
 const path = __importStar(require("path"));
+const appkodes_license_1 = require("./common/license/appkodes-license");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.enableCors({
         origin: true,
         credentials: true,
     });
+    const licenseGuard = (0, appkodes_license_1.createLicenseGuard)({
+        productId: 'instant-qr-storefront',
+        version: '1.0.0',
+        onInvalid: (result) => {
+            console.error(`🚨 AppKodes License invalid: ${result.message}`);
+        },
+    });
+    app.use(licenseGuard.middleware());
     app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
         setHeaders: (res) => {
             res.setHeader('Access-Control-Allow-Origin', '*');

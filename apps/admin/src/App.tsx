@@ -16,11 +16,13 @@ const queryClient = new QueryClient({
   },
 });
 
+const adminBasename = (import.meta.env.BASE_URL || '/admin').replace(/\/+$/, '') || '/admin';
+
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AdminToastContainer />
-      <BrowserRouter>
+      <BrowserRouter basename={adminBasename}>
         <Routes>
           {/* Public Super Admin Authentication Route */}
           <Route path="/login" element={<AdminLoginPage />} />
@@ -35,8 +37,8 @@ export function App() {
             <Route path="/system-health" element={<AdminDashboardPage />} />
           </Route>
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Fallback to login */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
@@ -44,4 +46,3 @@ export function App() {
 }
 
 export default App;
-

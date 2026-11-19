@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InstaDine — 1¢ per order. No subscription. Live in 5 minutes.</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
+    .font-display { font-family: 'Outfit', sans-serif; }
+
+    /* Custom futuristic glow effects & grid */
+    .bg-grid-pattern {
+      background-size: 40px 40px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    }
+    .glow-amber {
+      box-shadow: 0 0 80px -15px rgba(245, 158, 11, 0.35);
+    }
+    .glow-card {
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 20px -5px rgba(245, 158, 11, 0.15);
+    }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card-hover:hover {
+      border-color: rgba(245, 158, 11, 0.4);
+      transform: translateY(-2px);
+    }
+    /* Theme variables */
+    .theme-street {
+      --primary: #F59E0B;
+      --primary-gradient: linear-gradient(135deg, #F59E0B 0%, #EA580C 100%);
+      --accent-glow: rgba(245, 158, 11, 0.25);
+      --badge-bg: rgba(245, 158, 11, 0.15);
+      --badge-text: #FBBF24;
+      --hero-bg: #07090E;
+    }
+    .theme-obsidian {
+      --primary: #10B981;
+      --primary-gradient: linear-gradient(135deg, #10B981 0%, #0D9488 100%);
+      --accent-glow: rgba(16, 185, 129, 0.25);
+      --badge-bg: rgba(16, 185, 129, 0.15);
+      --badge-text: #34D399;
+      --hero-bg: #04060A;
+    }
+    .theme-vibrant {
+      --primary: #FF4D4D;
+      --primary-gradient: linear-gradient(135deg, #FF4D4D 0%, #F59E0B 100%);
+      --accent-glow: rgba(255, 77, 77, 0.3);
+      --badge-bg: rgba(255, 77, 77, 0.18);
+      --badge-text: #FCA5A5;
+      --hero-bg: #0A0C16;
+    }
+  </style>
+</head>
+<body id="app-body" class="theme-street bg-[var(--hero-bg)] text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950">
+
+  <!-- Ambient Glow & Grid -->
+  <div class="fixed inset-0 bg-grid-pattern pointer-events-none opacity-60 z-0"></div>
+
+  <!-- ================= SLEEK HEADER SECTION WITH DEDICATED BACKGROUND COLOR ================= -->
+  <header id="main-header" class="sticky top-0 z-50 bg-transparent transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+      
+      <!-- Logo & Brand -->
+      <a href="index.html" class="flex items-center gap-3 group">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-slate-950 shadow-xl shadow-amber-500/20 font-black text-2xl tracking-tighter group-hover:scale-105 transition-transform" id="brand-badge">
+          ID
+        </div>
+        <div class="text-2xl font-black tracking-tight text-white flex items-center gap-1.5">
+          Insta<span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500" id="brand-name-colored">Dine</span>
+        </div>
+      </a>
+
+      <!-- Nav Links -->
+      <nav class="hidden lg:flex items-center gap-8 text-sm font-extrabold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+        <a href="#how-it-works" class="hover:text-amber-400 transition-colors">How it Works</a>
+        <a href="pricing.html" class="hover:text-amber-400 transition-colors">Pricing</a>
+        <a href="faq.html" class="hover:text-amber-400 transition-colors">FAQ</a>
+      </nav>
+
+      <!-- Actions (No Currency Switcher) -->
+      <div class="flex items-center gap-3">
+        <button onclick="openModal('signup')" class="text-xs font-black bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-slate-950 px-5 py-2.5 rounded-xl transition-all shadow-xl shadow-amber-500/20 hover:scale-105">
+          Get 100 Free Credits
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= HERO SECTION: CLEAN, DIRECT ON IMAGE WITH BALANCED OPACITY ================= -->
+  <section class="relative z-10 -mt-20 pt-48 pb-10 md:pt-56 md:pb-14 px-4 sm:px-6 overflow-hidden flex items-start justify-center">
+    
+    <!-- RESTAURANT BACKGROUND IMAGE: RESTORED BALANCED OPACITY & TOP POSITIONING -->
+    <div class="absolute inset-0 z-0 bg-[#07090E]">
+      <img 
+        src="dine-takeaway-hero.jpg" 
+        alt="Restaurant Table Dine-In and Takeaway Operating System" 
+        class="w-full h-full object-cover opacity-65 filter brightness-90 contrast-105 saturate-110"
+        style="object-position: center center;"
+      />
+      <!-- Soft gradient overlay as it had already -->
+      <div class="absolute inset-0 bg-gradient-to-t from-[#07090E] via-transparent to-[#07090E]/60"></div>
+    </div>
+
+    <!-- Content rendered directly on the image with NO background box -->
+    <div class="max-w-4xl mx-auto text-center space-y-7 relative z-10 bg-transparent border-0 shadow-none p-0" style="margin-top:-50px;">
+      
+      <!-- Main Headline (Updated to punchy, high-converting title) -->
+      <h1 class="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-white leading-[1.08] font-display drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]">
+        Smart QR Ordering for <br class="hidden sm:inline" />
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]" id="hero-gradient">
+          Dine-In &amp; Takeaway
+        </span>
+      </h1>
+
+      <!-- Subtitle directly on the image -->
+      <p class="max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-slate-100 leading-relaxed font-semibold drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]" id="hero-subtext">
+        One simple system for both <strong>Table Dining</strong> and <strong>Takeaway Counter Pickup</strong>. Customers order in 1 tap on their phone, and your cashier confirms in 1 second.
+      </p>
+
+      <!-- Action Buttons directly on image -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-3">
+        <button onclick="openModal('signup')" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-95 text-slate-950 font-black text-base rounded-2xl flex items-center justify-center gap-3 transition-all shadow-[0_10px_30px_rgba(0,0,0,0.6)] hover:scale-105 border border-white/20">
+          <span>Claim 100 Free Credits</span>
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+        </button>
+        <a href="#setup-5mins" class="w-full sm:w-auto px-8 py-4 bg-black/60 hover:bg-black/80 text-white font-extrabold text-base rounded-2xl border border-white/30 backdrop-blur-md transition-all flex items-center justify-center gap-2 hover:border-amber-400 shadow-[0_10px_30px_rgba(0,0,0,0.6)]">
+          <span>⏱️ 5-Minute Restaurant Setup</span>
+        </a>
+      </div>
+
+
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- CENTERPIECE SECTION: "Set-up Complete Restaurant Profile in 5 mins"        -->
+  <!-- TRENDING, HIGH-CRAFT, VISUAL ONBOARDING ENGINE                             -->
+  <!-- ========================================================================= -->
+  <section id="setup-5mins" class="relative z-10 py-16 px-4 sm:px-6 bg-gradient-to-b from-[#07090E] via-[#0D121F] to-[#07090E] overflow-hidden" style="padding-top: 4rem; padding-bottom: 4rem;">
+    
+    <!-- Background subtle ambient lighting -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] bg-amber-500/10 blur-[180px] rounded-full pointer-events-none"></div>
+
+    <div class="max-w-6xl mx-auto space-y-12 relative z-10">
+      
+      <!-- Section Header -->
+      <div class="text-center max-w-3xl mx-auto space-y-4">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-xs font-black text-amber-300 uppercase tracking-widest shadow-lg">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+          <span>Live in 5 Minutes</span>
+        </div>
+
+        <h2 class="text-4xl sm:text-5xl md:text-6xl font-black text-white font-display tracking-tight leading-tight">
+          Set-up Complete Restaurant Profile <br class="hidden sm:inline" />
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-300 to-amber-500">
+            in 5 Mins Flat
+          </span>
+        </h2>
+        
+        <p class="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
+          From an empty smartphone to your first live QR customer order. No sales calls, no hardware shipping, no waiting days for approval.
+        </p>
+      </div>
+
+      <!-- OPTION A: HORIZONTAL CIRCULAR TIMELINE (Linear / GitHub style) -->
+      <div class="max-w-4xl mx-auto px-2">
+        <div class="relative py-4">
+
+          <!-- Connecting Track Line (Desktop/Tablet) -->
+          <div class="hidden sm:block absolute top-[42px] left-[12%] right-[12%] h-[3px] bg-slate-800 -z-0 rounded-full overflow-hidden">
+            <div id="step-timeline-progress" class="h-full w-0 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 transition-all duration-500 rounded-full shadow-[0_0_12px_rgba(251,191,36,0.8)]"></div>
+          </div>
+
+          <!-- Step Buttons Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-2 relative z-10">
+
+            <!-- STEP 1 -->
+            <button onclick="selectSetupStep(1)" id="step-tab-1" class="group flex flex-col items-center text-center cursor-pointer transition-all duration-300 p-3 rounded-2xl hover:bg-white/[0.02]">
+              <div id="step-node-1" class="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 font-black text-xl flex items-center justify-center shadow-[0_0_28px_rgba(251,191,36,0.55)] border-2 border-amber-300 transition-all duration-300 group-hover:scale-105">
+                1
+              </div>
+              <div class="mt-3.5 space-y-1">
+                <div class="flex items-center justify-center gap-2">
+                  <span id="step-badge-1" class="text-[10px] font-black uppercase tracking-[0.16em] text-amber-400 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-md">Step 1 &bull; 2 Mins</span>
+                </div>
+                <p id="step-title-1" class="text-white font-black text-sm tracking-tight transition-colors">Restaurant Profile &amp; QR</p>
+                <p id="step-desc-1" class="text-slate-400 text-[11px] leading-tight font-medium max-w-[200px] mx-auto">Logo, hours, currency &amp; table stands</p>
+                
+              </div>
+            </button>
+
+            <!-- STEP 2 -->
+            <button onclick="selectSetupStep(2)" id="step-tab-2" class="group flex flex-col items-center text-center cursor-pointer transition-all duration-300 p-3 rounded-2xl hover:bg-white/[0.02]">
+              <div id="step-node-2" class="w-14 h-14 rounded-full bg-slate-900 border-2 border-slate-700/80 text-slate-400 font-black text-xl flex items-center justify-center transition-all duration-300 group-hover:border-slate-500 group-hover:text-slate-200">
+                2
+              </div>
+              <div class="mt-3.5 space-y-1">
+                <div class="flex items-center justify-center gap-2">
+                  <span id="step-badge-2" class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 bg-slate-800/80 border border-slate-700/80 px-2 py-0.5 rounded-md">Step 2 &bull; 2 Mins</span>
+                </div>
+                <p id="step-title-2" class="text-slate-400 font-bold text-sm tracking-tight transition-colors">Quick Menu Setup</p>
+                <p id="step-desc-2" class="text-slate-500 text-[11px] leading-tight font-medium max-w-[200px] mx-auto">Add dishes, combos & set live stock status</p>
+                
+              </div>
+            </button>
+
+            <!-- STEP 3 -->
+            <button onclick="selectSetupStep(3)" id="step-tab-3" class="group flex flex-col items-center text-center cursor-pointer transition-all duration-300 p-3 rounded-2xl hover:bg-white/[0.02]">
+              <div id="step-node-3" class="w-14 h-14 rounded-full bg-slate-900 border-2 border-slate-700/80 text-slate-400 font-black text-xl flex items-center justify-center transition-all duration-300 group-hover:border-slate-500 group-hover:text-slate-200">
+                3
+              </div>
+              <div class="mt-3.5 space-y-1">
+                <div class="flex items-center justify-center gap-2">
+                  <span id="step-badge-3" class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 bg-slate-800/80 border border-slate-700/80 px-2 py-0.5 rounded-md">Step 3 &bull; 1 Min</span>
+                </div>
+                <p id="step-title-3" class="text-slate-400 font-bold text-sm tracking-tight transition-colors">Staff Allocation &amp; Roles</p>
+                <p id="step-desc-3" class="text-slate-500 text-[11px] leading-tight font-medium max-w-[200px] mx-auto">Assign Cashier PIN &amp; Kitchen KDS</p>
+                
+              </div>
+            </button>
+
+          </div>
+        </div>
+      </div>
+      <!-- HIGH-CRAFT LIVE INTERACTIVE DISPLAY CONTAINER -->
+      <div class="max-w-5xl mx-auto rounded-3xl p-1 bg-gradient-to-b from-white/20 via-white/5 to-white/10 shadow-2xl backdrop-blur-2xl">
+        <div class="bg-[#090D16] rounded-[22px] border border-slate-800 p-6 sm:p-10 relative overflow-hidden min-h-[520px] flex flex-col justify-between">
+          
+          <!-- Top Window Chrome -->
+          <div class="flex items-center justify-between border-b border-slate-800 pb-5 mb-6 text-xs">
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
+                <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
+                <span class="w-3 h-3 rounded-full bg-green-500/80"></span>
+              </div>
+              <div class="h-4 w-[1px] bg-slate-800 hidden sm:block"></div>
+              <span class="font-mono text-slate-400 text-[11px]" id="step-breadcrumb">
+                instadine.app/setup &gt; <strong class="text-amber-400">Step 1: Restaurant Identity</strong>
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="font-bold text-emerald-400 text-[11px]" id="step-status-chip">Ready in 2 Mins</span>
+            </div>
+          </div>
+
+          <!-- DYNAMIC HIGH-FIDELITY STEP SCREENS -->
+          <div class="flex-1">
+
+            <!-- ================= VIEW 1: RESTAURANT PROFILE & PRINTABLE QR STAND ================= -->
+            <div id="setup-view-1" class="space-y-6">
+              
+              <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                
+                <!-- Left: CONTINUOUS SCREENCAST VIDEO PLAYER -->
+                <div class="lg:col-span-7 bg-slate-950/95 rounded-3xl p-5 sm:p-6 border-2 border-slate-800 shadow-2xl relative text-left overflow-hidden">
+
+                  <!-- Video Frame Surface -->
+                  <div class="relative bg-slate-900/90 rounded-2xl p-6 border border-slate-800 min-h-[330px] flex flex-col justify-between overflow-hidden shadow-inner">
+                    
+                    <!-- Floating Simulated Mouse Cursor -->
+                    <div id="ref1-mouse-cursor" class="absolute z-30 pointer-events-none transition-all duration-300 flex items-center gap-1" style="top: 30px; left: 40px;">
+                      <svg class="w-5 h-5 text-amber-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M4 2l16 12-7 1.5 4 6.5-3 1.5-4-6.5L4 22V2z"/>
+                      </svg>
+                      <span id="ref1-cursor-action" class="text-[9px] font-mono font-bold bg-slate-950/90 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40 shadow">
+                        Typing...
+                      </span>
+                    </div>
+
+                    <!-- Form Video Content (One Single Fluid Screen) -->
+                    <div class="space-y-4 relative z-10">
+                      
+                      <!-- Header in Video -->
+                      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                        <div class="flex items-center gap-2">
+                          <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                          <span class="text-xs font-black text-white">Create Restaurant Concept</span>
+                        </div>
+                        <span class="text-[9px] text-emerald-400 font-mono font-bold">● Fast Onboarding Mode</span>
+                      </div>
+
+                      <!-- Field 1: Restaurant Name Typing -->
+                      <div>
+                        <label class="text-[10px] font-bold text-slate-400 block mb-1">Restaurant Concept Name</label>
+                        <div id="ref1-input-box" class="px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-sm flex items-center justify-between transition-all">
+                          <span id="ref1-name-display" class="font-display tracking-tight text-white">KFC Restaurant</span>
+                          <span id="ref1-caret" class="w-1.5 h-4 bg-amber-400 animate-pulse"></span>
+                        </div>
+                      </div>
+
+                      <!-- Field 2: Logo Drop & Concept Subtitle -->
+                      <div class="flex items-center gap-3 p-2.5 bg-slate-950/80 rounded-xl border border-slate-800/80">
+                        <div id="ref1-logo-badge" class="w-12 h-12 rounded-xl bg-[#E4002B] text-white flex items-center justify-center font-black text-lg font-display shrink-0 shadow-lg shadow-red-500/40 transition-all duration-300">
+                          KFC
+                        </div>
+                        <div class="text-xs space-y-0.5">
+                          <div class="font-bold text-white flex items-center gap-1.5">
+                            <span id="ref1-logo-status">Logo Attached: KFC_Brand.png</span>
+                            <span class="text-emerald-400 font-bold">✓</span>
+                          </div>
+                          <div class="text-[10px] text-slate-400">Fried Chicken • Burgers &amp; Wings • Quick Service</div>
+                        </div>
+                      </div>
+
+                      <!-- Field 3: Hours & Currency -->
+                      <div class="grid grid-cols-2 gap-2.5 text-xs">
+                        <div class="p-2.5 bg-slate-950 rounded-xl border border-slate-800 space-y-0.5">
+                          <span class="text-[9px] text-slate-500 font-bold uppercase">Operating Hours</span>
+                          <span class="font-bold text-white text-[11px] block">10:00 AM – 11:00 PM</span>
+                        </div>
+                        <div class="p-2.5 bg-slate-950 rounded-xl border border-slate-800 space-y-0.5">
+                          <span class="text-[9px] text-slate-500 font-bold uppercase">Default Currency</span>
+                          <span class="font-bold text-amber-400 text-[11px] block">🇺🇸 USD ($)</span>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    <!-- Submit Button in Video -->
+                    <div class="pt-2 relative z-10">
+                      <button id="ref1-video-btn" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                        <span id="ref1-btn-text">⚡ Launch Instant QR Fleet</span>
+                      </button>
+                    </div>
+
+                    <!-- Instant Success Confetti Overlay (Shows at end of 8s video) -->
+                    <div id="ref1-success-banner" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 space-y-3 z-20 hidden transition-all">
+                      <div class="w-12 h-12 rounded-full bg-emerald-500 text-slate-950 font-black text-2xl flex items-center justify-center shadow-lg shadow-emerald-500/50">
+                        ✓
+                      </div>
+                      <div class="text-center space-y-1">
+                        <div class="text-sm font-black text-white">KFC Restaurant Created in 1.8s!</div>
+                        <div class="text-xs text-emerald-400 font-bold">24 Tables Auto-Numbered • Stand Ready →</div>
+                      </div>
+                    </div>
+
+                    <!-- Subtle loop progress line at bottom of frame -->
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-slate-800/80 overflow-hidden">
+                      <div id="ref1-progress-bar" class="h-full bg-gradient-to-r from-amber-400 via-orange-400 to-emerald-400 w-0 transition-all duration-100"></div>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <!-- Right: Realistic Table Stand Card Mockup with REAL SCANNABLE QR CODE -->
+                <div class="lg:col-span-5 flex flex-col items-center">
+                  <div id="ref1-stand-card" class="w-full max-w-[280px] p-5 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-500/60 shadow-2xl relative text-center space-y-3 group hover:border-amber-400 transition-all duration-500">
+                    <span class="text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-red-600 to-[#E4002B] text-white px-2.5 py-0.5 rounded-full shadow">
+                      Official Table Stand • 300 DPI
+                    </span>
+                    
+                    <div class="flex items-center justify-center gap-2">
+                      <span class="w-5 h-5 rounded-md bg-[#E4002B] text-white font-black text-[9px] flex items-center justify-center font-display">KFC</span>
+                      <span class="text-sm font-black text-white">KFC Restaurant</span>
+                    </div>
+                    <div class="text-2xl font-black text-amber-400 tracking-tight font-display">TABLE #04</div>
+
+                    <!-- White QR Plate with REAL SCANNABLE QR CODE -->
+                    <div class="w-38 h-38 bg-white p-2.5 rounded-2xl mx-auto shadow-xl flex flex-col items-center justify-center border-2 border-slate-200">
+                      <img src="real_qr_kfc.svg" alt="Real Scannable KFC QR Code" class="w-32 h-32 rounded-lg shadow-sm" />
+                    </div>
+
+                    <div class="text-[10px] font-extrabold text-slate-300">Scan with Phone Camera to Order</div>
+                    <div class="text-[9px] font-mono text-slate-500">instadine.app/kfc/table-04</div>
+
+                    <button class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-xl border border-slate-700 transition-colors flex items-center justify-center gap-1.5">
+                      <span>📥 Download PDF Sheet</span>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- ================= VIEW 2: QUICK MENU SETUP (CONTINUOUS SCREENCAST VIDEO) ================= -->
+            <div id="setup-view-2" class="hidden space-y-6">
+              
+              <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                
+                <!-- Left: CONTINUOUS SCREENCAST VIDEO PLAYER -->
+                <div class="lg:col-span-7 bg-slate-950/95 rounded-3xl p-5 sm:p-6 border-2 border-slate-800 shadow-2xl relative text-left overflow-hidden">
+
+                  <!-- Video Frame Surface -->
+                  <div class="relative bg-slate-900/90 rounded-2xl p-6 border border-slate-800 min-h-[340px] flex flex-col justify-between overflow-hidden shadow-inner">
+                    
+                    <!-- Floating Simulated Mouse Cursor -->
+                    <div id="ref2-mouse-cursor" class="absolute z-30 pointer-events-none transition-all duration-300 flex items-center gap-1" style="top: 35px; left: 60px;">
+                      <svg class="w-5 h-5 text-amber-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M4 2l16 12-7 1.5 4 6.5-3 1.5-4-6.5L4 22V2z"/>
+                      </svg>
+                      <span id="ref2-cursor-action" class="text-[9px] font-mono font-bold bg-slate-950/90 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40 shadow">
+                        Uploading Menu File...
+                      </span>
+                    </div>
+
+                    <!-- Form Video Content (One Single Fluid Screen) -->
+                    <div class="space-y-3.5 relative z-10">
+                      
+                      <!-- Header in Video -->
+                      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                        <div class="flex items-center gap-2">
+                          <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                          <span class="text-xs font-black text-white">Smart Menu OCR &amp; AI Image Studio</span>
+                        </div>
+                        <span id="ref2-ai-status" class="text-[9px] text-emerald-400 font-mono font-bold">● Vision AI Ready</span>
+                      </div>
+
+                      <!-- Upload Zone / Attached File -->
+                      <div>
+                        <label class="text-[10px] font-bold text-slate-400 block mb-1">Upload Menu Image or File</label>
+                        <div id="ref2-upload-box" class="p-3 bg-slate-950 border-2 border-dashed border-amber-500/80 rounded-xl flex items-center justify-between transition-all">
+                          <div class="flex items-center gap-2.5">
+                            <span class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">📄</span>
+                            <div id="ref2-upload-status" class="text-xs font-bold text-white">
+                              <span class="text-amber-300 font-bold">Uploading kfc_menu_flyer.jpg...</span>
+                            </div>
+                          </div>
+                          <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono">Auto OCR</span>
+                        </div>
+                      </div>
+
+                      <!-- Extracted Items Review & Confirmation Table -->
+                      <div class="space-y-2">
+                        <div class="flex items-center justify-between text-[10px] font-bold text-slate-400">
+                          <span>Confirm Extracted Menu Items</span>
+                          <span class="text-amber-400">3 Items Found</span>
+                        </div>
+
+                        <!-- Item 1: Zinger Burger (Has Image) -->
+                        <div class="p-2 bg-slate-950/80 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs">
+                          <div class="flex items-center gap-2">
+                            <span class="text-emerald-400 font-black">✓</span>
+                            <span class="font-bold text-white">KFC Zinger Burger</span>
+                            <span class="text-slate-400 font-mono text-[11px]">$5.99</span>
+                          </div>
+                          <span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-bold">Photo in flyer ✓</span>
+                        </div>
+
+                        <!-- Item 2: Hot & Crispy (Has Image) -->
+                        <div class="p-2 bg-slate-950/80 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs">
+                          <div class="flex items-center gap-2">
+                            <span class="text-emerald-400 font-black">✓</span>
+                            <span class="font-bold text-white">Hot &amp; Crispy (4 Pcs)</span>
+                            <span class="text-slate-400 font-mono text-[11px]">$9.99</span>
+                          </div>
+                          <span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-bold">Photo in flyer ✓</span>
+                        </div>
+
+                        <!-- Item 3: Peri Peri Fries (MISSING IMAGE -> AUTO AI GENERATED!) -->
+                        <div class="p-2 bg-slate-950/80 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs">
+                          <div class="flex items-center gap-2">
+                            <span class="text-emerald-400 font-black">✓</span>
+                            <span class="font-bold text-white">Peri Peri French Fries</span>
+                            <span class="text-slate-400 font-mono text-[11px]">$2.99</span>
+                          </div>
+                          <span id="ref2-ai-badge" class="text-[9px] text-purple-300 font-bold bg-purple-500/20 px-1.5 py-0.5 rounded border border-purple-500/40">
+                            ✨ Auto AI Image Generated
+                          </span>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    <!-- Submit Button in Video -->
+                    <div class="pt-2 relative z-10">
+                      <button id="ref2-video-btn" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                        <span id="ref2-btn-text">⚡ Click: Confirm &amp; Add 3 Items to Storefront</span>
+                      </button>
+                    </div>
+
+                    <!-- Instant Success Overlay (Shows at end of 8s video) -->
+                    <div id="ref2-success-banner" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 space-y-3 z-20 hidden transition-all">
+                      <div class="w-12 h-12 rounded-full bg-emerald-500 text-slate-950 font-black text-2xl flex items-center justify-center shadow-lg shadow-emerald-500/50">
+                        ✓
+                      </div>
+                      <div class="text-center space-y-1">
+                        <div class="text-sm font-black text-white">3 Menu Items Confirmed &amp; Added!</div>
+                        <div class="text-xs text-emerald-400 font-bold">1 AI-Generated Photo Attached &bull; Menu Live &rarr;</div>
+                      </div>
+                    </div>
+
+                    <!-- Subtle loop progress line at bottom of frame -->
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-slate-800/80 overflow-hidden">
+                      <div id="ref2-progress-bar" class="h-full bg-gradient-to-r from-amber-400 via-orange-400 to-emerald-400 w-0 transition-all duration-100"></div>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <!-- Right: Realistic Live Storefront Menu Catalog Preview -->
+                <div class="lg:col-span-5 flex flex-col items-center">
+                  <div id="ref2-catalog-card" class="w-full max-w-[290px] p-5 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-500/60 shadow-2xl relative text-left space-y-3 group hover:border-amber-400 transition-all duration-500">
+                    
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-800 text-xs">
+                      <span class="text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-red-600 to-[#E4002B] text-white px-2.5 py-0.5 rounded-full shadow">
+                        Live Customer Menu
+                      </span>
+                      <span id="ref2-sync-badge" class="text-[9px] font-mono font-bold text-emerald-400">● Live on QR</span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                      <span class="w-5 h-5 rounded-md bg-[#E4002B] text-white font-black text-[9px] flex items-center justify-center font-display">KFC</span>
+                      <span class="text-sm font-black text-white">KFC Restaurant Catalog</span>
+                    </div>
+
+                    <!-- Live Dish Cards -->
+                    <div class="space-y-2 pt-1">
+                      
+                      <!-- Dish 1 -->
+                      <div class="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                          <span class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 font-black text-sm flex items-center justify-center">🍔</span>
+                          <div>
+                            <div class="font-bold text-white text-xs">KFC Zinger Burger</div>
+                            <div class="text-[10px] text-amber-400 font-mono font-bold">$5.99</div>
+                          </div>
+                        </div>
+                        <button class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 transition-colors">Add</button>
+                      </div>
+
+                      <!-- Dish 2 -->
+                      <div class="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                          <span class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 font-black text-sm flex items-center justify-center">🍗</span>
+                          <div>
+                            <div class="font-bold text-white text-xs">Hot &amp; Crispy (4 Pcs)</div>
+                            <div class="text-[10px] text-amber-400 font-mono font-bold">$9.99</div>
+                          </div>
+                        </div>
+                        <button class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 transition-colors">Add</button>
+                      </div>
+
+                      <!-- Dish 3 (AI Image) -->
+                      <div class="p-2.5 bg-slate-950/80 rounded-xl border border-purple-500/40 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                          <span class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-300 font-black text-sm flex items-center justify-center">🍟</span>
+                          <div>
+                            <div class="font-bold text-white text-xs flex items-center gap-1">
+                              <span>Peri Peri Fries</span>
+                              <span class="text-[8px] bg-purple-500/30 text-purple-200 px-1 py-0.2 rounded font-bold">AI Photo</span>
+                            </div>
+                            <div class="text-[10px] text-amber-400 font-mono font-bold">$2.99</div>
+                          </div>
+                        </div>
+                        <button class="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 transition-colors">Add</button>
+                      </div>
+
+                    </div>
+
+                    <div class="pt-2 text-[10px] text-slate-400 flex items-center justify-between border-t border-slate-800/80">
+                      <span>3 Items Live</span>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- ================= VIEW 3: ADD TEAM MEMBER & ACCESS CONTROLS (CONTINUOUS VIDEO) ================= -->
+            <div id="setup-view-3" class="hidden space-y-6">
+              
+              <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                
+                <!-- Left: CONTINUOUS SCREENCAST VIDEO PLAYER (Step 3: Add Team Member) -->
+                <div class="lg:col-span-7 bg-slate-950/95 rounded-3xl p-5 sm:p-6 border-2 border-slate-800 shadow-2xl relative text-left overflow-hidden">
+
+                  <!-- Video Frame Surface -->
+                  <div class="relative bg-slate-900/90 rounded-2xl p-6 border border-slate-800 min-h-[340px] flex flex-col justify-between overflow-hidden shadow-inner">
+                    
+                    <!-- Floating Simulated Mouse Cursor -->
+                    <div id="ref3-mouse-cursor" class="absolute z-30 pointer-events-none transition-all duration-300 flex items-center gap-1" style="top: 35px; left: 60px;">
+                      <svg class="w-5 h-5 text-amber-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M4 2l16 12-7 1.5 4 6.5-3 1.5-4-6.5L4 22V2z"/>
+                      </svg>
+                      <span id="ref3-cursor-action" class="text-[9px] font-mono font-bold bg-slate-950/90 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40 shadow">
+                        Entering Member Details...
+                      </span>
+                    </div>
+
+                    <!-- Form Video Content (One Single Fluid Screen) -->
+                    <div class="space-y-3.5 relative z-10">
+                      
+                      <!-- Header in Video -->
+                      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                        <div class="flex items-center gap-2">
+                          <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                          <span class="text-xs font-black text-white">Add Team Member</span>
+                        </div>
+                        <span id="ref3-status-chip" class="text-[9px] text-emerald-400 font-mono font-bold">● Fast Setup</span>
+                      </div>
+
+                      <!-- 1. Full Name & Email ID -->
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label class="text-[10px] font-bold text-slate-400 block mb-1">Full Name</label>
+                          <div id="ref3-name-box" class="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-between transition-all">
+                            <span id="ref3-name-display">John</span>
+                            <span id="ref3-caret" class="w-1.5 h-3.5 bg-amber-400 animate-pulse"></span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label class="text-[10px] font-bold text-slate-400 block mb-1">Email ID</label>
+                          <div id="ref3-email-box" class="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-between transition-all">
+                            <span id="ref3-email-display" class="text-slate-300">john@kfc.com</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 2. Mobile Number & Password -->
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label class="text-[10px] font-bold text-slate-400 block mb-1">Mobile Number</label>
+                          <div id="ref3-phone-box" class="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-between transition-all">
+                            <span id="ref3-phone-display" class="text-slate-300">+1 (555) 234-5678</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label class="text-[10px] font-bold text-slate-400 block mb-1">Password</label>
+                          <div id="ref3-password-box" class="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-between transition-all">
+                            <span id="ref3-password-display" class="font-mono text-slate-300 tracking-wider">••••••••</span>
+                            <span class="text-[10px] text-slate-500">👁️</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 3. Role Selection -->
+                      <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-400 block">Role</label>
+                        <div class="grid grid-cols-3 gap-2">
+                          
+                          <!-- Role 1: Cashier (Selected) -->
+                          <div id="ref3-role-cashier" class="p-2 rounded-xl bg-amber-500/15 border-2 border-amber-500/80 text-left transition-all">
+                            <div class="flex items-center gap-1.5">
+                              <span class="text-xs">💳</span>
+                              <span class="text-[11px] font-bold text-white">Cashier</span>
+                            </div>
+                            <div class="text-[9px] text-amber-300 mt-0.5">Accept orders &amp; cash</div>
+                          </div>
+
+                          <!-- Role 2: Kitchen Chef -->
+                          <div id="ref3-role-kitchen" class="p-2 rounded-xl bg-slate-950/80 border border-slate-800 text-left opacity-70 transition-all">
+                            <div class="flex items-center gap-1.5">
+                              <span class="text-xs">👨‍🍳</span>
+                              <span class="text-[11px] font-bold text-slate-300">Kitchen</span>
+                            </div>
+                            <div class="text-[9px] text-slate-500 mt-0.5">Orders queue</div>
+                          </div>
+
+                          <!-- Role 3: Manager -->
+                          <div id="ref3-role-manager" class="p-2 rounded-xl bg-slate-950/80 border border-slate-800 text-left opacity-70 transition-all">
+                            <div class="flex items-center gap-1.5">
+                              <span class="text-xs">🛡️</span>
+                              <span class="text-[11px] font-bold text-slate-300">Manager</span>
+                            </div>
+                            <div class="text-[9px] text-slate-500 mt-0.5">Full branch ops</div>
+                          </div>
+
+                        </div>
+                      </div>
+
+                    </div>
+
+                    <!-- Submit Button in Video -->
+                    <div class="pt-2 relative z-10">
+                      <button id="ref3-video-btn" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                        <span id="ref3-btn-text">⚡ Click: Add Team Member</span>
+                      </button>
+                    </div>
+
+                    <!-- Instant Success Overlay (Shows at end of 8s video) -->
+                    <div id="ref3-success-banner" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 space-y-3 z-20 hidden transition-all">
+                      <div class="w-12 h-12 rounded-full bg-emerald-500 text-slate-950 font-black text-2xl flex items-center justify-center shadow-lg shadow-emerald-500/50">
+                        ✓
+                      </div>
+                      <div class="text-center space-y-1">
+                        <div class="text-sm font-black text-white">John Added to Team!</div>
+                        <div class="text-xs text-emerald-400 font-bold">Role: Cashier &bull; Account Active &rarr;</div>
+                      </div>
+                    </div>
+
+                    <!-- Subtle loop progress line at bottom of frame -->
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-slate-800/80 overflow-hidden">
+                      <div id="ref3-progress-bar" class="h-full bg-gradient-to-r from-amber-400 via-orange-400 to-emerald-400 w-0 transition-all duration-100"></div>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <!-- Right: Staff Member Card -->
+                <div class="lg:col-span-5 flex flex-col items-center">
+                  <div id="ref3-staff-card" class="w-full max-w-[290px] p-5 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-500/60 shadow-2xl relative text-left space-y-3 group hover:border-amber-400 transition-all duration-500">
+
+                    <!-- Member Identity Badge -->
+                    <div class="flex items-center gap-3 p-3 bg-slate-950/80 rounded-2xl border border-slate-800">
+                      <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 font-black text-lg flex items-center justify-center font-display shadow-md">
+                        J
+                      </div>
+                      <div class="space-y-0.5">
+                        <div class="font-bold text-white text-sm flex items-center gap-1.5">
+                          <span>John</span>
+                          <span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded font-bold">Active</span>
+                        </div>
+                        <div class="text-xs text-amber-400 font-mono font-bold">Role: Cashier</div>
+                        <div class="text-[10px] text-slate-400 font-mono">john@kfc.com</div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= SECTION 2: HOW COUNTER WORKFLOW WORKS (WITH PANORAMIC MERGED BACKGROUND) ================= -->
+  <section id="how-it-works" class="relative z-10 pt-20 sm:pt-28 pb-16 overflow-hidden bg-[#05070D]" style="padding-bottom: 4rem;">
+    
+    <!-- Full-Bleed Merged Panoramic Background Layer (Edge-to-Edge: Table QR on Left, Cashier on Right) -->
+    <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+      <img 
+        src="title-banner-merged-bg.jpg" 
+        alt="How InstaDine Works Flow: From Table QR Scan to Cashier Counter"
+        class="w-full h-[calc(100%+100px)] object-cover object-center opacity-80 scale-105" 
+        style="margin-top: -100px;"
+      />
+      <!-- Black Center Vignette & Top/Bottom Edge Blends for contrast -->
+      <div class="absolute inset-0 bg-gradient-to-r from-black/50 via-[#05070D]/90 to-black/50"></div>
+      <div class="absolute inset-0 bg-[#05070D]/40"></div>
+      <div class="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#07090E] to-transparent"></div>
+      <div class="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#07090E] to-transparent"></div>
+    </div>
+
+    <div class="max-w-6xl mx-auto space-y-12 relative z-10 px-4 sm:px-6">
+      <div class="text-center max-w-3xl mx-auto space-y-3">
+        <span class="text-xs font-black uppercase tracking-wider text-amber-400 bg-amber-500/15 border border-amber-500/30 px-3.5 py-1 rounded-full backdrop-blur-md shadow-lg">
+          The Street &amp; Counter Order Flow
+        </span>
+        <h2 class="text-3xl sm:text-5xl font-black text-white font-display drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]">How InstaDine Works Every Day</h2>
+        <p class="text-slate-200 text-sm sm:text-base drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+          Customers order from their phone and pay you at the counter with Cash, Card, or Contactless QR. No customer credit cards required online.
+        </p>
+      </div>
+
+      <!-- 4 Stages (Floating Glass Cards over the Panoramic Background) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <!-- STEP 1 (Over Table QR & Phone Menu) -->
+        <div class="p-6 bg-slate-950/85 backdrop-blur-xl border border-amber-500/40 hover:border-amber-400 rounded-3xl space-y-4 shadow-2xl transition-all duration-300 group hover:-translate-y-1">
+          <div class="flex items-center justify-between">
+            <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 font-black flex items-center justify-center text-sm shadow">
+              01
+            </div>
+            <span class="text-[9px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">Table QR</span>
+          </div>
+          <h3 class="text-base font-bold text-white">1. Scan &amp; Order</h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Customer scans the table or counter QR. Your visual menu loads in under 1 second without downloading an app.
+          </p>
+        </div>
+
+        <!-- STEP 2 -->
+        <div class="p-6 bg-slate-950/85 backdrop-blur-xl border border-white/10 hover:border-orange-400/50 rounded-3xl space-y-4 shadow-2xl transition-all duration-300 group hover:-translate-y-1">
+          <div class="flex items-center justify-between">
+            <div class="w-10 h-10 rounded-2xl bg-orange-500/20 text-orange-400 font-black flex items-center justify-center text-sm shadow">
+              02
+            </div>
+            <span class="text-[9px] font-mono font-bold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded">Phone Docket</span>
+          </div>
+          <h3 class="text-base font-bold text-white">2. Get Order Number</h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Customer chooses items, picks Dine-In or Takeaway, and receives <strong>Order #104</strong>: <em>"Pay at counter."</em>
+          </p>
+        </div>
+
+        <!-- STEP 3 (Over Cashier POS Desk) -->
+        <div class="p-6 bg-slate-950/85 backdrop-blur-xl border-2 border-emerald-500/60 hover:border-emerald-400 rounded-3xl space-y-4 bg-emerald-950/20 shadow-2xl shadow-emerald-500/10 transition-all duration-300 group hover:-translate-y-1">
+          <div class="flex items-center justify-between">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-500 text-slate-950 font-black flex items-center justify-center text-sm shadow">
+              03
+            </div>
+            <span class="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded">Cashier POS</span>
+          </div>
+          <h3 class="text-base font-bold text-white">3. Pay &amp; Confirm</h3>
+          <p class="text-xs text-slate-200 leading-relaxed">
+            Customer pays cash/card at counter. Staff taps <strong>"Confirm &amp; Paid"</strong>. <strong>1 credit is deducted</strong>.
+          </p>
+          <span class="text-[10px] font-black text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded block text-center">
+            Only Confirmed Orders Cost Credits!
+          </span>
+        </div>
+
+        <!-- STEP 4 -->
+        <div class="p-6 bg-slate-950/85 backdrop-blur-xl border border-white/10 hover:border-blue-400/50 rounded-3xl space-y-4 shadow-2xl transition-all duration-300 group hover:-translate-y-1">
+          <div class="flex items-center justify-between">
+            <div class="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-400 font-black flex items-center justify-center text-sm shadow">
+              04
+            </div>
+            <span class="text-[9px] font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">Kitchen Print</span>
+          </div>
+          <h3 class="text-base font-bold text-white">4. Food Ready!</h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Kitchen cooks order. Customer's screen rings with voice notification: <strong>READY FOR PICKUP</strong>.
+          </p>
+        </div>
+      </div>
+
+      <!-- Zero Risk Guarantee Banner -->
+      <div class="p-6 bg-slate-950/85 backdrop-blur-xl border border-white/10 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 text-xs shadow-2xl">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-xl">
+            🛡️
+          </div>
+          <div>
+            <div class="font-black text-white text-sm">Zero Risk: Abandoned &amp; Fake Orders Cost You Nothing</div>
+            <div class="text-slate-300">If a customer enters an order and leaves without paying, it expires or gets rejected. You are never billed a single credit.</div>
+          </div>
+        </div>
+        <div class="font-mono text-emerald-400 font-bold bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 shrink-0 shadow">
+          Confirmed Orders Only = 1 Credit
+        </div>
+      </div>
+
+    </div>
+  </section>
+  <!-- ================= SECTION 4: FAQ TEASER BANNER ================= -->
+  <section class="relative z-10 py-16 px-4 sm:px-6 max-w-5xl mx-auto">
+    <div class="p-8 sm:p-12 bg-slate-950 border border-slate-800 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left relative overflow-hidden">
+      <div class="space-y-3 max-w-xl">
+        <span class="text-xs font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full">
+          Frequently Asked Questions
+        </span>
+        <h3 class="text-2xl sm:text-3xl font-black text-white font-display">
+          Got Questions About Hardware, Setup, or Credits?
+        </h3>
+        <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+          Learn how the cashier confirms orders in 1 second, how kitchen notifications work, and why customers never need to download an app.
+        </p>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-3 flex-shrink-0">
+        <a href="faq.html" class="px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all border border-slate-700">
+          Browse All FAQs &rarr;
+        </a>
+      </div>
+    </div>
+  </section>
+  <!-- ================= FINAL CTA ================= -->
+  <section class="relative z-10 py-16 px-4 sm:px-6" style="padding-top: 4rem; padding-bottom: 4rem;">
+    <!-- Content Area with Option 1 Background Image and Amber/Orange Background Colour -->
+    <div class="max-w-5xl mx-auto bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 rounded-3xl p-10 md:p-16 text-center space-y-6 shadow-2xl text-slate-950 relative overflow-hidden border border-amber-300/40">
+      
+      <!-- Option 1 Background Image Layer Inside Content Area Only -->
+      <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <img 
+          src="food-takeaway-bg-option1.jpg" 
+          alt="Restaurant Food and Takeaway Delivery Background"
+          class="w-full h-full object-cover object-center scale-105" 
+          style="mask-image: linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.7) 22%, rgba(0,0,0,0) 38%, rgba(0,0,0,0) 62%, rgba(0,0,0,0.7) 78%, rgba(0,0,0,0.85) 100%); -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.7) 22%, rgba(0,0,0,0) 38%, rgba(0,0,0,0) 62%, rgba(0,0,0,0.7) 78%, rgba(0,0,0,0.85) 100%);"
+        />
+        <!-- Warm color harmonization overlay -->
+        <div class="absolute inset-0 bg-gradient-to-r from-amber-500/20 via-transparent to-amber-500/20"></div>
+      </div>
+
+      <div class="relative z-10 space-y-6">
+        <h2 class="text-3xl sm:text-5xl font-black tracking-tight text-slate-950 leading-tight font-display">
+          Start Taking QR Orders in 5 Minutes
+        </h2>
+        <p class="text-slate-900 max-w-xl mx-auto text-sm sm:text-base font-bold">
+          100 free orders credited immediately. No credit card required. No monthly fees.
+        </p>
+        <div class="pt-2">
+          <button onclick="openModal('signup')" class="px-8 py-4 bg-slate-950 hover:bg-slate-900 text-white font-black text-base rounded-2xl transition-all shadow-2xl hover:scale-105">
+            Claim 100 Free Orders Now &rarr;
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="relative z-10 py-12 px-4 sm:px-6 border-t border-slate-800 text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <span class="font-extrabold text-white">Insta<span class="text-amber-400">Dine</span></span>
+        <span>• A product by Hitasoft Technology Solutions</span>
+      </div>
+      <div class="flex items-center gap-6 text-slate-400 font-medium">
+        <a href="#how-it-works" class="hover:text-amber-400 transition-colors">How it Works</a>
+        <a href="pricing.html" class="hover:text-amber-400 transition-colors">Pricing</a>
+        <a href="faq.html" class="hover:text-amber-400 transition-colors">FAQ</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Sign up Modal -->
+  <div id="auth-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative space-y-6">
+      <button onclick="closeModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white text-lg font-bold">
+        &times;
+      </button>
+
+      <div>
+        <span class="text-[10px] font-black text-amber-400 uppercase tracking-wider">Fast Onboarding</span>
+        <h3 class="text-xl font-black text-white mt-1" id="modal-title">Get 100 Free Credits</h3>
+        <p class="text-xs text-slate-400 mt-1" id="modal-subtitle">Set up complete restaurant profile in 5 minutes.</p>
+      </div>
+
+      <form onsubmit="handleSignup(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-bold mb-1.5">Outlet or Stall Name</label>
+          <input type="text" required placeholder="e.g. KFC Express / Downtown Grill" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500">
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-bold mb-1.5">Owner WhatsApp / Phone</label>
+          <input type="tel" required placeholder="+91 98765 43210" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500">
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-transform hover:scale-105">
+          Claim 100 Credits &amp; Start 5-Min Setup &rarr;
+        </button>
+
+        <p class="text-[10px] text-slate-500 text-center">
+          100% free start. No credit card required.
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+
+    // 1. Interactive 5-Minute Setup Step Switcher (Step 1, 2, 3)
+    let currentStep = 1;
+
+    // Video Reference 1: Continuous Screencast Animation Engine
+    let ref1Time = 0;
+    let isRef1Playing = true;
+    let ref1Interval = null;
+
+    const names = [
+      "K", "KF", "KFC", "KFC ", "KFC R", "KFC Res", "KFC Rest", "KFC Restau", "KFC Restaur", "KFC Restaurant"
+    ];
+
+    function tickRef1() {
+      if (currentStep !== 1 || !isRef1Playing) return;
+      ref1Time += 0.1;
+      if (ref1Time > 8.5) {
+        ref1Time = 0;
+        selectSetupStep(2);
+        return;
+      }
+      renderRef1();
+    }
+
+    function renderRef1() {
+      const tc = document.getElementById('ref1-timecode');
+      const sec = Math.floor(ref1Time);
+      if (tc) tc.innerText = '00:0' + sec + ' / 00:08';
+
+      const pBar = document.getElementById('ref1-progress-bar');
+      const pct = Math.min(100, (ref1Time / 8.0) * 100);
+      if (pBar) pBar.style.width = pct + '%';
+
+      const cursor = document.getElementById('ref1-mouse-cursor');
+      const cursorAct = document.getElementById('ref1-cursor-action');
+      const nameDisp = document.getElementById('ref1-name-display');
+      const inputBox = document.getElementById('ref1-input-box');
+      const logoBadge = document.getElementById('ref1-logo-badge');
+      const logoStatus = document.getElementById('ref1-logo-status');
+      const vidBtn = document.getElementById('ref1-video-btn');
+      const successBanner = document.getElementById('ref1-success-banner');
+      const standCard = document.getElementById('ref1-stand-card');
+
+      if (ref1Time < 2.5) {
+        // Phase 1: Typing Name
+        const nameIdx = Math.min(names.length - 1, Math.floor((ref1Time / 2.5) * names.length));
+        if (nameDisp) nameDisp.innerText = names[nameIdx];
+        if (inputBox) {
+          inputBox.className = 'px-3.5 py-2.5 bg-slate-950 border-2 border-amber-500 rounded-xl text-white font-bold text-sm flex items-center justify-between shadow-inner';
+        }
+        if (cursor) {
+          cursor.style.top = '75px';
+          cursor.style.left = '160px';
+        }
+        if (cursorAct) cursorAct.innerText = 'Typing Name...';
+        if (logoBadge) logoBadge.style.transform = 'scale(0.95)';
+        if (logoStatus) logoStatus.innerText = 'Uploading Logo...';
+        if (successBanner) successBanner.classList.add('hidden');
+        if (standCard) standCard.classList.remove('glow-amber', 'border-amber-400');
+        if (vidBtn) vidBtn.className = 'w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2';
+      } else if (ref1Time < 5.0) {
+        // Phase 2: Logo Attached & Tables Set
+        if (nameDisp) nameDisp.innerText = 'KFC Restaurant';
+        if (inputBox) {
+          inputBox.className = 'px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-sm flex items-center justify-between';
+        }
+        if (logoBadge) logoBadge.style.transform = 'scale(1.1)';
+        if (logoStatus) logoStatus.innerText = 'Logo Attached: KFC_Brand.png';
+        if (cursor) {
+          cursor.style.top = '150px';
+          cursor.style.left = '220px';
+        }
+        if (cursorAct) cursorAct.innerText = 'Selecting 24 Tables...';
+        if (successBanner) successBanner.classList.add('hidden');
+        if (standCard) standCard.classList.remove('glow-amber', 'border-amber-400');
+      } else if (ref1Time < 6.8) {
+        // Phase 3: Moving to Click Button
+        if (cursor) {
+          cursor.style.top = '250px';
+          cursor.style.left = '190px';
+        }
+        if (cursorAct) cursorAct.innerText = 'Clicking Launch!';
+        if (vidBtn) {
+          vidBtn.className = 'w-full py-2.5 bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-black text-xs rounded-xl shadow-2xl scale-[1.02] border-2 border-white flex items-center justify-center gap-2';
+        }
+        if (successBanner) successBanner.classList.add('hidden');
+      } else {
+        // Phase 4: Instant Success & Reaction on Table Stand
+        if (successBanner) successBanner.classList.remove('hidden');
+        if (cursorAct) cursorAct.innerText = 'Generated!';
+        if (standCard) {
+          standCard.classList.add('glow-amber', 'border-amber-400');
+        }
+      }
+    }
+
+    function toggleRef1Video() {
+      isRef1Playing = !isRef1Playing;
+      const icon = document.getElementById('ref1-play-icon');
+      const text = document.getElementById('ref1-play-text');
+      if (isRef1Playing) {
+        if (icon) icon.innerText = '⏸';
+        if (text) text.innerText = 'Pause';
+      } else {
+        if (icon) icon.innerText = '▶';
+        if (text) text.innerText = 'Play';
+      }
+    }
+
+    function restartRef1Video() {
+      ref1Time = 0;
+      if (!isRef1Playing) {
+        toggleRef1Video();
+      }
+      renderRef1();
+    }
+
+    function handleRef1Scrubber(e) {
+      const bar = e.currentTarget;
+      const rect = bar.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+      ref1Time = ratio * 8.0;
+      renderRef1();
+    }
+
+    ref1Interval = setInterval(tickRef1, 100);
+
+    // Video Step 2: Quick Menu Setup Screencast Animation Engine
+    let ref2Time = 0;
+    let isRef2Playing = true;
+    let ref2Interval = null;
+
+    function tickRef2() {
+      if (currentStep !== 2 || !isRef2Playing) return;
+      ref2Time += 0.1;
+      if (ref2Time > 8.5) {
+        ref2Time = 0;
+        selectSetupStep(3);
+        return;
+      }
+      renderRef2();
+    }
+
+    function renderRef2() {
+      const pBar = document.getElementById('ref2-progress-bar');
+      const pct = Math.min(100, (ref2Time / 8.0) * 100);
+      if (pBar) pBar.style.width = pct + '%';
+
+      const cursor = document.getElementById('ref2-mouse-cursor');
+      const cursorAct = document.getElementById('ref2-cursor-action');
+      const uploadBox = document.getElementById('ref2-upload-box');
+      const uploadStatus = document.getElementById('ref2-upload-status');
+      const aiStatus = document.getElementById('ref2-ai-status');
+      const aiBadge = document.getElementById('ref2-ai-badge');
+      const vidBtn = document.getElementById('ref2-video-btn');
+      const successBanner = document.getElementById('ref2-success-banner');
+      const catalogCard = document.getElementById('ref2-catalog-card');
+
+      if (ref2Time < 2.5) {
+        // Phase 1: Uploading menu file / flyer
+        if (cursor) {
+          cursor.style.top = '65px';
+          cursor.style.left = '140px';
+        }
+        if (cursorAct) cursorAct.innerText = 'Uploading Menu File...';
+        if (uploadBox) {
+          uploadBox.className = 'p-3 bg-slate-950 border-2 border-dashed border-amber-500/80 rounded-xl flex items-center justify-between transition-all';
+        }
+        if (uploadStatus) uploadStatus.innerHTML = '<span class="text-amber-300 font-bold">📄 Dropping kfc_menu_flyer.jpg...</span>';
+        if (aiStatus) aiStatus.innerText = '● Reading text & prices...';
+        if (aiBadge) {
+          aiBadge.innerText = 'No image in flyer';
+          aiBadge.className = 'text-[9px] text-slate-500 font-mono';
+        }
+        if (successBanner) successBanner.classList.add('hidden');
+        if (catalogCard) catalogCard.classList.remove('glow-amber', 'border-amber-400');
+        if (vidBtn) vidBtn.className = 'w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2';
+      } else if (ref2Time < 5.0) {
+        // Phase 2: System reads items, detects missing image, auto generates AI photo!
+        if (cursor) {
+          cursor.style.top = '175px';
+          cursor.style.left = '210px';
+        }
+        if (cursorAct) cursorAct.innerText = '✨ AI Generating Missing Photo...';
+        if (uploadBox) {
+          uploadBox.className = 'p-3 bg-slate-950/80 border border-emerald-500/50 rounded-xl flex items-center justify-between transition-all';
+        }
+        if (uploadStatus) uploadStatus.innerHTML = '<span class="text-white font-bold">📄 kfc_menu_flyer.jpg <span class="text-emerald-400 font-bold">✓ 3 Items Read</span></span>';
+        if (aiStatus) aiStatus.innerHTML = '<span class="text-purple-300 font-bold">✨ French Fries Photo Auto-Generated!</span>';
+        if (aiBadge) {
+          aiBadge.innerText = '✨ Auto AI Image Generated';
+          aiBadge.className = 'text-[9px] text-purple-300 font-bold bg-purple-500/20 px-1.5 py-0.5 rounded border border-purple-500/40 animate-pulse';
+        }
+        if (successBanner) successBanner.classList.add('hidden');
+        if (catalogCard) catalogCard.classList.remove('glow-amber', 'border-amber-400');
+      } else if (ref2Time < 6.8) {
+        // Phase 3: Owner reviews items & cursor moves to Confirm Button
+        if (cursor) {
+          cursor.style.top = '255px';
+          cursor.style.left = '180px';
+        }
+        if (cursorAct) cursorAct.innerText = 'Owner Confirming Items...';
+        if (aiBadge) {
+          aiBadge.className = 'text-[9px] text-purple-300 font-bold bg-purple-500/20 px-1.5 py-0.5 rounded border border-purple-500/40';
+        }
+        if (vidBtn) {
+          vidBtn.className = 'w-full py-2.5 bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-black text-xs rounded-xl shadow-2xl scale-[1.02] border-2 border-white flex items-center justify-center gap-2';
+        }
+        if (successBanner) successBanner.classList.add('hidden');
+      } else {
+        // Phase 4: Confirmed & added! Real-time sync to Storefront
+        if (successBanner) successBanner.classList.remove('hidden');
+        if (cursorAct) cursorAct.innerText = 'Items Confirmed & Live!';
+        if (catalogCard) {
+          catalogCard.classList.add('glow-amber', 'border-amber-400');
+        }
+      }
+    }
+
+    ref2Interval = setInterval(tickRef2, 100);
+
+    // Video Step 3: Add Team Member Screencast Animation Engine
+    let ref3Time = 0;
+    let isRef3Playing = true;
+    let ref3Interval = null;
+
+    const staffNames = [
+      "J", "Jo", "Joh", "John"
+    ];
+
+    function tickRef3() {
+      if (currentStep !== 3 || !isRef3Playing) return;
+      ref3Time += 0.1;
+      if (ref3Time > 8.5) {
+        ref3Time = 0;
+        selectSetupStep(1);
+        return;
+      }
+      renderRef3();
+    }
+
+    function renderRef3() {
+      const pBar = document.getElementById('ref3-progress-bar');
+      const pct = Math.min(100, (ref3Time / 8.0) * 100);
+      if (pBar) pBar.style.width = pct + '%';
+
+      const cursor = document.getElementById('ref3-mouse-cursor');
+      const cursorAct = document.getElementById('ref3-cursor-action');
+      const nameDisp = document.getElementById('ref3-name-display');
+      const nameBox = document.getElementById('ref3-name-box');
+      const emailBox = document.getElementById('ref3-email-box');
+      const phoneBox = document.getElementById('ref3-phone-box');
+      const passBox = document.getElementById('ref3-password-box');
+      const cashierRole = document.getElementById('ref3-role-cashier');
+      const vidBtn = document.getElementById('ref3-video-btn');
+      const successBanner = document.getElementById('ref3-success-banner');
+      const staffCard = document.getElementById('ref3-staff-card');
+
+      if (ref3Time < 2.0) {
+        // Phase 1: Typing Full Name: John
+        const nameIdx = Math.min(staffNames.length - 1, Math.floor((ref3Time / 2.0) * staffNames.length));
+        if (nameDisp) nameDisp.innerText = staffNames[nameIdx];
+        if (nameBox) {
+          nameBox.className = 'px-3 py-2 bg-slate-950 border-2 border-amber-500 rounded-xl text-white font-bold text-xs flex items-center justify-between shadow-inner';
+        }
+        if (emailBox) emailBox.className = 'px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-between';
+        if (phoneBox) phoneBox.className = 'px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-between';
+        if (passBox) passBox.className = 'px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-between';
+        if (cursor) {
+          cursor.style.top = '65px';
+          cursor.style.left = '90px';
+        }
+        if (cursorAct) cursorAct.innerText = 'Typing Name: John...';
+        if (successBanner) successBanner.classList.add('hidden');
+        if (staffCard) staffCard.classList.remove('glow-amber', 'border-amber-400');
+        if (vidBtn) vidBtn.className = 'w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2';
+      } else if (ref3Time < 3.8) {
+        // Phase 2: Entering Email & Mobile Number
+        if (nameDisp) nameDisp.innerText = 'John';
+        if (nameBox) {
+          nameBox.className = 'px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-between';
+        }
+        if (emailBox) {
+          emailBox.className = 'px-3 py-2 bg-slate-950 border-2 border-amber-500/80 rounded-xl text-white font-bold text-xs flex items-center justify-between shadow-inner';
+        }
+        if (phoneBox) {
+          phoneBox.className = 'px-3 py-2 bg-slate-950 border-2 border-amber-500/80 rounded-xl text-white font-bold text-xs flex items-center justify-between shadow-inner';
+        }
+        if (cursor) {
+          cursor.style.top = '65px';
+          cursor.style.left = '220px';
+        }
+        if (cursorAct) cursorAct.innerText = 'Entering Email & Mobile...';
+        if (successBanner) successBanner.classList.add('hidden');
+        if (staffCard) staffCard.classList.remove('glow-amber', 'border-amber-400');
+      } else if (ref3Time < 5.2) {
+        // Phase 3: Entering Password & Selecting Role
+        if (emailBox) emailBox.className = 'px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-between';
+        if (phoneBox) phoneBox.className = 'px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-between';
+        if (passBox) {
+          passBox.className = 'px-3 py-2 bg-slate-950 border-2 border-amber-500/80 rounded-xl text-white font-bold text-xs flex items-center justify-between shadow-inner';
+        }
+        if (cursor) {
+          cursor.style.top = '175px';
+          cursor.style.left = '80px';
+        }
+        if (cursorAct) cursorAct.innerText = 'Selecting Role: Cashier...';
+        if (cashierRole) {
+          cashierRole.className = 'p-2 rounded-xl bg-amber-500/20 border-2 border-amber-400 text-left transition-all scale-[1.02] shadow-sm';
+        }
+        if (successBanner) successBanner.classList.add('hidden');
+        if (staffCard) staffCard.classList.remove('glow-amber', 'border-amber-400');
+      } else if (ref3Time < 6.8) {
+        // Phase 4: Moving to Click Button
+        if (passBox) passBox.className = 'px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-xs flex items-center justify-between';
+        if (cursor) {
+          cursor.style.top = '255px';
+          cursor.style.left = '180px';
+        }
+        if (cursorAct) cursorAct.innerText = 'Adding John to Team...';
+        if (vidBtn) {
+          vidBtn.className = 'w-full py-2.5 bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-black text-xs rounded-xl shadow-2xl scale-[1.02] border-2 border-white flex items-center justify-center gap-2';
+        }
+        if (successBanner) successBanner.classList.add('hidden');
+      } else {
+        // Phase 5: Confirmed & added! Real-time sync to Terminal
+        if (successBanner) successBanner.classList.remove('hidden');
+        if (cursorAct) cursorAct.innerText = 'John Active on Counter!';
+        if (staffCard) {
+          staffCard.classList.add('glow-amber', 'border-amber-400');
+        }
+      }
+    }
+
+    ref3Interval = setInterval(tickRef3, 100);
+
+    function selectSetupStep(step) {
+      currentStep = step;
+
+      if (step === 1) {
+        ref1Time = 0;
+        renderRef1();
+      } else if (step === 2) {
+        ref2Time = 0;
+        renderRef2();
+      } else if (step === 3) {
+        ref3Time = 0;
+        renderRef3();
+      }
+
+      const breadcrumbs = [
+        'instadine.app/setup > <strong class="text-amber-400">Step 1: KFC Restaurant Identity</strong>',
+        'instadine.app/setup > <strong class="text-amber-400">Step 2: Quick Menu Setup</strong>',
+        'instadine.app/setup > <strong class="text-amber-400">Step 3: Staff & KDS Setup</strong>'
+      ];
+      const statusChips = [
+        'Ready in 2 Mins',
+        'Ready in 2 Mins',
+        'Ready in 1 Min'
+      ];
+
+      // Update Node 1, 2, 3 styles
+      for (let i = 1; i <= 3; i++) {
+        const node = document.getElementById(`step-node-${i}`);
+        const badge = document.getElementById(`step-badge-${i}`);
+        const title = document.getElementById(`step-title-${i}`);
+        const desc = document.getElementById(`step-desc-${i}`);
+        const timer = document.getElementById(`step-timer-${i}`);
+        const view = document.getElementById(`setup-view-${i}`);
+
+        if (view) {
+          if (i === step) {
+            view.classList.remove('hidden');
+          } else {
+            view.classList.add('hidden');
+          }
+        }
+
+        if (!node) continue;
+
+        if (i === step) {
+          // ACTIVE
+          node.className = "w-14 h-14 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 font-black text-xl flex items-center justify-center shadow-[0_0_28px_rgba(251,191,36,0.6)] border-2 border-amber-300 transition-all duration-300 scale-105";
+          node.innerText = i;
+          if (badge) badge.className = "text-[10px] font-black uppercase tracking-[0.16em] text-amber-400 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-md";
+          if (title) title.className = "text-white font-black text-sm tracking-tight transition-colors";
+          if (desc) desc.className = "text-slate-300 text-[11px] leading-tight font-medium max-w-[200px] mx-auto";
+          if (timer) timer.className = "text-[10px] font-mono text-amber-400 font-bold pt-0.5";
+        } else if (i < step) {
+          // COMPLETED
+          node.className = "w-14 h-14 rounded-full bg-amber-500/20 text-amber-400 border-2 border-amber-500/60 font-black text-xl flex items-center justify-center shadow-[0_0_15px_rgba(251,191,36,0.2)] transition-all duration-300";
+          node.innerText = "✓";
+          if (badge) badge.className = "text-[10px] font-black uppercase tracking-[0.16em] text-amber-400/80 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md";
+          if (title) title.className = "text-slate-200 font-bold text-sm tracking-tight transition-colors";
+          if (desc) desc.className = "text-slate-400 text-[11px] leading-tight font-medium max-w-[200px] mx-auto";
+          if (timer) timer.className = "text-[10px] font-mono text-amber-500/60 font-bold pt-0.5";
+        } else {
+          // UPCOMING
+          node.className = "w-14 h-14 rounded-full bg-slate-900 border-2 border-slate-700/80 text-slate-400 font-black text-xl flex items-center justify-center transition-all duration-300 group-hover:border-slate-500 group-hover:text-slate-200";
+          node.innerText = i;
+          if (badge) badge.className = "text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 bg-slate-800/80 border border-slate-700/80 px-2 py-0.5 rounded-md";
+          if (title) title.className = "text-slate-400 font-bold text-sm tracking-tight transition-colors";
+          if (desc) desc.className = "text-slate-500 text-[11px] leading-tight font-medium max-w-[200px] mx-auto";
+          if (timer) timer.className = "text-[10px] font-mono text-slate-500 font-bold pt-0.5";
+        }
+      }
+
+      // Connecting progress line
+      const progress = document.getElementById('step-timeline-progress');
+      if (progress) {
+        if (step === 1) progress.style.width = '0%';
+        else if (step === 2) progress.style.width = '50%';
+        else if (step === 3) progress.style.width = '100%';
+      }
+
+      const bc = document.getElementById('step-breadcrumb');
+      const sc = document.getElementById('step-status-chip');
+      if (bc) bc.innerHTML = breadcrumbs[step - 1];
+      if (sc) sc.innerText = statusChips[step - 1];
+    }
+
+    // AI scan simulator (Step 2)
+    let scanRunning = false;
+    function triggerSimulatedScan() {
+      if (scanRunning) return;
+      scanRunning = true;
+      const btn  = document.getElementById('btn-rescan-interactive');
+      const laser = document.getElementById('scan-laser');
+      if (btn)  btn.innerText = '⏳ Scanning…';
+      if (laser) laser.classList.add('animate-bounce');
+
+      setTimeout(() => {
+        if (btn)  btn.innerText = '✅ Scan Complete — 18 Items Added!';
+        if (laser) laser.classList.remove('animate-bounce');
+        scanRunning = false;
+        setTimeout(() => { if (btn) btn.innerText = '🔄 Tap to Re-Test AI Scan'; }, 2500);
+      }, 1800);
+    }
+
+    // Dish stock toggle (Step 2)
+    function toggleDishStock(btn) {
+      const isInStock = btn.innerText.trim() === 'In Stock';
+      if (isInStock) {
+        btn.innerText = 'Out of Stock';
+        btn.className = 'px-2.5 py-1 rounded-lg font-bold text-[10px] bg-red-500/20 text-red-400 border border-red-500/30';
+      } else {
+        btn.innerText = 'In Stock';
+        btn.className = 'px-2.5 py-1 rounded-lg font-bold text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+      }
+    }
+
+    // Staff confirm simulator (Step 3)
+    let staffConfirmed = false;
+    function simulateStaffConfirm() {
+      if (staffConfirmed) {
+        // Reset
+        staffConfirmed = false;
+        const ticket = document.getElementById('staff-test-ticket');
+        const btn    = document.getElementById('btn-staff-confirm');
+        if (ticket) {
+          ticket.innerHTML = `
+            <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">Test Order</p>
+            <p class="font-black text-white text-base">KFC Zinger Combo + 4 Pcs Bucket</p>
+            <p class="text-slate-300 text-sm mt-0.5">Table #04 &nbsp;·&nbsp; $15.98</p>
+            <p class="text-amber-400 text-xs font-bold mt-2">⏳ Awaiting Cashier Confirmation…</p>`;
+        }
+        if (btn) {
+          btn.innerText = '🧾 Cashier Taps: Confirm & Paid';
+          btn.className = 'w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-transform hover:scale-105';
+        }
+        return;
+      }
+      staffConfirmed = true;
+      const ticket = document.getElementById('staff-test-ticket');
+      const btn    = document.getElementById('btn-staff-confirm');
+      if (ticket) {
+        ticket.innerHTML = `
+          <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">Order Confirmed ✅</p>
+          <p class="font-black text-white text-base">KFC Zinger Combo + 4 Pcs Bucket</p>
+          <p class="text-slate-300 text-sm mt-0.5">Table #04 &nbsp;·&nbsp; $15.98 — Paid</p>
+          <p class="text-emerald-400 text-xs font-bold mt-2">✅ 1 Credit Deducted · Balance: 499 credits</p>`;
+      }
+      if (btn) {
+        btn.innerText = '↩ Reset Demo';
+        btn.className = 'w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-black text-xs rounded-xl shadow-lg transition-transform hover:scale-105';
+      }
+    }
+
+    function simulatePhotoScan() {
+      triggerSimulatedScan();
+    }
+
+    // 2. Theme Switcher
+    function setTheme(theme) {
+      const body = document.getElementById('app-body');
+      body.className = `theme-${theme} bg-[var(--hero-bg)] text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950`;
+
+      const bStreet = document.getElementById('btn-theme-street');
+      const bObsidian = document.getElementById('btn-theme-obsidian');
+      const bVibrant = document.getElementById('btn-theme-vibrant');
+
+      [bStreet, bObsidian, bVibrant].forEach(b => {
+        b.className = 'px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-white transition-all text-[11px]';
+      });
+
+      if (theme === 'street') {
+        bStreet.className = 'px-2.5 py-1 rounded-lg font-black bg-amber-500 text-slate-950 transition-all text-[11px] shadow';
+      } else if (theme === 'obsidian') {
+        bObsidian.className = 'px-2.5 py-1 rounded-lg font-black bg-emerald-500 text-slate-950 transition-all text-[11px] shadow';
+      } else if (theme === 'vibrant') {
+        bVibrant.className = 'px-2.5 py-1 rounded-lg font-black bg-red-500 text-white transition-all text-[11px] shadow';
+      }
+    }
+
+    // Modal & Handlers
+
+    // 6. Modal
+    function openModal(mode, pack = '') {
+      const modal = document.getElementById('auth-modal');
+      const title = document.getElementById('modal-title');
+      if (mode === 'login') {
+        title.innerText = 'Log In to InstaDine';
+      } else {
+        title.innerText = pack ? `Claim 100 Free Credits (${pack})` : 'Claim 100 Free Credits';
+      }
+      modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+    }
+
+    function handleSignup(e) {
+      e.preventDefault();
+      alert('100 Free Credits added! Starting 5-Minute Setup Wizard...');
+      closeModal();
+    }
+
+    // Dynamic Scroll Header: Transparent on load/top, Black on scroll
+    const headerEl = document.getElementById('main-header');
+    function updateHeaderBackground() {
+      if (!headerEl) return;
+      if (window.scrollY > 20) {
+        headerEl.classList.remove('bg-transparent');
+        headerEl.classList.add('bg-black', 'backdrop-blur-md', 'border-b', 'border-slate-800/90', 'shadow-xl');
+      } else {
+        headerEl.classList.add('bg-transparent');
+        headerEl.classList.remove('bg-black', 'backdrop-blur-md', 'border-b', 'border-slate-800/90', 'shadow-xl');
+      }
+    }
+    window.addEventListener('scroll', updateHeaderBackground);
+    // Run immediately on page load/refresh
+    updateHeaderBackground();
+
+  </script>
+</body>
+</html>

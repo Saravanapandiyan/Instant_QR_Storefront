@@ -368,7 +368,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
         ctx.font = '22px sans-serif';
-        ctx.fillText('Instant QR Storefront', width / 2, 1510);
+        ctx.fillText('OrdZo Storefront', width / 2, 1510);
       } else if (template === 'acrylic') {
         // --- MODERN TABLETOP TENT ---
         ctx.fillStyle = '#f8fafc';
@@ -425,7 +425,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
 
         ctx.fillStyle = '#94a3b8';
         ctx.font = 'normal 20px sans-serif';
-        ctx.fillText('Powered by Instant QR Storefront', width / 2, 1530);
+        ctx.fillText('Powered by OrdZo Storefront', width / 2, 1530);
       } else if (template === 'badge') {
         // --- BISTRO ROUND DECAL / COASTER ---
         ctx.fillStyle = '#ffffff';
@@ -521,7 +521,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
         ctx.font = 'normal 20px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillText('Powered by Instant QR Storefront', width / 2, 1490);
+        ctx.fillText('Powered by OrdZo Storefront', width / 2, 1490);
       }
 
       const fileName = `${branch.slug}-${template}-stand.png`;

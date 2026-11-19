@@ -22,8 +22,8 @@ export function AdminLoginPage() {
   const { setAuth } = useAdminAuthStore();
   const { theme, toggleTheme } = useAdminThemeStore();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@ordzo.com');
+  const [password, setPassword] = useState('123456');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -76,7 +76,7 @@ export function AdminLoginPage() {
           </div>
           <div>
             <h1 className="text-sm font-bold tracking-tight" style={{ color: 'var(--adm-text)' }}>
-              Instant QR
+              OrdZo
             </h1>
             <p className="text-[10px] font-mono uppercase tracking-wider" style={{ color: 'var(--adm-muted)' }}>
               Control Plane Root
@@ -127,8 +127,32 @@ export function AdminLoginPage() {
               Super Admin Sign In
             </h2>
             <p className="text-xs mt-1.5 leading-relaxed" style={{ color: 'var(--adm-muted)' }}>
-              Enter your platform administrator credentials to access the Instant QR control plane.
+              Enter your platform administrator credentials to access the OrdZo control plane.
             </p>
+          </div>
+
+          {/* Demo Admin Credentials Box */}
+          <div
+            className="mb-5 p-3 rounded-xl border text-left cursor-pointer transition-all hover:border-orange-500/50"
+            style={{
+              backgroundColor: 'var(--adm-surface)',
+              borderColor: 'var(--adm-border)',
+            }}
+            onClick={() => {
+              setEmail('admin@ordzo.com');
+              setPassword('123456');
+            }}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500">
+                Demo Super Admin Credentials
+              </span>
+              <span className="text-[10px] opacity-60">Click to fill</span>
+            </div>
+            <div className="text-xs font-mono space-y-0.5">
+              <div>Email: <strong>admin@ordzo.com</strong></div>
+              <div>Password: <strong>123456</strong></div>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -144,7 +168,7 @@ export function AdminLoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@instantqr.io"
+                  placeholder="admin@ordzo.io"
                   className="w-full h-10 pl-9 pr-3 rounded-xl text-xs border focus:outline-none focus:ring-1 transition-all"
                   style={{
                     backgroundColor: 'var(--adm-bg)',
@@ -214,7 +238,7 @@ export function AdminLoginPage() {
 
       {/* Footer System Disclaimer */}
       <div className="text-center text-[11px] font-mono" style={{ color: 'var(--adm-muted)' }}>
-        Instant QR SaaS Engine • Internal Infrastructure Control Plane
+        OrdZo SaaS Engine • Internal Infrastructure Control Plane
       </div>
     </div>
   );

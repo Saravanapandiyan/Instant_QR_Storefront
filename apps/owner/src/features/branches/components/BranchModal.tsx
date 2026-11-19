@@ -249,7 +249,7 @@ export const BranchModal: React.FC<BranchModalProps> = ({
               Customer Storefront QR Link Preview:
             </span>
             <span className="font-mono text-primary font-semibold truncate block">
-              instantqr.com/r/{computedSlug}
+              ordzo.com/r/{computedSlug}
             </span>
           </div>
 

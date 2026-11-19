@@ -537,13 +537,68 @@ async function downloadImage(photoId, filename) {
 async function main() {
   console.log('🚀 Starting demo data feeding for Ananda Non veg...');
 
-  // 1. Update owner user email from babu@yopmail.com to demo@yopmail.com
-  console.log('Step 1: Updating owner account to demo@yopmail.com...');
-  const userUpdate = await prisma.user.updateMany({
-    where: { email: 'babu@yopmail.com' },
-    data: { email: 'demo@yopmail.com', name: 'Demo Owner' },
+  // 1. Ensure Demo Owner User exists
+  console.log('Step 1: Ensuring demo owner account exists...');
+  const bcrypt = require('bcrypt');
+  const passwordHash = await bcrypt.hash('Password123!', 10);
+  
+  const ownerUser = await prisma.user.upsert({
+    where: { email: 'demo@yopmail.com' },
+    update: { name: 'Demo Owner' },
+    create: {
+      id: 'd0000000-0000-0000-0000-000000000001',
+      email: 'demo@yopmail.com',
+      passwordHash,
+      name: 'Demo Owner',
+      role: 'ADMIN',
+    },
   });
-  console.log(`Updated ${userUpdate.count} owner user(s).`);
+  console.log(`Owner account ready: ${ownerUser.email}`);
+
+  // 1.1 Ensure Restaurant exists
+  const restaurant = await prisma.restaurant.upsert({
+    where: { id: RESTAURANT_ID },
+    update: { name: 'Ananda Non veg' },
+    create: {
+      id: RESTAURANT_ID,
+      ownerId: ownerUser.id,
+      name: 'Ananda Non veg',
+      slug: 'ananda-non-veg',
+      description: 'Authentic South Indian & Chettinad Non-Veg Cuisine',
+      defaultCurrency: 'INR',
+    },
+  });
+  console.log(`Restaurant ready: ${restaurant.name} (${restaurant.slug})`);
+
+  // 1.2 Ensure Branches exist
+  const branch1 = await prisma.branch.upsert({
+    where: { id: BRANCH_IDS[0] },
+    update: { name: 'Theppakulam Branch' },
+    create: {
+      id: BRANCH_IDS[0],
+      restaurantId: restaurant.id,
+      name: 'Theppakulam Branch',
+      slug: 'ananda-non-veg-theppakulam',
+      address: '14 East Veli Street, Near Theppakulam, Madurai',
+      phone: '9876543210',
+      currency: 'INR',
+    },
+  });
+
+  const branch2 = await prisma.branch.upsert({
+    where: { id: BRANCH_IDS[1] },
+    update: { name: 'Downtown Branch' },
+    create: {
+      id: BRANCH_IDS[1],
+      restaurantId: restaurant.id,
+      name: 'Downtown Branch',
+      slug: 'downtown-branch',
+      address: '42 Main Boulevard, Downtown',
+      phone: '9876543211',
+      currency: 'INR',
+    },
+  });
+  console.log(`Branches ready: ${branch1.slug}, ${branch2.slug}`);
 
   // Ensure uploads directory exists
   if (!fs.existsSync(UPLOADS_DIR)) {

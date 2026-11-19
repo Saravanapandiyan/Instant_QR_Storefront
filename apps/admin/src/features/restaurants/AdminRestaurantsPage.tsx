@@ -16,6 +16,7 @@ import {
 import { AdminLayout } from '../../components/layout/AdminLayout.tsx';
 import { adminRestaurantsApi, type AdminRestaurantTenant } from '../../api/adminRestaurantsApi.ts';
 import { toast } from '../../components/ui/toast/useAdminToastStore.ts';
+import { getCustomerStorefrontUrl } from '../../lib/urls.ts';
 
 type StatusTab = 'ALL' | 'ACTIVE' | 'SUSPENDED';
 
@@ -324,7 +325,7 @@ export function AdminRestaurantsPage() {
                       {/* Storefront Route */}
                       <td className="py-3 px-4 text-xs">
                         <a
-                          href={`http://localhost:5174/r/${tenant.slug}`}
+                          href={getCustomerStorefrontUrl(tenant.slug)}
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
@@ -569,7 +570,7 @@ export function AdminRestaurantsPage() {
                   <div className="flex items-center justify-between">
                     <span style={{ color: 'var(--adm-muted)' }}>Storefront Route:</span>
                     <a
-                      href={`http://localhost:5174/r/${activeSelectedTenant.slug}`}
+                      href={getCustomerStorefrontUrl(activeSelectedTenant.slug)}
                       target="_blank"
                       rel="noreferrer"
                       className="font-mono text-[11px] text-indigo-500 hover:underline flex items-center gap-1"

@@ -11,7 +11,7 @@ interface BrandState {
 export const useBrandStore = create<BrandState>()(
   persist(
     (set) => ({
-      appName: 'Instant QR',
+      appName: 'OrdZo',
       appTagline: 'Multi-Tenant In-Store Dining & QR Storefront',
       appLogoUrl: null,
 
@@ -22,7 +22,7 @@ export const useBrandStore = create<BrandState>()(
         })),
     }),
     {
-      name: 'instant-qr-brand-config',
+      name: 'ordzo-brand-config',
     }
   )
 );

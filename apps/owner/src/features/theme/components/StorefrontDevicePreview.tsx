@@ -157,7 +157,7 @@ export const StorefrontDevicePreview: React.FC<StorefrontDevicePreviewProps> = (
 
               {/* Mock Address Bar */}
               <div className="px-3 py-0.5 rounded-md bg-surface border border-border text-[11px] font-mono text-muted flex items-center gap-2 max-w-xs w-full justify-center">
-                <span>🔒 instantqr.com/r/downtown-branch</span>
+                <span>🔒 ordzo.com/r/downtown-branch</span>
               </div>
 
               <div className="w-10" />
