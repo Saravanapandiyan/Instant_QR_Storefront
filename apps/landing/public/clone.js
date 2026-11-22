@@ -65,9 +65,7 @@
   }, { threshold: 0.15 });
   hidden.forEach((el) => io.observe(el));
 
-  // 4. Static stand-ins for the Mapbox maps
-  const pin = (x, y, red) => `<span class="clone-pin${red ? ' red' : ''}" style="left:${x}%;top:${y}%"><svg width="14" height="14" viewBox="0 0 16 16" fill="#fff"><path d="M9 0L2 9h5l-1 7 7-9H8z"/></svg></span>`;
-  // Restaurant floor plan on the right of the hero (replaces the EV station pins)
+  // 4. Beach-restaurant scene on the right of the hero
   const hero = main.querySelector('section');
   if (hero) hero.insertAdjacentHTML('afterbegin',
     '<div class="clone-ocean" aria-hidden="true"></div>' +
@@ -91,10 +89,4 @@
     }
   }).catch(() => {});
 
-  const geo = [...main.querySelectorAll('section')].find((s) => /Geospatial intelligence/.test(s.innerText));
-  const panel = geo && [...geo.querySelectorAll('div')].filter((d) => d.offsetHeight > 400 && d.offsetWidth > 700).pop();
-  if (panel) {
-    panel.classList.add('clone-geomap');
-    panel.insertAdjacentHTML('afterbegin', [[22,30],[35,52],[48,40],[60,62],[30,72],[72,35],[55,25],[44,78]].map(([x, y]) => pin(x, y, false)).join(''));
-  }
 })();
