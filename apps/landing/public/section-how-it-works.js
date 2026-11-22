@@ -1,5 +1,5 @@
 // Section 3: "Live in 5 minutes" — the owner's setup in three steps, inserted after the Guest view section.
-// Step 2/3 mini-UIs mirror apps/owner (Storefront QR Studio, Live Orders). Step 1 (AI menu import) is designed in the same style.
+// Step 2/3 mini-UIs mirror apps/owner (Storefront QR Studio, Live Orders). Step 1 (menu builder) is designed in the same style.
 (() => {
   const anchor = document.querySelector('.sx-wrap');
   if (!anchor) return;
@@ -26,12 +26,12 @@
       <ol class="hw-steps">
         <li class="hw-step">
           <div class="hw-top"><span class="hw-n">1</span><span class="hw-time">~2 min</span></div>
-          <h3>Snap your menu</h3>
-          <p>Upload a photo or PDF of your menu. AI reads it and builds your digital menu with categories and prices.</p>
+          <h3>Add your menu</h3>
+          <p>Add your dishes, prices and photos once. Categories, best-seller tags and sold-out switches are built in.</p>
           <div class="hw-art hw-a1" aria-hidden="true">
-            <div class="hw-paper"><i class="w60"></i><i class="w80"></i><i class="w70"></i><i class="w50"></i><i class="w80"></i><i class="w60"></i><span class="hw-scan"></span></div>
+            <div class="hw-paper"><i class="w60"></i><i class="w80"></i><i class="w70"></i><i class="w50"></i><i class="w80"></i><i class="w60"></i></div>
             <div class="hw-out">
-              <div class="hw-out-h"><span>✦ AI menu import</span><b>3 dishes found</b></div>
+              <div class="hw-out-h"><span>Menu builder</span><b>3 dishes added</b></div>
               ${menuRow('Chicken Wings', '$4', 'c1')}${menuRow('Prawn Curry &amp; Rice', '$12', 'c2')}${menuRow('Fresh Lime Soda', '$3', 'c3')}
             </div>
           </div>

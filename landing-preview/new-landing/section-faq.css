@@ -1,0 +1,49 @@
+/* Section 7: FAQ (fq- prefix). Mint band; sticky heading on the left, accordion rows with gradient separators on the right. */
+.fq { --teal: #0F766E; --ink: #0c0c09; --muted: #5b5b55;
+  position: relative; z-index: 10; padding: 112px 24px 120px; color: var(--ink);
+  background: #EDF5F3; border-top: 1px solid #DCEBE7; }
+.fq-in { max-width: 1232px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 64px; align-items: start; }
+.fq-side { position: sticky; top: 120px; }
+.fq-h2 { margin: 0; font-size: clamp(32px, 4.4vw, 52px); line-height: 1.04; letter-spacing: -0.035em; font-weight: 600; }
+.fq-lead { margin: 18px 0 0; font-size: 18px; line-height: 1.55; color: var(--muted); max-width: 380px; }
+.fq-contact { margin: 20px 0 0; font-size: 15px; color: var(--muted); }
+.fq-contact a { color: var(--teal); font-weight: 600; text-underline-offset: 3px; }
+.fq-cta { display: inline-flex; align-items: center; height: 48px; margin-top: 28px; padding: 0 22px; border-radius: 999px; background: var(--teal); color: #fff;
+  font-size: 15px; font-weight: 600; text-decoration: none; transition: background-color .2s; }
+.fq-cta:hover { background: #115E59; }
+.fq-cta:focus-visible, .fq-contact a:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+
+/* accordion */
+.fq-item { position: relative; }
+.fq-item + .fq-item::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+  background: linear-gradient(90deg, rgba(15,118,110,.35), rgba(15,118,110,.14) 55%, rgba(15,118,110,0)); }
+.fq-item h3 { margin: 0; font: inherit; }
+.fq-q { display: flex; justify-content: space-between; align-items: center; gap: 24px; width: 100%; padding: 22px 4px; background: none; border: 0;
+  text-align: left; font: inherit; font-size: 19px; font-weight: 600; letter-spacing: -0.015em; color: var(--ink); cursor: pointer; }
+.fq-q:hover span { color: var(--teal); }
+.fq-q:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 6px; }
+.fq-q i { position: relative; flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 1px solid #CFE3DD; transition: background-color .25s, border-color .25s; }
+.fq-q i::before, .fq-q i::after { content: ""; position: absolute; left: 50%; top: 50%; width: 11px; height: 2px; margin: -1px 0 0 -5.5px; border-radius: 2px; background: var(--teal);
+  transition: transform .3s cubic-bezier(.2,.8,.2,1), background-color .25s; }
+.fq-q i::after { transform: rotate(90deg); }
+.fq-item.is-open .fq-q i { background: var(--teal); border-color: var(--teal); }
+.fq-item.is-open .fq-q i::before, .fq-item.is-open .fq-q i::after { background: #fff; }
+.fq-item.is-open .fq-q i::after { transform: rotate(0deg); }
+.fq-a { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s cubic-bezier(.2,.8,.2,1); }
+.fq-a > div { overflow: hidden; min-height: 0; }
+.fq-a p { margin: 0; padding: 0 56px 24px 4px; font-size: 16px; line-height: 1.65; color: var(--muted); max-width: 640px; }
+.fq-item.is-open .fq-a { grid-template-rows: 1fr; }
+
+/* reveal (only hides once the script runs) */
+.rv-on.fq .fq-side, .rv-on.fq .fq-list { opacity: 0; transform: translateY(28px); transition: opacity .7s ease-out, transform .7s cubic-bezier(.2,.8,.2,1); }
+.rv-on.fq .fq-list { transition-delay: .12s; }
+.rv-on.fq.is-in .fq-side, .rv-on.fq.is-in .fq-list { opacity: 1; transform: none; }
+
+@media (max-width: 960px) {
+  .fq { padding: 80px 20px; } .fq-in { grid-template-columns: minmax(0, 1fr); gap: 32px; } .fq-side { position: static; }
+  .fq-q { font-size: 17px; padding: 18px 2px; } .fq-a p { padding-right: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fq-a, .fq-q i::before, .fq-q i::after { transition: none; }
+  .rv-on.fq .fq-side, .rv-on.fq .fq-list { opacity: 1; transform: none; transition: none; }
+}

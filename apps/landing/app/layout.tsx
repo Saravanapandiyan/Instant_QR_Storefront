@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 // Landing sections (injected by the section-*.js scripts), in page order.
-const SECTIONS = ["guest-view", "how-it-works", "pricing", "features", "secure", "footer"];
+const SECTIONS = ["guest-view", "how-it-works", "pricing", "features", "secure", "faq", "footer"];
 
 // All CSS is inlined: purged base styles + clone.css + the section styles, so first paint needs no CSS requests.
 const read = (...p: string[]) => readFileSync(path.join(process.cwd(), ...p), "utf8");
