@@ -10,7 +10,7 @@
       'beforeend',
       `<nav class="clone-nav" aria-label="Primary">
         <a href="#" class="clone-nav-item">Product <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg></a>
-        <a href="#tracker">Tracker</a><a href="#pricing">Pricing</a><a href="#">Spexbook</a><a href="#">Changelog</a>
+        <a href="#how-it-works">How it works</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a>
       </nav>`
     );
   }

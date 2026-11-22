@@ -1,0 +1,28 @@
+:root { --brand: #0F766E; --brand-2: #14B8A6; --brand-hover: #115E59; --ground: #E6EEEB; }
+/* Stand-ins for behaviour/markup that was client-rendered on the original site */
+.clone-nav { display: none; align-items: center; gap: 24px; font-size: 14px; font-weight: 500; }
+.clone-nav a { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; opacity: .95; }
+.clone-nav a:hover { opacity: .7; }
+@media (min-width: 1024px) { .clone-nav { display: flex; } }
+
+header { transition: color .3s ease-out; }
+header[data-dark-bg="false"] { color: #0c0c09; }
+header[data-dark-bg="true"] { color: #fff; }
+
+.clone-ocean { position: absolute; inset: 0; z-index: 0; pointer-events: none; display: none;
+  background: linear-gradient(to right, #0F766E 0%, #138a86 28%, #1a9a96 calc(100% - max(80vh, 576px))); }
+.clone-site { position: absolute; z-index: 0; top: 0; right: 0; height: 100%; width: max(80vh, 576px); display: none; pointer-events: none; overflow: hidden; }
+.clone-scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: right center;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 9%); mask-image: linear-gradient(to right, transparent 0, #000 9%); }
+@media (min-width: 1100px) { .clone-site, .clone-ocean { display: block; } }
+.clone-pin { position: absolute; width: 32px; height: 32px; margin: -16px 0 0 -16px; border-radius: 50%;
+  background: rgba(60, 60, 60, .55); display: grid; place-items: center; box-shadow: 0 6px 14px rgba(0,0,0,.25); backdrop-filter: blur(4px); }
+.clone-pin.red { background: rgba(200, 40, 50, .85); box-shadow: 0 0 24px rgba(220, 40, 50, .55); }
+
+.clone-geomap { position: relative; overflow: hidden;
+  background-color: #0d1013;
+  background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 48px 48px; }
+.clone-geomap > .clone-pin { background: rgba(255,255,255,.14); }
+
+@media (prefers-reduced-motion: reduce) { [style*="translateY"] { transition: none !important; } }
