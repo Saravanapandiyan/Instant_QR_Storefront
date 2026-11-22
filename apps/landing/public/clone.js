@@ -85,7 +85,9 @@
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
       const setRunning = (on) => { if (on && !reduce) el.unpauseAnimations(); else el.pauseAnimations(); animHost.classList.toggle('is-paused', !on || reduce); };
       setRunning(true);
-      new IntersectionObserver(([e]) => setRunning(e.isIntersecting), { threshold: 0 }).observe(animHost);
+      // Pause only once the scene is well off-screen (300px margin): toggling layers right at the viewport edge,
+      // under the fixed header, made Chrome flash the header black for a frame.
+      new IntersectionObserver(([e]) => setRunning(e.isIntersecting), { rootMargin: '300px 0px', threshold: 0 }).observe(animHost);
     }
   }).catch(() => {});
 

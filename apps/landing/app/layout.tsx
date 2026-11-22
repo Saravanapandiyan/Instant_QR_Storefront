@@ -46,12 +46,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="apple-touch-icon.png" sizes="180x180" />
         <link rel="manifest" href="site.webmanifest" />
         <link rel="stylesheet" href="section-guest-view.css" />
+        <link rel="stylesheet" href="section-how-it-works.css" />
       </head>
       <body className="min-h-full min-w-full flex flex-col" suppressHydrationWarning>
         {children}
         {/* same position as the original: end of <body>, runs after the markup is parsed */}
         <script src="clone.js" defer />
         <script src="section-guest-view.js" defer />
+        <script src="section-how-it-works.js" defer />
       </body>
     </html>
   );
