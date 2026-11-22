@@ -3,8 +3,8 @@ import path from "node:path";
 
 // The page body is the exact markup of landing-preview/new-landing/index.html (minus the clone.js tag,
 // which the layout renders at the end of <body>). `display: contents` keeps the wrapper out of layout.
-const body = readFileSync(path.join(process.cwd(), "app", "landing-body.html"), "utf8");
-
+// Read per render so `next dev` picks up edits to the HTML file; a static build reads it once at build time.
 export default function Home() {
+  const body = readFileSync(path.join(process.cwd(), "app", "landing-body.html"), "utf8");
   return <div style={{ display: "contents" }} dangerouslySetInnerHTML={{ __html: body }} suppressHydrationWarning />;
 }

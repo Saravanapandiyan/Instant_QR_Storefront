@@ -38,8 +38,10 @@
     const logo = header.querySelector('img');
     if (logo) logo.style.filter = textDark ? 'brightness(0) invert(1)' : 'none';
   };
-  addEventListener('scroll', sync, { passive: true });
-  addEventListener('resize', sync);
+  let queued = false;
+  const onScroll = () => { if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; sync(); }); } };
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', onScroll);
   sync();
 
   // 3. Reveal-on-scroll for elements the original animated in (opacity:0 + small translate)
@@ -62,7 +64,23 @@
   const hero = main.querySelector('section');
   if (hero) hero.insertAdjacentHTML('afterbegin',
     '<div class="clone-ocean" aria-hidden="true"></div>' +
-    '<div class="clone-site" aria-hidden="true"><img class="clone-scene" src="beach-restaurant-sea-left.svg" alt="Open-air beach restaurant on the shore: dining area, bar, entrance, and a kitchen and ordering hut" width="1400" height="1750"></div>');
+    '<div class="clone-site" aria-hidden="true"><img class="clone-scene" src="beach-scene-static.webp" alt="" width="1728" height="2160" decoding="async" fetchpriority="high">' +
+    '<div class="clone-scene clone-scene-anim" role="img" aria-label="Open-air beach restaurant on the shore: guests scan a table QR, the order reaches the kitchen and is served"></div></div>');
+  // Animated layer is inlined (not an <img>) so the browser only repaints the small regions that move,
+  // instead of re-rasterising the whole illustration every frame.
+  const animHost = document.querySelector('.clone-scene-anim');
+  if (animHost) fetch('beach-scene-anim.svg').then((r) => r.text()).then((svg) => {
+    animHost.innerHTML = svg;
+    const el = animHost.querySelector('svg');
+    if (el) {
+      el.setAttribute('preserveAspectRatio', 'xMaxYMid slice'); el.setAttribute('width', '100%'); el.setAttribute('height', '100%'); el.setAttribute('aria-hidden', 'true');
+      // Only animate while the scene is on screen; nothing runs once the visitor scrolls past the hero.
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const setRunning = (on) => { if (on && !reduce) el.unpauseAnimations(); else el.pauseAnimations(); animHost.classList.toggle('is-paused', !on || reduce); };
+      setRunning(true);
+      new IntersectionObserver(([e]) => setRunning(e.isIntersecting), { threshold: 0 }).observe(animHost);
+    }
+  }).catch(() => {});
 
   const geo = [...main.querySelectorAll('section')].find((s) => /Geospatial intelligence/.test(s.innerText));
   const panel = geo && [...geo.querySelectorAll('div')].filter((d) => d.offsetHeight > 400 && d.offsetWidth > 700).pop();

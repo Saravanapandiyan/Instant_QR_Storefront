@@ -1,6 +1,13 @@
 import type { Viewport } from "next";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
-// Mirrors <head> of landing-preview/new-landing/index.html tag-for-tag (generated).
+const css =
+  readFileSync(path.join(process.cwd(), "app", "critical.css"), "utf8") +
+  "\n" +
+  readFileSync(path.join(process.cwd(), "public", "clone.css"), "utf8");
+
+// Mirrors <head> of landing-preview/new-landing/index.html, minus render-blocking requests (CSS is inlined).
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -12,13 +19,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="WPvz0W_variable h-full w-full antialiased" suppressHydrationWarning>
       <head>
-        <link rel="preload" as="image" imageSrcSet="assets/img/marketing-figma-product-parking-night.jpg 32w, assets/img/marketing-figma-product-parking-night.jpg 48w, assets/img/marketing-figma-product-parking-night.jpg 64w, assets/img/marketing-figma-product-parking-night.jpg 96w, assets/img/marketing-figma-product-parking-night.jpg 128w, assets/img/marketing-figma-product-parking-night.jpg 256w, assets/img/marketing-figma-product-parking-night.jpg 384w, assets/img/marketing-figma-product-parking-night.jpg 640w, assets/img/marketing-figma-product-parking-night.jpg 750w, assets/img/marketing-figma-product-parking-night.jpg 828w, assets/img/marketing-figma-product-parking-night.jpg 1080w, assets/img/marketing-figma-product-parking-night.jpg 1200w, assets/img/marketing-figma-product-parking-night.jpg 1920w, assets/img/marketing-figma-product-parking-night.jpg 2048w, assets/img/marketing-figma-product-parking-night.jpg 3840w" imageSizes="1152px" />
-        <link rel="stylesheet" href="assets/2vh4gd9rb19q0.css" />
-        <link rel="stylesheet" href="assets/09z_4zirjmsh4.css" />
-        <link rel="stylesheet" href="assets/3r7cicuf3xu7i.css" />
-        <link rel="stylesheet" href="assets/2xab2v5s2qal4.css" />
-        <link rel="preload" href="assets/2-ff2abrggthq.css" as="style" />
-        <link rel="expect" href="#_R_" blocking="render" />
+        {/* Critical CSS inlined: unused rules purged from the original stylesheets (same rules, same order) + clone.css */}
+        <style dangerouslySetInnerHTML={{ __html: css }} />
+        <link rel="preload" as="font" type="font/woff2" href="assets/css-InterVariable-s.p.0qg9ojghpj0ov.woff2" crossOrigin="anonymous" />
         <meta name="theme-color" content="#111827" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)" />
         <meta name="next-size-adjust" content="" />
@@ -42,12 +45,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="favicon-32x32.png" type="image/png" sizes="32x32" />
         <link rel="icon" href="favicon-16x16.png" type="image/png" sizes="16x16" />
         <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-        <link rel="stylesheet" href="clone.css" />
       </head>
       <body className="min-h-full min-w-full flex flex-col" suppressHydrationWarning>
         {children}
         {/* same position as the original: end of <body>, runs after the markup is parsed */}
-        <script src="clone.js" />
+        <script src="clone.js" defer />
       </body>
     </html>
   );
