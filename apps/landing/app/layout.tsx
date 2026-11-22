@@ -47,6 +47,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="manifest" href="site.webmanifest" />
         <link rel="stylesheet" href="section-guest-view.css" />
         <link rel="stylesheet" href="section-how-it-works.css" />
+        <link rel="stylesheet" href="section-pricing.css" />
+        <link rel="stylesheet" href="section-features.css" />
       </head>
       <body className="min-h-full min-w-full flex flex-col" suppressHydrationWarning>
         {children}
@@ -54,6 +56,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script src="clone.js" defer />
         <script src="section-guest-view.js" defer />
         <script src="section-how-it-works.js" defer />
+        <script src="section-pricing.js" defer />
+        <script src="section-features.js" defer />
       </body>
     </html>
   );
