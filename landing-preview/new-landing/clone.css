@@ -9,10 +9,12 @@ header { transition: color .3s ease-out; }
 header[data-dark-bg="false"] { color: #0c0c09; }
 header[data-dark-bg="true"] { color: #fff; }
 
-.clone-site { position: absolute; z-index: 0; top: 0; right: 0; bottom: 0; width: 54%; display: none; pointer-events: none; overflow: hidden; }
-.clone-scene { position: absolute; top: 0; right: 0; width: 100%; height: 100%; object-fit: cover; object-position: right center;
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,.02) 7%, rgba(0,0,0,.08) 14%, rgba(0,0,0,.2) 22%, rgba(0,0,0,.4) 30%, rgba(0,0,0,.62) 38%, rgba(0,0,0,.8) 46%, rgba(0,0,0,.93) 54%, rgba(0,0,0,.99) 62%, #000 70%); mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,.02) 7%, rgba(0,0,0,.08) 14%, rgba(0,0,0,.2) 22%, rgba(0,0,0,.4) 30%, rgba(0,0,0,.62) 38%, rgba(0,0,0,.8) 46%, rgba(0,0,0,.93) 54%, rgba(0,0,0,.99) 62%, #000 70%); }
-@media (min-width: 1100px) { .clone-site { display: block; } }
+.clone-ocean { position: absolute; inset: 0; z-index: 0; pointer-events: none; display: none;
+  background: linear-gradient(to right, #0F766E 0%, #138a86 28%, #1a9a96 calc(100% - max(80vh, 576px))); }
+.clone-site { position: absolute; z-index: 0; top: 0; right: 0; height: 100%; width: max(80vh, 576px); display: none; pointer-events: none; overflow: hidden; }
+.clone-scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: right center;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 9%); mask-image: linear-gradient(to right, transparent 0, #000 9%); }
+@media (min-width: 1100px) { .clone-site, .clone-ocean { display: block; } }
 .clone-pin { position: absolute; width: 32px; height: 32px; margin: -16px 0 0 -16px; border-radius: 50%;
   background: rgba(60, 60, 60, .55); display: grid; place-items: center; box-shadow: 0 6px 14px rgba(0,0,0,.25); backdrop-filter: blur(4px); }
 .clone-pin.red { background: rgba(200, 40, 50, .85); box-shadow: 0 0 24px rgba(220, 40, 50, .55); }

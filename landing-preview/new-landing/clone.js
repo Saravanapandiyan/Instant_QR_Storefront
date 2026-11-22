@@ -61,7 +61,8 @@
   // Restaurant floor plan on the right of the hero (replaces the EV station pins)
   const hero = main.querySelector('section');
   if (hero) hero.insertAdjacentHTML('afterbegin',
-    '<div class="clone-site" aria-hidden="true"><img class="clone-scene" src="beach-restaurant.svg" alt="Open-air beach restaurant: dining area, bar, entrance, and a kitchen and ordering hut beside the sea" width="1734" height="2000"></div>');
+    '<div class="clone-ocean" aria-hidden="true"></div>' +
+    '<div class="clone-site" aria-hidden="true"><img class="clone-scene" src="beach-restaurant-sea-left.svg" alt="Open-air beach restaurant on the shore: dining area, bar, entrance, and a kitchen and ordering hut" width="1400" height="1750"></div>');
 
   const geo = [...main.querySelectorAll('section')].find((s) => /Geospatial intelligence/.test(s.innerText));
   const panel = geo && [...geo.querySelectorAll('div')].filter((d) => d.offsetHeight > 400 && d.offsetWidth > 700).pop();
