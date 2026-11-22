@@ -29,7 +29,7 @@
         ${col('Account', [['Create account', '/sign-up'], ['Log in', '/sign-in'], ['Claim 100 free orders', '/sign-up?start=free-orders']])}
       </div>
       <div class="fo-bottom">
-        <span>© ${year} InstaDine · Made for small restaurants</span>
+        <span>© ${year} InstaDine · Made for small restaurants · Powered by <a class="fo-by" href="https://www.hitasoft.com" target="_blank" rel="noopener">Hitasoft</a></span>
         <a href="#" class="fo-top">Back to top ↑</a>
       </div>
     </div>
