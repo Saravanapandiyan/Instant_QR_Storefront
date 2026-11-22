@@ -4,12 +4,6 @@
   if (!anchor) return;
 
   const img = (f) => `assets/img/dishes/${f}.webp`;
-  const tile = (cls, title, text, art) => `
-        <article class="ft-tile ${cls}">
-          <div class="ft-art" aria-hidden="true">${art}</div>
-          <h3>${title}</h3>
-          <p>${text}</p>
-        </article>`;
 
   // 1 · Live orders: a ticket travels New -> Kitchen -> Ready
   const tk = (id, t, items) => `<div class="ft-tk"><div><b>#${id}</b><span>${t}</span></div><small>${items}</small></div>`;
@@ -61,6 +55,16 @@
       </tbody>
     </table>`;
 
+  // tour order: the daily essentials first
+  const FEATURES = [
+    { title: 'Live orders', text: 'Every order appears instantly with its table number. Move it from New to Kitchen to Ready in one tap.', art: orders },
+    { title: 'Your menu, your way', text: 'Photos, prices and best-seller tags. Ran out of fish? Mark it sold out in one tap and guests see it instantly.', art: menu },
+    { title: 'Your brand', text: 'Pick a colour theme and add your logo. Guests see your restaurant, not ours.', art: theme },
+    { title: 'Cash or online', text: 'Guests pay at the counter today. Card and wallet payments are on the way.', art: pay },
+    { title: 'Staff logins', text: 'Give the counter, the kitchen and your manager their own login with just the access they need.', art: staff },
+    { title: 'More than one branch', text: 'Run every outlet from one account. Each branch has its own QR codes and its own stock.', art: branches },
+  ];
+
   const html = `
   <section class="ft" id="features" aria-labelledby="ft-h">
     <div class="ft-in">
@@ -69,32 +73,59 @@
         <h2 class="ft-h2" id="ft-h">Everything a small restaurant needs.<br>Nothing it doesn't.</h2>
         <p class="ft-lead">One simple dashboard for the counter, the kitchen and the owner. No POS, no tablets to rent, no setup visit.</p>
       </div>
-      <div class="ft-grid">
-        ${tile('ft-w ft-t1', 'Live orders', 'Every order appears instantly with its table number. Move it from New to Kitchen to Ready in one tap.', orders)}
-        ${tile('ft-t2', 'Your brand', 'Pick a colour theme and add your logo. Guests see your restaurant, not ours.', theme)}
-        ${tile('ft-t3', 'Cash or online', 'Guests pay at the counter today. Card and wallet payments are on the way.', pay)}
-        ${tile('ft-w ft-t4', 'Your menu, your way', 'Photos, prices and best-seller tags. Ran out of fish? Mark it sold out in one tap and guests see it instantly.', menu)}
-        ${tile('ft-t5', 'Staff logins', 'Give the counter, the kitchen and your manager their own login with just the access they need.', staff)}
-        ${tile('ft-w ft-t6', 'More than one branch', 'Run every outlet from one account. Each branch has its own QR codes and its own stock.', branches)}
+      <div class="ft-tour ft-rv">
+        <div class="ft-tour-list" role="tablist" aria-label="Features">
+          ${FEATURES.map((f, i) => `
+          <button type="button" role="tab" class="ft-tab" id="ft-tab-${i}" aria-controls="ft-pane-${i}" aria-selected="${i === 0}">
+            <span class="ft-tab-t">${f.title}</span>
+            <span class="ft-tab-d"><span>${f.text}</span></span>
+            <i class="ft-tab-bar"><i></i></i>
+          </button>`).join('')}
+        </div>
+        <div class="ft-stage">
+          ${FEATURES.map((f, i) => `<div class="ft-pane${i === 0 ? ' is-on' : ''}" id="ft-pane-${i}" role="tabpanel" aria-labelledby="ft-tab-${i}"><div class="ft-art" aria-hidden="true">${f.art}</div></div>`).join('')}
+        </div>
       </div>
     </div>
   </section>`;
   anchor.insertAdjacentHTML('afterend', html);
 
   const sec = document.getElementById('features');
-  const tiles = [...sec.querySelectorAll('.ft-tile')];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // product tour: auto-advance every 6s until the visitor picks a tab
+  const tour = sec.querySelector('.ft-tour');
+  const tabs = [...sec.querySelectorAll('.ft-tab')], panes = [...sec.querySelectorAll('.ft-pane')];
+  let cur = 0, auto = !reduce, timer = null;
+  const go = (n) => {
+    cur = n;
+    tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === n)); t.tabIndex = k === n ? 0 : -1; t.classList.remove('is-run'); });
+    panes.forEach((p, k) => p.classList.toggle('is-on', k === n));
+    if (auto) { void tabs[n].offsetWidth; tabs[n].classList.add('is-run'); }
+  };
+  const stopAuto = () => { auto = false; clearInterval(timer); tour.classList.add('is-manual'); };
+  tabs.forEach((t, k) => {
+    t.addEventListener('click', () => { stopAuto(); go(k); });
+    t.addEventListener('keydown', (e) => {
+      const d = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 0;
+      if (!d) return;
+      e.preventDefault(); stopAuto();
+      const n = (k + d + tabs.length) % tabs.length; go(n); tabs[n].focus();
+    });
+  });
+  go(0);
+  if (auto) timer = setInterval(() => { if (auto && !sec.classList.contains('is-off')) go((cur + 1) % tabs.length); }, 6000);
+
+  // pause the looping mocks (and the tour) while the section is off screen
+  const vis = new IntersectionObserver(([e]) => sec.classList.toggle('is-off', !e.isIntersecting), { rootMargin: '200px 0px' });
+  vis.observe(sec);
+
+  // reveal once on scroll into view
+  const parts = [...sec.querySelectorAll('.ft-rv')];
   sec.classList.add('rv-on');
-  tiles.forEach((t, i) => t.style.setProperty('--d', `${(i % 3) * 0.08}s`));
-  if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    tiles.forEach((t) => t.classList.add('is-in'));
-    return;
-  }
+  if (!('IntersectionObserver' in window) || reduce) { parts.forEach((p) => p.classList.add('is-in')); return; }
   const io = new IntersectionObserver((entries) => {
     entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
   }, { rootMargin: '0px 0px -10% 0px' });
-  tiles.forEach((t) => io.observe(t));
-
-  // pause the looping mocks while the section is off screen
-  const vis = new IntersectionObserver(([e]) => sec.classList.toggle('is-off', !e.isIntersecting), { rootMargin: '200px 0px' });
-  vis.observe(sec);
+  parts.forEach((p) => io.observe(p));
 })();
