@@ -23,20 +23,27 @@
     const [r, g, b, a = 1] = m.map(Number);
     return +a > 0.5 && (r * 299 + g * 587 + b * 114) / 1000 < 110;
   };
+  // Header state with hysteresis: switch to the white "scrolled" bar only past 48px and back only under 12px,
+  // so small trackpad jitter near the top can't toggle it (that toggling read as the top area blinking).
+  // Attributes/styles are written only when they actually change.
+  const logo = header.querySelector('img');
+  let scrolled = scrollY > 48;
+  const setAttr = (k, v) => { if (header.dataset[k] !== v) header.dataset[k] = v; };
   const sync = () => {
-    const scrolled = scrollY > 8;
-    header.dataset.scrolled = String(scrolled);
-    const y = header.offsetHeight / 2;
-    const under = sections.find((s) => { const r = s.getBoundingClientRect(); return r.top <= y && r.bottom > y; });
-    let dark = true;
-    if (under && under !== sections[0]) {
-      dark = isDark(under) || [...under.querySelectorAll(':scope > *')].some((c) => { const r = c.getBoundingClientRect(); return r.top <= y && r.bottom > y && isDark(c); });
+    const y0 = scrollY;
+    if (!scrolled && y0 > 48) scrolled = true;
+    else if (scrolled && y0 < 12) scrolled = false;
+    setAttr('scrolled', String(scrolled));
+    let textDark = false;                       // white bar showing -> dark text
+    if (!scrolled) {
+      const y = header.offsetHeight / 2;
+      const under = sections.find((s) => { const r = s.getBoundingClientRect(); return r.top <= y && r.bottom > y; });
+      textDark = !under || under === sections[0] || isDark(under) ||
+        [...under.querySelectorAll(':scope > *')].some((c) => { const r = c.getBoundingClientRect(); return r.top <= y && r.bottom > y && isDark(c); });
     }
-    // when the white bar is showing, text must be dark regardless of section
-    const textDark = scrolled ? false : !dark ? false : true;
-    header.dataset.darkBg = String(textDark);
-    const logo = header.querySelector('img');
-    if (logo) logo.style.filter = textDark ? 'brightness(0) invert(1)' : 'none';
+    setAttr('darkBg', String(textDark));
+    const f = textDark ? 'brightness(0) invert(1)' : 'none';
+    if (logo && logo.style.filter !== f) logo.style.filter = f;
   };
   let queued = false;
   const onScroll = () => { if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; sync(); }); } };
