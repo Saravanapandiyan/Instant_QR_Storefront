@@ -49,6 +49,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="stylesheet" href="section-how-it-works.css" />
         <link rel="stylesheet" href="section-pricing.css" />
         <link rel="stylesheet" href="section-features.css" />
+        <link rel="stylesheet" href="section-secure.css" />
+        <link rel="stylesheet" href="section-footer.css" />
       </head>
       <body className="min-h-full min-w-full flex flex-col" suppressHydrationWarning>
         {children}
@@ -58,6 +60,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script src="section-how-it-works.js" defer />
         <script src="section-pricing.js" defer />
         <script src="section-features.js" defer />
+        <script src="section-secure.js" defer />
+        <script src="section-footer.js" defer />
       </body>
     </html>
   );
