@@ -88,4 +88,13 @@
 <g transform="translate(1261 618) rotate(90) scale(1.7)" opacity="0"><animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.1845;0.1920;0.2145;0.2250;1" calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" begin="27s" dur="36s" repeatCount="indefinite"/><circle r="18" fill="#0F766E" stroke="#fff" stroke-width="3"/><path d="M-7 0l4.5 4.5 9-9" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
 </g>
 </g>
-</g></svg>
+</g><g id="bs-area-labels" font-size="29" font-weight="600" text-anchor="middle" fill="#4a3a28" stroke="#f3ead6" stroke-width="6" stroke-linejoin="round" paint-order="stroke" aria-hidden="true">
+<text x="670" y="335" dominant-baseline="central">Lounge</text>
+<text x="935" y="428" dominant-baseline="central">Dry area</text>
+<text x="631" y="727" dominant-baseline="central">Sunbeds</text>
+<text x="1201" y="799" dominant-baseline="central" fill="#f3ead6" stroke="#4b4f55">Kitchen</text>
+<text x="675" y="1647" dominant-baseline="central">Dining</text>
+<text x="1000" y="1647" dominant-baseline="central">Bar</text>
+<text x="789" y="750" dominant-baseline="central" transform="rotate(-90 789 750)">Counter</text>
+</g>
+</svg>
