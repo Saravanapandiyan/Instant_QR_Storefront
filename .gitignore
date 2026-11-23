@@ -28,3 +28,7 @@ yarn-debug.log*
 *.sw?
 test/
 apps/api/uploads/
+
+# design-skill scan output (Hallmark / Impeccable)
+.hallmark/
+.impeccable/

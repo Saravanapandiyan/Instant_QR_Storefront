@@ -1,0 +1,36 @@
+:root { --brand: #0F766E; --brand-2: #14B8A6; --brand-hover: #115E59; --ground: #E6EEEB; }
+/* Stand-ins for behaviour/markup that was client-rendered on the original site */
+.clone-nav { display: none; align-items: center; gap: 24px; font-size: 14px; font-weight: 500; }
+.clone-nav a { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; opacity: .95; }
+.clone-nav a:hover { opacity: .7; }
+@media (min-width: 1024px) { .clone-nav { display: flex; } }
+
+header { transition: color .3s ease-out; }
+header[data-dark-bg="false"] { color: #0c0c09; }
+header[data-dark-bg="true"] { color: #fff; }
+
+.clone-ocean { position: absolute; inset: 0; z-index: 0; pointer-events: none; display: none;
+  background: linear-gradient(to right, #0F766E 0%, #138a86 28%, #1a9a96 calc(100% - max(80vh, 576px))); }
+.clone-site { position: absolute; z-index: 0; top: 0; right: 0; height: 100%; width: max(80vh, 576px); display: none; pointer-events: none; overflow: hidden; contain: layout paint; }
+/* left-edge fade into the ocean, as a plain overlay (a CSS mask here caused one-frame black flashes in Chrome) */
+.clone-site::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to right, #1a9a96 0, rgba(26,154,150,0) 9%); }
+.clone-scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: right center; }
+.clone-scene-anim > svg { display: block; width: 100%; height: 100%; }
+.clone-scene-anim.is-paused * { animation-play-state: paused !important; }
+@media (min-width: 1100px) { .clone-site, .clone-ocean { display: block; } }
+
+@media (prefers-reduced-motion: reduce) { [style*="translateY"] { transition: none !important; } }
+
+/* No rubber-band / bounce scrolling past the page edges */
+html, body { overscroll-behavior: none; }
+
+/* No backdrop blur inside the fixed header: a backdrop-filter on a fixed layer makes Chrome occasionally
+   paint the whole header black with a stale texture while scrolling (the "header blink"). */
+header, header * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+/* Header without layer churn: the white bar fades by background-colour (not opacity) and the logo filter
+   switches without a transition, so Chrome never creates/destroys compositor layers when the header flips. */
+header > div[aria-hidden="true"] { opacity: 1 !important; background-color: rgba(255,255,255,0) !important; border-color: transparent !important;
+  transition: background-color .3s ease-out, border-color .3s ease-out !important; }
+header[data-scrolled="true"] > div[aria-hidden="true"] { background-color: #fff !important; border-color: rgba(12,12,9,.06) !important; }
+header img { transition: none !important; }
