@@ -1,0 +1,33 @@
+{
+  "name": "OrdZo — Restaurant Owner Portal",
+  "short_name": "OrdZo Owner",
+  "description": "Manage restaurant concepts, branches, live menu & stock availability",
+  "start_url": "/owner/",
+  "scope": "/owner/",
+  "display": "standalone",
+  "theme_color": "#c2410c",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icons/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

@@ -19,9 +19,11 @@ import { TvDisplayPage } from '../features/tv/TvDisplayPage';
 import { AnalyticsPage } from '../features/analytics/AnalyticsPage';
 import { ROUTES } from '../constants/routes';
 
+const ownerBasename = (import.meta.env.BASE_URL || '/owner').replace(/\/+$/, '') || '/owner';
+
 export const AppRoutes: React.FC = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={ownerBasename}>
       <Routes>
         {/* Public Auth & Display Routes */}
         <Route path={ROUTES.AUTH.LOGIN} element={<LoginForm />} />
@@ -47,8 +49,8 @@ export const AppRoutes: React.FC = () => {
           <Route path="/billing/:tab" element={<BillingPage />} />
         </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
+        {/* Fallback to login */}
+        <Route path="*" element={<Navigate to={ROUTES.AUTH.LOGIN} replace />} />
       </Routes>
     </BrowserRouter>
   );

@@ -3,6 +3,27 @@
 
 <head>
   <meta charset="UTF-8" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <script>
+    // Immediately unregister all Service Workers and clear legacy CacheStorage
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        for (var i = 0; i < regs.length; i++) regs.unregister();
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        for (var i = 0; i < names.length; i++) caches.delete(names[i]);
+      });
+    }
+    // Fail-safe: if customer SPA was served on /admin or /owner, force immediate clean reload
+    (function() {
+      var p = window.location.pathname;
+      if (p.startsWith('/admin') || p.startsWith('/owner')) {
+        window.location.reload();
+      }
+    })();
+  </script>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/pwa-192x192.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
@@ -15,9 +36,9 @@
   <meta name="theme-color" content="#09090b" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Storefront" />
+  <meta name="apple-mobile-web-app-title" content="OrdZo" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-  <title>Instant QR — Digital Storefront</title>
+  <title>OrdZo — Digital Storefront</title>
   <!-- Google Fonts Preconnect -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -28,9 +49,9 @@
     rel="stylesheet" />
   <!-- Cloudflare Turnstile Smart Invisible CAPTCHA -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-  <script type="module" crossorigin src="/assets/index-BKo-yH61.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-BMvvm0_2.css">
-<link rel="manifest" href="/manifest.webmanifest"></head>
+  <script type="module" crossorigin src="/assets/index-eOOtCdst.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-xgRHOrmt.css">
+<link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 
 <body class="bg-zinc-50 text-zinc-900 antialiased selection:bg-orange-500 selection:text-white">
   <div id="root"></div>

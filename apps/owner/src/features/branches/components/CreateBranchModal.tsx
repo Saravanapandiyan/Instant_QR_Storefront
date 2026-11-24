@@ -155,7 +155,7 @@ export const CreateBranchModal: React.FC<CreateBranchModalProps> = ({
           <div className="p-2.5 rounded-[8px] bg-surface-2 border border-border text-xs">
             <span className="text-muted block text-[11px] mb-0.5">Customer Storefront URL Preview:</span>
             <span className="font-mono text-primary font-semibold truncate block">
-              instantqr.com/r/{computedSlug}
+              ordzo.com/r/{computedSlug}
             </span>
           </div>
 

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Video References — Continuous Restaurant Creation (No Steps)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .glow-amber {
+      box-shadow: 0 0 50px -12px rgba(245, 158, 11, 0.35);
+    }
+    .glow-red {
+      box-shadow: 0 0 40px -10px rgba(228, 0, 43, 0.4);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 40px -10px rgba(16, 185, 129, 0.4);
+    }
+    @keyframes cursorMovement {
+      0%   { transform: translate(40px, 30px); }
+      15%  { transform: translate(120px, 60px); }
+      35%  { transform: translate(180px, 120px); }
+      55%  { transform: translate(90px, 170px); }
+      75%  { transform: translate(220px, 210px); }
+      90%  { transform: translate(160px, 270px); }
+      100% { transform: translate(160px, 270px); }
+    }
+    .animated-cursor {
+      animation: cursorMovement 8s ease-in-out infinite;
+    }
+    @keyframes clickRipple {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .click-ring {
+      animation: clickRipple 1.2s infinite;
+    }
+  </style>
+</head>
+<body class="bg-[#05070D] text-slate-100 font-sans antialiased min-h-screen selection:bg-amber-500 selection:text-slate-950">
+
+  <!-- Ambient background glow -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+    <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-amber-500/10 blur-[160px] rounded-full"></div>
+    <div class="absolute top-1/3 -left-40 w-[600px] h-[600px] bg-red-600/10 blur-[180px] rounded-full"></div>
+    <div class="absolute bottom-1/4 -right-40 w-[600px] h-[600px] bg-emerald-600/10 blur-[180px] rounded-full"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 bg-[#05070D]/95 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-amber-500/20">
+            ID
+          </div>
+          <span class="text-xl font-black text-white">Insta<span class="text-amber-400">Dine</span></span>
+        </a>
+        <span class="hidden sm:inline-block text-[11px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-3 py-1 rounded-full">
+          🎥 Quick Video Lab &bull; Continuous Flow (No Steps)
+        </span>
+      </div>
+
+      <div class="flex items-center gap-4 text-xs font-bold">
+        <a href="section_image_references.html" class="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black rounded-xl shadow-lg transition-transform hover:scale-105">
+          📸 New: Left &amp; Right Images Preview &rarr;
+        </a>
+        <a href="index.html#setup-5mins" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-colors border border-slate-700">
+          &larr; View Live Home Page
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-16">
+
+    <!-- Top Headline -->
+    <div class="text-center max-w-3xl mx-auto space-y-4">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-xs font-black text-amber-300 uppercase tracking-widest shadow-lg">
+        <span>🎬 Pure Video Recording Style</span>
+      </div>
+      <h1 class="text-3xl sm:text-5xl font-black text-white font-display tracking-tight leading-tight">
+        Continuous Quick Video of <br />
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-300 to-amber-500">
+          Restaurant Creation Process
+        </span>
+      </h1>
+      <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+        <strong>No step-by-step segmentation. No tabs.</strong> A continuous, fluid quick video showing someone creating "KFC Restaurant" in real time (typing name, logo upload, 24 tables, and 1-tap QR launch).
+      </p>
+
+      <!-- Nav Switcher Pills -->
+      <div class="inline-flex flex-wrap items-center justify-center gap-2 p-1.5 bg-slate-900/90 border border-slate-800 rounded-2xl text-xs font-bold">
+        <a href="#video-ref-1" class="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-black shadow-lg transition-transform hover:scale-105">
+          Video Reference 1: Screencast Recording (⭐ Top Pick)
+        </a>
+        <a href="#video-ref-2" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 transition-colors">
+          Video Reference 2: iPad Screen Video
+        </a>
+        <a href="#video-ref-3" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 transition-colors">
+          Video Reference 3: 5s Hyperlapse Speed-Run
+        </a>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIDEO REFERENCE 1: CONTINUOUS SCREENCAST RECORDING (CURSOR TRACKING) -->
+    <!-- ========================================================================= -->
+    <section id="video-ref-1" class="scroll-mt-28 space-y-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <span class="text-xs font-black uppercase tracking-widest text-amber-400 bg-amber-500/15 border border-amber-500/30 px-3 py-1 rounded-full">
+              Video Reference 1 &bull; Recommended
+            </span>
+            <span class="text-xs font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 rounded-full">
+              ★ 100% Fluid Continuous Recording (No Steps)
+            </span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-black text-white font-display mt-2">
+            Continuous Screencast Video Recording
+          </h2>
+          <p class="text-slate-400 text-xs sm:text-sm mt-1 max-w-3xl leading-relaxed">
+            <strong>What happens:</strong> A single continuous video screen recording. You see the mouse cursor move naturally, type "KFC Restaurant", snap in the KFC logo, select USD and 24 tables, and click "Launch QR Fleet" &mdash; causing the real Table #04 stand on the right to light up with celebration!
+          </p>
+        </div>
+        <div class="shrink-0 flex items-center gap-2">
+          <button onclick="toggleRef1Video()" id="ref1-play-btn" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-transform hover:scale-105 flex items-center gap-1.5">
+            <span id="ref1-play-icon">⏸</span>
+            <span id="ref1-play-text">Pause Video</span>
+          </button>
+          <button onclick="restartRef1Video()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-colors border border-slate-700">
+            🔄 Replay
+          </button>
+        </div>
+      </div>
+
+      <!-- MAIN CONTAINER: Left Video + Right Table Stand -->
+      <div class="rounded-3xl p-1 bg-gradient-to-r from-amber-500/25 via-white/10 to-slate-800/40 shadow-2xl glow-amber">
+        <div class="bg-gradient-to-b from-[#090D17] to-[#05070D] rounded-[22px] border border-slate-800 p-6 sm:p-8 relative overflow-hidden">
+          
+          <!-- Top Window Chrome & Video Player Bar -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-6 border-b border-slate-800/90 text-xs gap-3">
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                <span class="w-3 h-3 rounded-full bg-green-500"></span>
+              </div>
+              <span class="font-mono text-slate-300 text-[11px] flex items-center gap-2">
+                <span>📹</span>
+                <span>kfc_restaurant_creation_demo.mp4</span>
+              </span>
+            </div>
+
+            <!-- Video Player Indicators -->
+            <div class="flex items-center gap-3 font-mono text-[11px]">
+              <span class="flex items-center gap-1.5 text-red-400 font-bold bg-red-500/10 px-2.5 py-0.5 rounded-full border border-red-500/20">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                <span>REC &bull; 1080p 60fps</span>
+              </span>
+              <span id="ref1-timecode" class="text-amber-300 font-bold bg-slate-900 px-2.5 py-0.5 rounded-md border border-slate-800">
+                00:00 / 00:08
+              </span>
+            </div>
+          </div>
+
+          <!-- 2 Columns: Video on Left (7 cols) + Table Stand on Right (5 cols) -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            <!-- LEFT COLUMN: CONTINUOUS SCREENCAST VIDEO PLAYER -->
+            <div class="lg:col-span-7 bg-slate-950/95 rounded-3xl p-5 sm:p-6 border-2 border-slate-800 shadow-2xl space-y-4 relative text-left overflow-hidden">
+              
+              <!-- Video Frame Surface -->
+              <div class="relative bg-slate-900/90 rounded-2xl p-5 border border-slate-800 min-h-[310px] flex flex-col justify-between overflow-hidden shadow-inner">
+                
+                <!-- Floating Simulated Mouse Cursor -->
+                <div id="ref1-mouse-cursor" class="absolute z-30 pointer-events-none transition-all duration-300 flex items-center gap-1" style="top: 30px; left: 40px;">
+                  <svg class="w-5 h-5 text-amber-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M4 2l16 12-7 1.5 4 6.5-3 1.5-4-6.5L4 22V2z"/>
+                  </svg>
+                  <span id="ref1-cursor-action" class="text-[9px] font-mono font-bold bg-slate-950/90 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40 shadow">
+                    Typing...
+                  </span>
+                </div>
+
+                <!-- Form Video Content (One Single Fluid Screen) -->
+                <div class="space-y-3.5 relative z-10">
+                  
+                  <!-- Modal Header in Video -->
+                  <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                      <span class="text-xs font-black text-white">Create Restaurant Concept</span>
+                    </div>
+                    <span class="text-[9px] text-emerald-400 font-mono font-bold">● Fast Onboarding Mode</span>
+                  </div>
+
+                  <!-- Field 1: Restaurant Name Typing -->
+                  <div>
+                    <label class="text-[10px] font-bold text-slate-400 block mb-1">Restaurant Concept Name</label>
+                    <div id="ref1-input-box" class="px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-sm flex items-center justify-between transition-all">
+                      <span id="ref1-name-display" class="font-display tracking-tight text-white">KFC Restaurant</span>
+                      <span id="ref1-caret" class="w-1.5 h-4 bg-amber-400 animate-pulse"></span>
+                    </div>
+                  </div>
+
+                  <!-- Field 2: Logo Drop & Concept Subtitle -->
+                  <div class="flex items-center gap-3 p-2.5 bg-slate-950/80 rounded-xl border border-slate-800/80">
+                    <div id="ref1-logo-badge" class="w-12 h-12 rounded-xl bg-[#E4002B] text-white flex items-center justify-center font-black text-lg font-display shrink-0 shadow-lg shadow-red-500/40 transition-all duration-300">
+                      KFC
+                    </div>
+                    <div class="text-xs space-y-0.5">
+                      <div class="font-bold text-white flex items-center gap-1.5">
+                        <span id="ref1-logo-status">Logo Attached: KFC_Brand.png</span>
+                        <span class="text-emerald-400 font-bold">✓</span>
+                      </div>
+                      <div class="text-[10px] text-slate-400">Fried Chicken &bull; Burgers &amp; Wings &bull; Quick Service</div>
+                    </div>
+                  </div>
+
+                  <!-- Field 3: Hours & 24 Tables -->
+                  <div class="grid grid-cols-2 gap-2.5 text-xs">
+                    <div class="p-2.5 bg-slate-950 rounded-xl border border-slate-800 space-y-0.5">
+                      <span class="text-[9px] text-slate-500 font-bold uppercase">Operating Hours</span>
+                      <span class="font-bold text-white text-[11px] block">10:00 AM – 11:00 PM</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-950 rounded-xl border border-slate-800 space-y-0.5">
+                      <span class="text-[9px] text-slate-500 font-bold uppercase">Default Currency</span>
+                      <span class="font-bold text-amber-400 text-[11px] block">🇺🇸 USD ($) &bull; 0% Cut</span>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Submit Button in Video -->
+                <div class="pt-2 relative z-10">
+                  <button id="ref1-video-btn" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                    <span id="ref1-btn-text">⚡ Click: Launch Instant QR Fleet (24 Tables)</span>
+                  </button>
+                </div>
+
+                <!-- Instant Success Confetti Overlay (Shows at end of 8s video) -->
+                <div id="ref1-success-banner" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 space-y-3 z-20 hidden transition-all">
+                  <div class="w-12 h-12 rounded-full bg-emerald-500 text-slate-950 font-black text-2xl flex items-center justify-center shadow-lg shadow-emerald-500/50">
+                    ✓
+                  </div>
+                  <div class="text-center space-y-1">
+                    <div class="text-sm font-black text-white">KFC Restaurant Created in 1.8s!</div>
+                    <div class="text-xs text-emerald-400 font-bold">24 Tables Auto-Numbered &bull; Stand Ready &rarr;</div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Continuous Video Scrubber Timeline (Smooth advancement) -->
+              <div class="space-y-1.5 pt-1">
+                <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden relative cursor-pointer" onclick="handleRef1Scrubber(event)">
+                  <div id="ref1-progress-bar" class="h-full bg-gradient-to-r from-amber-400 via-orange-400 to-emerald-400 w-0 transition-all duration-100"></div>
+                </div>
+                <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                  <span>Start (00:00)</span>
+                  <span class="text-amber-400 font-bold">Continuous Screen Recording</span>
+                  <span>Live QR (00:08)</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: THE RESULTING OFFICIAL TABLE STAND (TABLE #04) -->
+            <div class="lg:col-span-5 flex flex-col items-center">
+              
+              <div id="ref1-stand-card" class="w-full max-w-[290px] p-5 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-500/60 shadow-2xl relative text-center space-y-3 transition-all duration-500">
+                
+                <span class="text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-red-600 to-[#E4002B] text-white px-2.5 py-0.5 rounded-full shadow">
+                  Official Table Stand &bull; 300 DPI
+                </span>
+                
+                <div class="flex items-center justify-center gap-2">
+                  <span class="w-5 h-5 rounded-md bg-[#E4002B] text-white font-black text-[9px] flex items-center justify-center font-display">KFC</span>
+                  <span class="text-sm font-black text-white">KFC Restaurant</span>
+                </div>
+
+                <div class="text-2xl font-black text-amber-400 tracking-tight font-display">
+                  TABLE #04
+                </div>
+
+                <!-- White QR Plate with Real Scannable QR -->
+                <div class="w-36 h-36 bg-white p-2.5 rounded-2xl mx-auto shadow-xl flex flex-col items-center justify-center border-2 border-slate-200">
+                  <img src="real_qr_kfc.svg" alt="Real Scannable KFC QR Code" class="w-30 h-30 rounded-lg shadow-sm" />
+                </div>
+
+                <div class="text-[10px] font-extrabold text-slate-300">Scan with Phone Camera to Order</div>
+                <div class="text-[9px] font-mono text-slate-500">instadine.app/kfc/table-04</div>
+
+                <button class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-xl border border-slate-700 transition-colors flex items-center justify-center gap-1.5">
+                  <span>📥 Download PDF Sheet</span>
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Bottom Summary Bar -->
+          <div class="mt-8 pt-5 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+            <div class="flex items-center gap-2 text-slate-300 text-left">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>
+                Continuous Video Demonstration: Live KFC setup in <strong class="text-amber-400 font-bold">8 seconds</strong>.
+              </span>
+            </div>
+            <button class="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-transform hover:scale-105">
+              Start Your 5-Min Setup &rarr;
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- VIDEO REFERENCE 2: IPAD / TABLET SCREEN RECORDING VIDEO -->
+    <!-- ========================================================================= -->
+    <section id="video-ref-2" class="scroll-mt-28 space-y-6 pt-10 border-t border-slate-800">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <span class="text-xs font-black uppercase tracking-widest text-teal-400 bg-teal-500/15 border border-teal-500/30 px-3 py-1 rounded-full">
+              Video Reference 2 &bull; Tablet Bezel
+            </span>
+            <span class="text-xs font-bold text-purple-400 bg-purple-500/15 border border-purple-500/30 px-2.5 py-1 rounded-full">
+              Hardware Video Sheen
+            </span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-black text-white font-display mt-2">
+            iPad Tablet Screen Recording Video
+          </h2>
+          <p class="text-slate-400 text-xs sm:text-sm mt-1 max-w-3xl leading-relaxed">
+            <strong>What happens:</strong> The video recording plays inside an iPad Pro hardware bezel. Shows touch-tap ripples as the manager types "KFC Restaurant" and activates the 24 tables fleet in a continuous 6-second recording.
+          </p>
+        </div>
+        <div class="shrink-0">
+          <span class="text-xs font-mono text-teal-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl block">
+            Style: Tablet In-Hand Recording
+          </span>
+        </div>
+      </div>
+
+      <!-- MOCKUP 2: Tablet Bezel Frame -->
+      <div class="rounded-3xl p-1 bg-gradient-to-b from-teal-500/20 via-white/5 to-slate-800/40 shadow-2xl">
+        <div class="bg-[#080D18] rounded-[22px] border border-slate-800 p-6 sm:p-8 space-y-6 text-left">
+          
+          <div class="max-w-2xl mx-auto bg-slate-950 p-4 rounded-[36px] border-4 border-slate-700 shadow-2xl relative overflow-hidden">
+            
+            <!-- Video Pill Bar inside iPad -->
+            <div class="flex items-center justify-between pb-3 px-2 border-b border-slate-800 text-[10px] text-slate-400 font-mono">
+              <span class="flex items-center gap-1.5 text-white font-bold">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                <span>iPad Screen Recording &bull; InstaDine Manager</span>
+              </span>
+              <span class="text-teal-400 font-bold">00:04 / 00:06</span>
+            </div>
+
+            <!-- Video Content Screen -->
+            <div class="p-6 bg-slate-900/90 rounded-2xl border border-slate-800 space-y-4 my-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-xl bg-[#E4002B] text-white flex items-center justify-center font-black text-xl font-display shadow-md">
+                    KFC
+                  </div>
+                  <div>
+                    <div class="text-sm font-black text-white">KFC Restaurant &bull; Express Outlet</div>
+                    <div class="text-[11px] text-slate-400">Fried Chicken &bull; Burgers &amp; Wings</div>
+                  </div>
+                </div>
+                <span class="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full">● Open</span>
+              </div>
+
+              <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                <div>
+                  <span class="text-[10px] text-slate-500 uppercase font-bold block">Tables Count</span>
+                  <span class="text-sm font-black text-white">24 Tables Auto-Numbered</span>
+                </div>
+                <span class="text-[10px] text-amber-400 font-mono bg-amber-500/10 px-2 py-1 rounded font-bold">
+                  Stand #04 Ready
+                </span>
+              </div>
+
+              <!-- Animated Touch Ripple -->
+              <div class="p-3 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl text-center shadow-lg relative flex items-center justify-center gap-2">
+                <span>⚡ Instant QR Fleet Generated</span>
+                <span class="w-3 h-3 rounded-full bg-white opacity-80 click-ring"></span>
+              </div>
+            </div>
+
+            <div class="w-32 h-1 bg-slate-700 rounded-full mx-auto mt-2"></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- VIDEO REFERENCE 3: 5-SECOND HYPERLAPSE SPEED-RUN VIDEO -->
+    <!-- ========================================================================= -->
+    <section id="video-ref-3" class="scroll-mt-28 space-y-6 pt-10 border-t border-slate-800">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <span class="text-xs font-black uppercase tracking-widest text-purple-400 bg-purple-500/15 border border-purple-500/30 px-3 py-1 rounded-full">
+              Video Reference 3 &bull; Hyperlapse Speed-Run
+            </span>
+            <span class="text-xs font-bold text-pink-400 bg-pink-500/15 border border-pink-500/30 px-2.5 py-1 rounded-full">
+              5-Second Fast Forward
+            </span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-black text-white font-display mt-2">
+            5-Second Hyperlapse Speed-Run Video
+          </h2>
+          <p class="text-slate-400 text-xs sm:text-sm mt-1 max-w-3xl leading-relaxed">
+            <strong>What happens:</strong> A high-energy fast-forward video time-lapse. In 5 lightning seconds, the entire KFC profile is typed, styled, and 24 table QR stands emerge with sound chime!
+          </p>
+        </div>
+        <div class="shrink-0">
+          <span class="text-xs font-mono text-purple-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl block">
+            Style: Fast-Forward Hyperlapse
+          </span>
+        </div>
+      </div>
+
+      <!-- MOCKUP 3: Hyperlapse Speed-Run Video -->
+      <div class="rounded-3xl p-1 bg-gradient-to-b from-purple-500/20 via-white/5 to-slate-800/40 shadow-2xl">
+        <div class="bg-[#090A14] rounded-[22px] border border-slate-800 p-6 sm:p-8 space-y-6 text-left">
+          
+          <div class="max-w-2xl mx-auto p-6 bg-slate-950 rounded-2xl border-2 border-purple-500/50 space-y-4 relative overflow-hidden">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-black text-purple-400 flex items-center gap-1.5">
+                <span>⏩ 5x Speed-Run Recording</span>
+              </span>
+              <span class="text-[10px] font-mono text-slate-400">Total Run Time: 00:05</span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 text-center text-xs">
+              <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
+                <span class="text-[10px] text-slate-500 uppercase font-bold">1. Concept</span>
+                <span class="font-black text-white text-xs block">KFC Restaurant</span>
+              </div>
+              <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
+                <span class="text-[10px] text-slate-500 uppercase font-bold">2. Tables</span>
+                <span class="font-black text-amber-400 text-xs block">24 Tables Auto</span>
+              </div>
+              <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
+                <span class="text-[10px] text-slate-500 uppercase font-bold">3. Fleet</span>
+                <span class="font-black text-emerald-400 text-xs block">300 DPI Live</span>
+              </div>
+            </div>
+
+            <div class="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center text-xs text-emerald-300 font-bold">
+              ⚡ Completed in 5.0s: Ready for first diner
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Confirmation Box -->
+    <div class="p-8 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-500/40 rounded-3xl text-center space-y-4 shadow-2xl max-w-3xl mx-auto">
+      <h3 class="text-2xl font-black text-white font-display">Which Continuous Video Style Do You Prefer?</h3>
+      <p class="text-slate-300 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
+        None of these have been applied to your home page yet. Review <strong>Video Reference 1 (Screencast with Cursor)</strong>, <strong>Video Reference 2 (Tablet Bezel)</strong>, or <strong>Video Reference 3 (Hyperlapse)</strong> and let me know which one you'd like to apply!
+      </p>
+      <div class="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs font-bold">
+        <span class="px-3.5 py-2 rounded-xl bg-amber-500 text-slate-950 font-black shadow">★ Video Reference 1: Screencast Recording</span>
+        <span class="px-3.5 py-2 rounded-xl bg-slate-800 text-slate-200 border border-slate-700">Video Reference 2: Tablet Bezel</span>
+        <span class="px-3.5 py-2 rounded-xl bg-slate-800 text-slate-200 border border-slate-700">Video Reference 3: 5s Hyperlapse</span>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="py-10 border-t border-slate-800 text-center text-xs text-slate-500">
+    InstaDine Design System &bull; A Product by Hitasoft Technology Solutions
+  </footer>
+
+  <script>
+    // Video Reference 1: Continuous Screencast Animation Engine
+    let ref1Time = 0;
+    let isRef1Playing = true;
+    let ref1Interval = null;
+
+    const names = [
+      "K", "KF", "KFC", "KFC ", "KFC R", "KFC Res", "KFC Rest", "KFC Restau", "KFC Restaur", "KFC Restaurant"
+    ];
+
+    function tickRef1() {
+      if (!isRef1Playing) return;
+      ref1Time += 0.1;
+      if (ref1Time > 8.0) {
+        ref1Time = 0;
+      }
+      renderRef1();
+    }
+
+    function renderRef1() {
+      // 1. Timecode
+      const tc = document.getElementById('ref1-timecode');
+      const sec = Math.floor(ref1Time);
+      if (tc) tc.innerText = '00:0' + sec + ' / 00:08';
+
+      // 2. Scrubber progress
+      const pBar = document.getElementById('ref1-progress-bar');
+      const pct = (ref1Time / 8.0) * 100;
+      if (pBar) pBar.style.width = pct + '%';
+
+      // Elements
+      const cursor = document.getElementById('ref1-mouse-cursor');
+      const cursorAct = document.getElementById('ref1-cursor-action');
+      const nameDisp = document.getElementById('ref1-name-display');
+      const inputBox = document.getElementById('ref1-input-box');
+      const logoBadge = document.getElementById('ref1-logo-badge');
+      const logoStatus = document.getElementById('ref1-logo-status');
+      const vidBtn = document.getElementById('ref1-video-btn');
+      const successBanner = document.getElementById('ref1-success-banner');
+      const standCard = document.getElementById('ref1-stand-card');
+
+      if (ref1Time < 2.5) {
+        // Phase 1: Typing Name
+        const nameIdx = Math.min(names.length - 1, Math.floor((ref1Time / 2.5) * names.length));
+        if (nameDisp) nameDisp.innerText = names[nameIdx];
+        if (inputBox) {
+          inputBox.className = 'px-3.5 py-2.5 bg-slate-950 border-2 border-amber-500 rounded-xl text-white font-bold text-sm flex items-center justify-between shadow-inner';
+        }
+        if (cursor) {
+          cursor.style.top = '75px';
+          cursor.style.left = '160px';
+        }
+        if (cursorAct) cursorAct.innerText = 'Typing Name...';
+        if (logoBadge) logoBadge.style.transform = 'scale(0.95)';
+        if (logoStatus) logoStatus.innerText = 'Uploading Logo...';
+        if (successBanner) successBanner.classList.add('hidden');
+        if (standCard) standCard.classList.remove('glow-amber', 'border-amber-400');
+        if (vidBtn) vidBtn.className = 'w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2';
+      } else if (ref1Time < 5.0) {
+        // Phase 2: Logo Attached & Tables Set
+        if (nameDisp) nameDisp.innerText = 'KFC Restaurant';
+        if (inputBox) {
+          inputBox.className = 'px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-sm flex items-center justify-between';
+        }
+        if (logoBadge) logoBadge.style.transform = 'scale(1.1)';
+        if (logoStatus) logoStatus.innerText = 'Logo Attached: KFC_Brand.png';
+        if (cursor) {
+          cursor.style.top = '150px';
+          cursor.style.left = '220px';
+        }
+        if (cursorAct) cursorAct.innerText = 'Selecting 24 Tables...';
+        if (successBanner) successBanner.classList.add('hidden');
+        if (standCard) standCard.classList.remove('glow-amber', 'border-amber-400');
+      } else if (ref1Time < 6.8) {
+        // Phase 3: Moving to Click Button
+        if (cursor) {
+          cursor.style.top = '250px';
+          cursor.style.left = '190px';
+        }
+        if (cursorAct) cursorAct.innerText = 'Clicking Launch!';
+        if (vidBtn) {
+          vidBtn.className = 'w-full py-2.5 bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-black text-xs rounded-xl shadow-2xl scale-[1.02] border-2 border-white flex items-center justify-center gap-2';
+        }
+        if (successBanner) successBanner.classList.add('hidden');
+      } else {
+        // Phase 4: Instant Success & Reaction on Table Stand
+        if (successBanner) successBanner.classList.remove('hidden');
+        if (cursorAct) cursorAct.innerText = 'Generated!';
+        if (standCard) {
+          standCard.classList.add('glow-amber', 'border-amber-400');
+        }
+      }
+    }
+
+    function toggleRef1Video() {
+      isRef1Playing = !isRef1Playing;
+      const icon = document.getElementById('ref1-play-icon');
+      const text = document.getElementById('ref1-play-text');
+      if (isRef1Playing) {
+        if (icon) icon.innerText = '⏸';
+        if (text) text.innerText = 'Pause Video';
+      } else {
+        if (icon) icon.innerText = '▶';
+        if (text) text.innerText = 'Play Video';
+      }
+    }
+
+    function restartRef1Video() {
+      ref1Time = 0;
+      if (!isRef1Playing) {
+        toggleRef1Video();
+      }
+      renderRef1();
+    }
+
+    function handleRef1Scrubber(e) {
+      const bar = e.currentTarget;
+      const rect = bar.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+      ref1Time = ratio * 8.0;
+      renderRef1();
+    }
+
+    ref1Interval = setInterval(tickRef1, 100);
+  </script>
+
+</body>
+</html>

@@ -3,6 +3,20 @@
 
 <head>
   <meta charset="UTF-8" />
+  <link rel="manifest" href="/owner/manifest.webmanifest" />
+  <script>
+    // Immediately unregister all Service Workers and clear legacy CacheStorage
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        for (var i = 0; i < regs.length; i++) regs.unregister();
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        for (var i = 0; i < names.length; i++) caches.delete(names[i]);
+      });
+    }
+  </script>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/pwa-192x192.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
@@ -15,9 +29,9 @@
   <meta name="theme-color" content="#09090b" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Instant QR" />
+  <meta name="apple-mobile-web-app-title" content="OrdZo" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-  <title>Instant QR — Owner Portal</title>
+  <title>OrdZo — Owner Portal</title>
   <!-- Google Fonts Preconnect -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

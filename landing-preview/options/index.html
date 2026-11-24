@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InstaDine — Background Image Options Comparison</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .font-display { font-family: 'Outfit', sans-serif; }
+  </style>
+</head>
+<body class="bg-[#07090E] text-slate-100 min-h-screen p-6 sm:p-10">
+
+  <div class="max-w-7xl mx-auto space-y-10">
+    
+    <!-- Top Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div>
+        <span class="text-xs font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full">
+          Reference Gallery (Not Applied)
+        </span>
+        <h1 class="text-3xl sm:text-4xl font-black text-white font-display mt-2">
+          Compare Background Image Options
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+          Review the 3 authentic restaurant settings below. Tell me which one you prefer, and I will apply it to the main page.
+        </p>
+      </div>
+
+      <a href="../" class="px-5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white hover:border-amber-400 transition-colors flex items-center gap-2">
+        <span>&larr; Back to Live Landing Page</span>
+      </a>
+    </div>
+
+    <!-- 3 Options Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+      <!-- CURRENT LIVE IMAGE -->
+      <div class="bg-slate-950 border-2 border-amber-500/80 rounded-3xl p-5 space-y-4 shadow-2xl relative">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black text-amber-400 uppercase tracking-wider bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/40">
+            Currently Live on Page
+          </span>
+          <span class="text-[11px] font-mono text-slate-400">Current</span>
+        </div>
+
+        <div class="rounded-2xl overflow-hidden aspect-[16/9] border border-white/10 shadow-lg relative group">
+          <img src="../dine-takeaway-hero.jpg" alt="Current Live Image" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500">
+        </div>
+
+        <div class="space-y-1.5 text-xs">
+          <div class="font-bold text-white text-sm">Warm Bistro &amp; Table 04 Stand</div>
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            Avocado toast on dining table with 'TABLE 04 — DINE IN' acrylic stand being scanned, plus glowing 'TAKEAWAY &amp; PICKUP' counter on right.
+          </p>
+        </div>
+      </div>
+
+      <!-- OPTION 1: Artisan Cafe -->
+      <div class="bg-slate-950 border border-slate-800 hover:border-white/30 rounded-3xl p-5 space-y-4 shadow-xl relative transition-all">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black text-slate-300 uppercase tracking-wider bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-700">
+            Option 1
+          </span>
+          <span class="text-[11px] font-mono text-slate-400">Daylight Cafe</span>
+        </div>
+
+        <div class="rounded-2xl overflow-hidden aspect-[16/9] border border-white/10 shadow-lg relative group">
+          <img src="option1-artisan-cafe.jpg" alt="Option 1: Artisan Cafe" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500">
+        </div>
+
+        <div class="space-y-1.5 text-xs">
+          <div class="font-bold text-white text-sm">Urban Artisan Cafe &amp; Wooden Cube</div>
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            Sunlit urban cafe with flat white coffee and croissant, a clean wooden cube QR stand ('TABLE 07 - DINE IN'), and background takeaway kraft bag station.
+          </p>
+        </div>
+      </div>
+
+      <!-- OPTION 2: Fast-Casual QSR -->
+      <div class="bg-slate-950 border border-slate-800 hover:border-white/30 rounded-3xl p-5 space-y-4 shadow-xl relative transition-all">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black text-slate-300 uppercase tracking-wider bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-700">
+            Option 2
+          </span>
+          <span class="text-[11px] font-mono text-slate-400">Modern QSR</span>
+        </div>
+
+        <div class="rounded-2xl overflow-hidden aspect-[16/9] border border-white/10 shadow-lg relative group">
+          <img src="option2-modern-qsr.jpg" alt="Option 2: Modern QSR" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500">
+        </div>
+
+        <div class="space-y-1.5 text-xs">
+          <div class="font-bold text-white text-sm">Fast-Casual QSR &amp; Express Pickup</div>
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            High-energy modern eatery with acrylic Table 12 QR stand, burger meal, glowing 'EXPRESS PICKUP &amp; TAKEAWAY' counter, stacked takeout boxes, and cashier tablet.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Instruction Footer -->
+    <div class="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+      <div class="text-slate-300">
+        <span class="font-bold text-white">None of these have been applied to your landing page.</span> 
+        Compare them above or open each image directly to inspect full resolution.
+      </div>
+      <div class="text-amber-400 font-bold text-right shrink-0">
+        Reply with: "Keep Current", "Use Option 1", or "Use Option 2"
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

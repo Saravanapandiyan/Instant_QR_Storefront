@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAQ — InstaDine Smart QR Ordering</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700;900&family=JetBrains+Mono:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #07090E; }
+    .font-display { font-family: 'Space Grotesk', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-[#07090E] text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950">
+
+  <!-- ================= SLEEK HEADER ================= -->
+  <header id="main-header" class="sticky top-0 z-50 bg-transparent transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+      
+      <!-- Logo & Brand -->
+      <a href="/" class="flex items-center gap-3 group">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-slate-950 shadow-xl shadow-amber-500/20 font-black text-2xl tracking-tighter group-hover:scale-105 transition-transform" id="brand-badge">
+          ID
+        </div>
+        <div class="text-2xl font-black tracking-tight text-white flex items-center gap-1.5">
+          Insta<span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500" id="brand-name-colored">Dine</span>
+        </div>
+      </a>
+
+      <!-- Nav Links -->
+      <nav class="hidden lg:flex items-center gap-8 text-sm font-extrabold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+        <a href="index.html#how-it-works" class="hover:text-amber-400 transition-colors">How it Works</a>
+        <a href="pricing.html" class="hover:text-amber-400 transition-colors">Pricing</a>
+        <a href="faq.html" class="text-amber-400 font-extrabold border-b-2 border-amber-400 pb-0.5">FAQ</a>
+      </nav>
+
+      <!-- Action Button -->
+      <div class="flex items-center gap-3">
+        <button onclick="openModal('signup')" class="text-xs font-black bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-slate-950 px-5 py-2.5 rounded-xl transition-all shadow-xl shadow-amber-500/20 hover:scale-105">
+          Get 100 Free Credits
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= HERO ================= -->
+  <section class="relative pt-16 pb-12 px-4 sm:px-6 text-center max-w-4xl mx-auto space-y-6">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-xs font-black text-amber-300 uppercase tracking-widest shadow-lg">
+      <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+      <span>Got Questions? We Have Answers</span>
+    </div>
+    <h1 class="text-4xl sm:text-6xl font-black text-white font-display tracking-tight leading-tight">
+      Frequently Asked <br />
+      <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-300 to-amber-500">
+        Questions
+      </span>
+    </h1>
+    <p class="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+      Learn how InstaDine's pay-per-order prepaid model, 5-minute onboarding, and counter workflow make restaurant operations effortless.
+    </p>
+
+    <!-- Interactive Search Bar -->
+    <div class="max-w-xl mx-auto relative pt-4">
+      <input 
+        type="text" 
+        id="faq-search" 
+        onkeyup="filterFaqs()" 
+        placeholder="Search questions (e.g. credits, refund, kitchen, hardware)..." 
+        class="w-full px-5 py-3.5 bg-slate-900 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-400 shadow-xl"
+      />
+      <span class="absolute right-4 top-7 text-slate-500 text-lg">🔍</span>
+    </div>
+  </section>
+
+  <!-- ================= CATEGORIZED FAQ LIST ================= -->
+  <section class="py-12 px-4 sm:px-6 max-w-4xl mx-auto space-y-12">
+    
+    <!-- CATEGORY 1: BILLING & PREPAID CREDITS -->
+    <div class="faq-category space-y-4">
+      <div class="flex items-center gap-2.5 text-amber-400 font-black text-sm uppercase tracking-wider pb-2 border-b border-slate-800">
+        <span>💳</span>
+        <span>Billing &amp; Prepaid Credits</span>
+      </div>
+
+      <!-- FAQ 1 -->
+      <div class="faq-item p-5 bg-slate-900/60 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 transition-all" onclick="toggleItem(this)">
+        <div class="flex justify-between items-center gap-4">
+          <h3 class="font-bold text-white text-sm sm:text-base">How does the Prepaid Order Credit model work?</h3>
+          <span class="faq-icon text-amber-400 text-xl font-black flex-shrink-0">+</span>
+        </div>
+        <div class="faq-body hidden text-xs sm:text-sm text-slate-300 mt-3 pt-3 border-t border-slate-800/80 leading-relaxed space-y-2">
+          <p>InstaDine works like a prepaid mobile recharge. Instead of paying hefty $49–$99 monthly subscriptions, you purchase a pack of order credits (e.g. $5 for 500 orders or $20 for 3,300 orders).</p>
+          <p><strong>Exactly 1 credit is deducted when your counter staff confirms payment</strong> for an order. If a customer opens the menu and abandons their cart or cancels, it costs you <strong>0 credits</strong>.</p>
+        </div>
+      </div>
+
+      <!-- FAQ 2 -->
+      <div class="faq-item p-5 bg-slate-900/60 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 transition-all" onclick="toggleItem(this)">
+        <div class="flex justify-between items-center gap-4">
+          <h3 class="font-bold text-white text-sm sm:text-base">What happens if a customer sends a fake or cancelled order?</h3>
+          <span class="faq-icon text-amber-400 text-xl font-black flex-shrink-0">+</span>
+        </div>
+        <div class="faq-body hidden text-xs sm:text-sm text-slate-300 mt-3 pt-3 border-t border-slate-800/80 leading-relaxed">
+          Credits are <strong>only deducted when the cashier confirms payment</strong> ("Confirm &amp; Paid"). Fake orders, prank orders, test orders, and cancelled orders cost you exactly zero credits. You are 100% protected.
+        </div>
+      </div>
+
+      <!-- FAQ 3 -->
+      <div class="faq-item p-5 bg-slate-900/60 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 transition-all" onclick="toggleItem(this)">
+        <div class="flex justify-between items-center gap-4">
+          <h3 class="font-bold text-white text-sm sm:text-base">Do prepaid credits ever expire?</h3>
+          <span class="faq-icon text-amber-400 text-xl font-black flex-shrink-0">+</span>
+        </div>
+        <div class="faq-body hidden text-xs sm:text-sm text-slate-300 mt-3 pt-3 border-t border-slate-800/80 leading-relaxed">
+          <strong>No, credits never expire.</strong> Whether you use all your credits in a week or spread them over 6 months during seasonal business slowdowns, your balance remains safe in your wallet indefinitely.
+        </div>
+      </div>
+
+      <!-- FAQ 4 -->
+      <div class="faq-item p-5 bg-slate-900/60 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 transition-all" onclick="toggleItem(this)">
+        <div class="flex justify-between items-center gap-4">
+          <h3 class="font-bold text-white text-sm sm:text-base">What happens if my credits run out during a dinner rush?</h3>
+          <span class="faq-icon text-amber-400 text-xl font-black flex-shrink-0">+</span>
+        </div>
+        <div class="faq-body hidden text-xs sm:text-sm text-slate-300 mt-3 pt-3 border-t border-slate-800/80 leading-relaxed space-y-2">
+          <p>We built a built-in <strong>20-Order Grace Buffer</strong>. Your orders will never get cut off mid-service. Customers can continue ordering up to 20 orders past zero balance.</p>
+          <p>You can also enable <strong>Auto Top-Up</strong>, which automatically recharges your chosen credit pack whenever your balance dips below 20 credits.</p>
+        </div>
+      </div>
+
+      <!-- FAQ 5 -->
+      <div class="faq-item p-5 bg-slate-900/60 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 transition-all" onclick="toggleItem(this)">
+        <div class="flex justify-between items-center gap-4">
+          <h3 class="font-bold text-white text-sm sm:text-base">Are there any platform commissions or monthly charges?</h3>
+          <span class="faq-icon text-amber-400 text-xl font-black flex-shrink-0">+</span>
+        </div>
+        <div class="faq-body hidden text-xs sm:text-sm text-slate-300 mt-3 pt-3 border-t border-slate-800/80 leading-relaxed">
+          <strong>Zero commission. Zero monthly fees.</strong> We never take a cut of your order totals. You keep 100% of your customer payments.
+        </div>
+      </div>
+
+      <!-- FAQ 6: Same features across plans -->
+      <div class="faq-item p-5 bg-slate-900/60 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 transition-all" onclick="toggleItem(this)">
+        <div class="flex justify-between items-center gap-4">
+          <h3 class="font-bold text-white text-sm sm:text-base">Do different pricing plans have different features?</h3>
+          <span class="faq-icon text-amber-400 text-xl font-black flex-shrink-0">+</span>
+        </div>
+        <div class="faq-body hidden text-xs sm:text-sm text-slate-300 mt-3 pt-3 border-t border-slate-800/80 leading-relaxed space-y-2">
+          <p><strong>No! All features are 100% identical across every plan</strong> — even the /bin/zsh Free Pack.</p>
+          <p>Every restaurant gets full access to Dine-in &amp; Takeaway QR menus, Kitchen KDS, Cashier Counter POS, Voice Alerts, Real-Time Sales, and Multi-Staff PINs. <strong>Based on your selected plan, only the confirmed orders count changes.</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CATEGORY 2: WORKFLOW & HARDWARE -->
+    <div class="faq-category space-y-4">
+      <div class="flex items-center gap-2.5 text-amber-400 font-black text-sm uppercase tracking-wider pb-2 border-b border-slate-800">
+        <span>🏪</span>
+        <span>Hardware &amp; Counter Workflow</span>
+      </div>
+
+      <!-- FAQ 6 -->
+      <div class="faq-item p-5 bg-slate-900/60 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 transition-all" onclick="toggleItem(this)">
+        <div class="flex justify-between items-center gap-4">
+          <h3 class="font-bold text-white text-sm sm:text-base">Do I need to buy expensive POS hardware or thermal printers?</h3>
+          <span class="faq-icon text-amber-400 text-xl font-black flex-shrink-0">+</span>
+        </div>
+        <div class="faq-body hidden text-xs sm:text-sm text-slate-300 mt-3 pt-3 border-t border-slate-800/80 leading-relaxed">
+          <strong>No specialized hardware required.</strong> The entire InstaDine system runs in standard web browsers on any smartphone, iPad, tablet, laptop, or desktop computer you already own. You can also connect standard Bluetooth thermal receipt printers if you wish.
+        </div>
+      </div>
+
+      <!-- FAQ 7 -->
+      <div class="faq-item p-5 bg-slate-900/60 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 transition-all" onclick="toggleItem(this)">
+        <div class="flex justify-between items-center gap-4">
+          <h3 class="font-bold text-white text-sm sm:text-base">How does the kitchen receive orders?</h3>
+          <span class="faq-icon text-amber-400 text-xl font-black flex-shrink-0">+</span>
+        </div>
+        <div class="faq-body hidden text-xs sm:text-sm text-slate-300 mt-3 pt-3 border-t border-slate-800/80 leading-relaxed">
+          Once the cashier confirms payment, the order instantly pops up on the <strong>Kitchen Display Screen (KDS)</strong> (run on any budget tablet mounted on the kitchen wall), with an optional chime sound. Staff can mark dishes as "Preparing" or "Ready" in one tap.
+        </div>
+      </div>
+
+      <!-- FAQ 8 -->
+      <div class="faq-item p-5 bg-slate-900/60 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 transition-all" onclick="toggleItem(this)">
+        <div class="flex justify-between items-center gap-4">
+          <h3 class="font-bold text-white text-sm sm:text-base">Can I manage both Dine-In and Takeaway orders?</h3>
+          <span class="faq-icon text-amber-400 text-xl font-black flex-shrink-0">+</span>
+        </div>
+        <div class="faq-body hidden text-xs sm:text-sm text-slate-300 mt-3 pt-3 border-t border-slate-800/80 leading-relaxed">
+          Yes! Table QR codes automatically route to <strong>Table Dining</strong> with table number auto-assigned. Counter QR codes allow customers in line to order for <strong>Takeaway Pickup</strong> with a token number. Both appear in your single counter dashboard.
+        </div>
+      </div>
+    </div>
+
+    <!-- CATEGORY 3: CUSTOMER EXPERIENCE -->
+    <div class="faq-category space-y-4">
+      <div class="flex items-center gap-2.5 text-amber-400 font-black text-sm uppercase tracking-wider pb-2 border-b border-slate-800">
+        <span>📱</span>
+        <span>Customer Experience</span>
+      </div>
+
+      <!-- FAQ 9 -->
+      <div class="faq-item p-5 bg-slate-900/60 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 transition-all" onclick="toggleItem(this)">
+        <div class="flex justify-between items-center gap-4">
+          <h3 class="font-bold text-white text-sm sm:text-base">Do customers need to download an app or sign up?</h3>
+          <span class="faq-icon text-amber-400 text-xl font-black flex-shrink-0">+</span>
+        </div>
+        <div class="faq-body hidden text-xs sm:text-sm text-slate-300 mt-3 pt-3 border-t border-slate-800/80 leading-relaxed">
+          <strong>Never.</strong> Customers point their phone camera at the QR code and the menu loads in under 1 second in Safari or Chrome. No downloads, no passwords, no friction.
+        </div>
+      </div>
+
+      <!-- FAQ 10 -->
+      <div class="faq-item p-5 bg-slate-900/60 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 transition-all" onclick="toggleItem(this)">
+        <div class="flex justify-between items-center gap-4">
+          <h3 class="font-bold text-white text-sm sm:text-base">How do customers pay?</h3>
+          <span class="faq-icon text-amber-400 text-xl font-black flex-shrink-0">+</span>
+        </div>
+        <div class="faq-body hidden text-xs sm:text-sm text-slate-300 mt-3 pt-3 border-t border-slate-800/80 leading-relaxed">
+          InstaDine supports <strong>Counter Payment</strong> (cash, card swipe, or your existing POS terminal) where the customer places the order on their phone and pays at the counter, as well as integrated online payments if you choose to enable them.
+        </div>
+      </div>
+    </div>
+
+    <!-- CATEGORY 4: 5-MINUTE SETUP -->
+    <div class="faq-category space-y-4">
+      <div class="flex items-center gap-2.5 text-amber-400 font-black text-sm uppercase tracking-wider pb-2 border-b border-slate-800">
+        <span>⏱️</span>
+        <span>Setup &amp; Onboarding</span>
+      </div>
+
+      <!-- FAQ 11 -->
+      <div class="faq-item p-5 bg-slate-900/60 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 transition-all" onclick="toggleItem(this)">
+        <div class="flex justify-between items-center gap-4">
+          <h3 class="font-bold text-white text-sm sm:text-base">Can I really set up my entire restaurant in 5 minutes?</h3>
+          <span class="faq-icon text-amber-400 text-xl font-black flex-shrink-0">+</span>
+        </div>
+        <div class="faq-body hidden text-xs sm:text-sm text-slate-300 mt-3 pt-3 border-t border-slate-800/80 leading-relaxed">
+          Yes! Step 1 (2 mins): Enter restaurant name, trading hours, and auto-number tables. Step 2 (2 mins): Snap a photo of your printed menu and AI extracts all items, prices, and categories. Step 3 (1 min): Create staff cashier PINs. You're ready to take live orders immediately.
+        </div>
+      </div>
+
+      <!-- FAQ 12 -->
+      <div class="faq-item p-5 bg-slate-900/60 border border-slate-800 rounded-2xl cursor-pointer hover:border-slate-700 transition-all" onclick="toggleItem(this)">
+        <div class="flex justify-between items-center gap-4">
+          <h3 class="font-bold text-white text-sm sm:text-base">How do I print table QR stand labels?</h3>
+          <span class="faq-icon text-amber-400 text-xl font-black flex-shrink-0">+</span>
+        </div>
+        <div class="faq-body hidden text-xs sm:text-sm text-slate-300 mt-3 pt-3 border-t border-slate-800/80 leading-relaxed">
+          In your dashboard, click "Print QR Stands" and InstaDine instantly generates an A4 or table-tent PDF with high-resolution QR codes numbered for Table #01 through your highest table number, ready for your standard office printer.
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ================= NEED MORE HELP? ================= -->
+  <section class="py-12 px-4 sm:px-6 max-w-4xl mx-auto">
+    <div class="p-8 bg-slate-900/80 border border-slate-800 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
+      <div>
+        <h3 class="text-lg font-black text-white">Have a specific question not covered here?</h3>
+        <p class="text-xs text-slate-400 mt-1">Our support team is ready to help you get set up in minutes.</p>
+      </div>
+      <button onclick="openModal('signup')" class="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow-lg hover:scale-105 transition-transform flex-shrink-0">
+        Chat with Team / Get Free Trial
+      </button>
+    </div>
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="py-12 px-4 sm:px-6 border-t border-slate-800 text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <span class="font-extrabold text-white">Insta<span class="text-amber-400">Dine</span></span>
+        <span>• A product by Hitasoft Technology Solutions</span>
+      </div>
+      <div class="flex items-center gap-6 text-slate-400 font-medium">
+        <a href="/" class="hover:text-amber-400 transition-colors">Home</a>
+        <a href="/#how-it-works" class="hover:text-amber-400 transition-colors">How it Works</a>
+        <a href="pricing.html" class="hover:text-amber-400 transition-colors">Pricing</a>
+        <a href="faq.html" class="text-amber-400 font-bold">FAQ</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= SIGNUP MODAL ================= -->
+  <div id="auth-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative space-y-6">
+      <button onclick="closeModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white text-lg font-bold">
+        &times;
+      </button>
+
+      <div>
+        <span class="text-[10px] font-black text-amber-400 uppercase tracking-wider">Fast Onboarding</span>
+        <h3 class="text-xl font-black text-white mt-1">Get 100 Free Credits</h3>
+        <p class="text-xs text-slate-400 mt-1">Set up complete restaurant profile in 5 minutes.</p>
+      </div>
+
+      <form onsubmit="handleSignup(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-bold mb-1.5">Outlet or Stall Name</label>
+          <input type="text" required placeholder="e.g. Downtown Coffee &amp; Grill" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500">
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-bold mb-1.5">Owner Phone / WhatsApp</label>
+          <input type="tel" required placeholder="+1 (555) 000-0000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500">
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-transform hover:scale-105">
+          Claim 100 Credits &amp; Start 5-Min Setup &rarr;
+        </button>
+
+        <p class="text-[10px] text-slate-500 text-center">
+          100% free start. No credit card required.
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function toggleItem(el) {
+      const body = el.querySelector('.faq-body');
+      const icon = el.querySelector('.faq-icon');
+      if (body.classList.contains('hidden')) {
+        body.classList.remove('hidden');
+        icon.innerText = '−';
+        el.classList.add('border-amber-500/50', 'bg-slate-900');
+      } else {
+        body.classList.add('hidden');
+        icon.innerText = '+';
+        el.classList.remove('border-amber-500/50', 'bg-slate-900');
+      }
+    }
+
+    function filterFaqs() {
+      const q = document.getElementById('faq-search').value.toLowerCase().trim();
+      const items = document.querySelectorAll('.faq-item');
+      items.forEach(item => {
+        const text = item.innerText.toLowerCase();
+        if (text.includes(q)) {
+          item.style.display = '';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    function openModal() {
+      document.getElementById('auth-modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+    }
+
+    function handleSignup(e) {
+      e.preventDefault();
+      alert('🎉 Success! Your profile is ready with 100 Free Orders.');
+      closeModal();
+    }
+  
+    // Dynamic Scroll Header: Transparent on load/top, Black on scroll
+    const headerEl = document.getElementById('main-header');
+    function updateHeaderBackground() {
+      if (!headerEl) return;
+      if (window.scrollY > 20) {
+        headerEl.classList.remove('bg-transparent');
+        headerEl.classList.add('bg-black', 'backdrop-blur-md', 'border-b', 'border-slate-800/90', 'shadow-xl');
+      } else {
+        headerEl.classList.add('bg-transparent');
+        headerEl.classList.remove('bg-black', 'backdrop-blur-md', 'border-b', 'border-slate-800/90', 'shadow-xl');
+      }
+    }
+    window.addEventListener('scroll', updateHeaderBackground);
+    updateHeaderBackground();
+
+  </script>
+
+</body>
+</html>

@@ -170,12 +170,18 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateAdminUserDto.prototype, "pinCode", void 0);
+const RoleEnum = client_1.Role || {
+    SUPER_ADMIN: 'SUPER_ADMIN',
+    ADMIN: 'ADMIN',
+    MANAGER: 'MANAGER',
+    STAFF: 'STAFF',
+};
 class UpdateUserRoleDto {
     role;
 }
 exports.UpdateUserRoleDto = UpdateUserRoleDto;
 __decorate([
-    (0, class_validator_1.IsEnum)(client_1.Role),
+    (0, class_validator_1.IsEnum)(RoleEnum),
     __metadata("design:type", String)
 ], UpdateUserRoleDto.prototype, "role", void 0);
 class UpdateUserStatusDto {

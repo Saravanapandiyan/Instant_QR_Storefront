@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as express from 'express';
 import * as path from 'path';
+import { createLicenseGuard } from './common/license/appkodes-license';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,6 +14,16 @@ async function bootstrap() {
     origin: true,
     credentials: true,
   });
+
+  // AppKodes Store License Enforcement Middleware
+  const licenseGuard = createLicenseGuard({
+    productId: 'instant-qr-storefront',
+    version: '1.0.0',
+    onInvalid: (result) => {
+      console.error(`🚨 AppKodes License invalid: ${result.message}`);
+    },
+  });
+  app.use(licenseGuard.middleware());
 
   app.use(
     '/uploads',
@@ -38,7 +49,7 @@ async function bootstrap() {
 
   // 3. Configure Swagger Interactive API Documentation
   const config = new DocumentBuilder()
-    .setTitle('Instant QR Storefront API')
+    .setTitle('OrdZo API')
     .setDescription('Multi-restaurant in-store QR ordering platform API')
     .setVersion('1.0')
     .addTag('auth', 'Restaurant owner authentication & profile')

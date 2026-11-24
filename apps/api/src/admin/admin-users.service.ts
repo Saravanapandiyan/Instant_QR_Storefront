@@ -91,8 +91,15 @@ export class UpdateAdminUserDto {
   pinCode?: string;
 }
 
+const RoleEnum = (Role as any) || {
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  ADMIN: 'ADMIN',
+  MANAGER: 'MANAGER',
+  STAFF: 'STAFF',
+};
+
 export class UpdateUserRoleDto {
-  @IsEnum(Role)
+  @IsEnum(RoleEnum)
   role: Role;
 }
 

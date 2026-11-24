@@ -497,7 +497,7 @@ const ThermalReceiptBody: React.FC<ThermalReceiptBodyProps> = ({
         <div className="font-bold">Thank you for dining with us!</div>
         <div>Please visit again</div>
         <div className="text-[9px] text-neutral-600 pt-1">
-          Instant QR Storefront &bull; Table #{order.tableNumber || '1'}
+          OrdZo Storefront &bull; Table #{order.tableNumber || '1'}
         </div>
       </div>
     </div>

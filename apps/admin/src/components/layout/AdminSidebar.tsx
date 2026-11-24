@@ -80,7 +80,7 @@ export function AdminSidebar() {
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-sm tracking-tight leading-none" style={{ color: 'var(--adm-text)' }}>
-                Instant QR
+                OrdZo
               </span>
               <span className="text-[10px] uppercase tracking-wider font-semibold leading-tight mt-0.5" style={{ color: 'var(--adm-muted)' }}>
                 Control Plane
@@ -194,7 +194,7 @@ export function AdminSidebar() {
                 {user?.name || 'Super Admin'}
               </span>
               <span className="text-[10px] truncate" style={{ color: 'var(--adm-muted)' }}>
-                {user?.email || 'admin@instantqr.io'}
+                {user?.email || 'admin@ordzo.io'}
               </span>
             </div>
           </div>

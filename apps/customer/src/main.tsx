@@ -1,20 +1,25 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { registerSW } from 'virtual:pwa-register';
 import App from './App.tsx';
 import './index.css';
 
-// Register Service Worker for PWA offline & instant load support
-registerSW({
-  immediate: true,
-  onNeedRefresh() {
-    console.log('[PWA] New content available, auto-updating...');
-  },
-  onOfflineReady() {
-    console.log('[PWA] Storefront ready to work offline.');
-  },
-});
+// Purge any legacy Service Worker from previous builds
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const r of registrations) {
+      r.unregister();
+    }
+  });
+}
+
+// Fail-safe: If a rogue service worker served customer index.html on admin or owner URLs, redirect immediately
+if (typeof window !== 'undefined') {
+  const path = window.location.pathname;
+  if (path.startsWith('/admin') || path.startsWith('/owner')) {
+    window.location.reload();
+  }
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -23,4 +28,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </React.StrictMode>,
 );
-
