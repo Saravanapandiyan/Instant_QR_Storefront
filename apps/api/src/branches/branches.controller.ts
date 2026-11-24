@@ -95,4 +95,67 @@ export class BranchesController {
   remove(@Param('id') id: string, @CurrentUser() user: any) {
     return this.branchesService.remove(id, user.id);
   }
+
+  // Table Management Endpoints
+  @Get(':branchId/tables')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all tables and active open orders for a branch' })
+  getTables(@Param('branchId') branchId: string) {
+    return this.branchesService.getBranchTables(branchId);
+  }
+
+  @Post(':branchId/tables')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a new table for a branch' })
+  createTable(
+    @Param('branchId') branchId: string,
+    @Body() body: { tableNumber: string; section?: string; capacity?: number },
+  ) {
+    return this.branchesService.createTable(branchId, body);
+  }
+
+  @Post(':branchId/tables/bulk')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk generate tables for a branch' })
+  bulkCreateTables(
+    @Param('branchId') branchId: string,
+    @Body()
+    body: {
+      section?: string;
+      prefix?: string;
+      startNumber: number;
+      count: number;
+      capacity?: number;
+    },
+  ) {
+    return this.branchesService.bulkCreateTables(branchId, body);
+  }
+
+  @Patch(':branchId/tables/:tableId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update table properties (number, section, capacity)' })
+  updateTable(
+    @Param('tableId') tableId: string,
+    @Body()
+    body: {
+      tableNumber?: string;
+      section?: string;
+      capacity?: number;
+      isActive?: boolean;
+    },
+  ) {
+    return this.branchesService.updateTable(tableId, body);
+  }
+
+  @Delete(':branchId/tables/:tableId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Deactivate / delete a table' })
+  deleteTable(@Param('tableId') tableId: string) {
+    return this.branchesService.deleteTable(tableId);
+  }
 }

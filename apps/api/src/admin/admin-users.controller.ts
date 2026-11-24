@@ -1,10 +1,23 @@
-import { Controller, Get, Patch, Param, Query, Body, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Query,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
 import {
   AdminUsersService,
   AdminUsersQuery,
+  CreateAdminUserDto,
+  UpdateAdminUserDto,
   UpdateUserRoleDto,
   UpdateUserStatusDto,
 } from './admin-users.service';
@@ -29,6 +42,28 @@ export class AdminUsersController {
   @ApiResponse({ status: 404, description: 'User not found.' })
   getUserById(@Param('id') id: string) {
     return this.usersService.getUserById(id);
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Super Admin: Create a new user account' })
+  createUser(@Body() body: CreateAdminUserDto) {
+    return this.usersService.createUser(body);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Super Admin: Update user profile and reset credentials' })
+  updateUser(
+    @Param('id') id: string,
+    @Body() body: UpdateAdminUserDto,
+    @Request() req: any,
+  ) {
+    return this.usersService.updateUser(id, body, req.user?.id);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Super Admin: Delete/deactivate user' })
+  deleteUser(@Param('id') id: string, @Request() req: any) {
+    return this.usersService.deleteUser(id, req.user?.id);
   }
 
   @Patch(':id/role')

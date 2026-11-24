@@ -429,7 +429,7 @@ export const BranchMatrixTable: React.FC<BranchMatrixTableProps> = ({
                 filteredProducts.map((dish: any) => {
                   const isChecked = selectedDishIds.includes(dish.id);
                   const imageSrc = getMediaUrl(dish.imageUrl);
-                  const branchProductsMap = new Map(
+                  const branchProductsMap = new Map<string, any>(
                     (dish.branchProducts || []).map((bp: any) => [bp.branchId, bp]),
                   );
 

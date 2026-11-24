@@ -179,13 +179,31 @@ export class StaffService {
     }
 
     // Update user fields if provided
-    if (dto.name || dto.phone || dto.password) {
+    if (
+      dto.name ||
+      dto.phone !== undefined ||
+      dto.countryCode !== undefined ||
+      dto.email ||
+      dto.password ||
+      dto.pinCode
+    ) {
       const userUpdateData: any = {};
       if (dto.name) userUpdateData.name = dto.name.trim();
-      if (dto.phone) userUpdateData.phone = dto.phone.trim();
-      if (dto.countryCode) userUpdateData.countryCode = dto.countryCode.trim();
+      if (dto.phone !== undefined) userUpdateData.phone = dto.phone ? dto.phone.trim() : null;
+      if (dto.countryCode !== undefined) userUpdateData.countryCode = dto.countryCode ? dto.countryCode.trim() : null;
+      if (dto.email) {
+        const emailLower = dto.email.trim().toLowerCase();
+        const existing = await this.prisma.user.findUnique({ where: { email: emailLower } });
+        if (existing && existing.id !== staff.userId) {
+          throw new ConflictException('This email is already in use by another account.');
+        }
+        userUpdateData.email = emailLower;
+      }
       if (dto.password) {
         userUpdateData.passwordHash = await bcrypt.hash(dto.password, 10);
+      } else if (dto.pinCode) {
+        // Sync passwordHash with new pinCode
+        userUpdateData.passwordHash = await bcrypt.hash(dto.pinCode.trim(), 10);
       }
 
       await this.prisma.user.update({

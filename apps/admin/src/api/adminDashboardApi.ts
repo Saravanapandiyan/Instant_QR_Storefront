@@ -54,9 +54,29 @@ export interface RecentTenantFleet {
   createdAt: string;
 }
 
-export const adminDashboardApi = {
-  getStats: () => adminApiClient.get<AdminDashboardStats>('admin/dashboard/stats'),
-  getVelocity: () => adminApiClient.get<VelocityDataPoint[]>('admin/dashboard/velocity'),
-  getRecentFleet: () => adminApiClient.get<RecentTenantFleet[]>('admin/dashboard/recent-fleet'),
-};
+export interface DashboardQueryParams {
+  restaurantId?: string;
+  branchId?: string;
+  days?: number;
+}
 
+export const adminDashboardApi = {
+  getStats: (params?: DashboardQueryParams) =>
+    adminApiClient.get<AdminDashboardStats>('admin/dashboard/stats', {
+      restaurantId: params?.restaurantId && params.restaurantId !== 'ALL' ? params.restaurantId : undefined,
+      branchId: params?.branchId && params.branchId !== 'ALL' ? params.branchId : undefined,
+      days: params?.days,
+    }),
+
+  getVelocity: (params?: DashboardQueryParams) =>
+    adminApiClient.get<VelocityDataPoint[]>('admin/dashboard/velocity', {
+      restaurantId: params?.restaurantId && params.restaurantId !== 'ALL' ? params.restaurantId : undefined,
+      branchId: params?.branchId && params.branchId !== 'ALL' ? params.branchId : undefined,
+      days: params?.days,
+    }),
+
+  getRecentFleet: (params?: { restaurantId?: string }) =>
+    adminApiClient.get<RecentTenantFleet[]>('admin/dashboard/recent-fleet', {
+      restaurantId: params?.restaurantId && params.restaurantId !== 'ALL' ? params.restaurantId : undefined,
+    }),
+};

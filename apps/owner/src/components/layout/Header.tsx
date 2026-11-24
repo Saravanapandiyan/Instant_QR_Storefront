@@ -53,6 +53,9 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
   // Resolve current route title for breadcrumb
   const getRouteLabel = () => {
+    if (location.pathname.startsWith('/billing')) {
+      return 'Plans & Credits';
+    }
     switch (location.pathname) {
       case ROUTES.RESTAURANTS:
         return 'Restaurants';
@@ -62,6 +65,16 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         return 'Menu Catalog';
       case ROUTES.ORDERS:
         return 'Live Orders';
+      case ROUTES.KDS:
+        return 'Kitchen (KDS)';
+      case ROUTES.TV_DISPLAY:
+        return 'TV Order Board';
+      case ROUTES.ANALYTICS:
+        return 'Sales & Analytics';
+      case ROUTES.STAFF:
+        return 'Staff & Roles';
+      case ROUTES.PAYMENTS:
+        return 'Payment Settings';
       case ROUTES.SETTINGS:
         return 'Settings';
       case ROUTES.DASHBOARD:

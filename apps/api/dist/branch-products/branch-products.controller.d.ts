@@ -33,6 +33,7 @@ export declare class BranchProductsController {
                 deletedBy: string | null;
                 restaurantId: string;
                 sortOrder: number;
+                translations: import("@prisma/client/runtime/library").JsonValue | null;
             };
             branchProducts: {
                 id: string;
@@ -52,6 +53,7 @@ export declare class BranchProductsController {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
+            translations: import("@prisma/client/runtime/library").JsonValue | null;
             categoryId: string;
             basePrice: import("@prisma/client/runtime/library").Decimal;
             imageUrl: string | null;
@@ -84,6 +86,7 @@ export declare class BranchProductsController {
             deletedBy: string | null;
             restaurantId: string;
             sortOrder: number;
+            translations: import("@prisma/client/runtime/library").JsonValue | null;
         }[];
     } & {
         description: string | null;
@@ -94,6 +97,7 @@ export declare class BranchProductsController {
         themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         ownerId: string;
+        creditBalance: number;
         paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
         isActive: boolean;
         createdAt: Date;
@@ -135,11 +139,13 @@ export declare class BranchProductsController {
             deletedBy: string | null;
             restaurantId: string;
             sortOrder: number;
+            translations: import("@prisma/client/runtime/library").JsonValue | null;
         }[];
         items: {
             id: string;
             name: string;
             description: string | null;
+            translations: import("@prisma/client/runtime/library").JsonValue;
             basePrice: import("@prisma/client/runtime/library").Decimal;
             finalPrice: import("@prisma/client/runtime/library").Decimal | null;
             priceOverride: import("@prisma/client/runtime/library").Decimal | null;
@@ -147,6 +153,7 @@ export declare class BranchProductsController {
             imageUrl: string | null;
             categoryId: string;
             categoryName: string;
+            categoryTranslations: import("@prisma/client/runtime/library").JsonValue;
             isAvailable: boolean;
             isEnabled: boolean;
         }[];

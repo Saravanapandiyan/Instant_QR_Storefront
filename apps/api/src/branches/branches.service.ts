@@ -274,4 +274,184 @@ export class BranchesService {
       where: { id },
     });
   }
+
+  // 8. Tables & Table View: Get all tables for a branch with live open order status
+  async getBranchTables(branchId: string) {
+    const branch = await this.prisma.branch.findUnique({
+      where: { id: branchId },
+      include: {
+        tables: {
+          where: { isActive: true },
+          orderBy: [{ section: 'asc' }, { tableNumber: 'asc' }],
+        },
+      },
+    });
+
+    if (!branch) {
+      throw new NotFoundException(`Branch with ID "${branchId}" not found`);
+    }
+
+    let tables = branch.tables;
+
+    // If branch has no tables configured yet, auto-seed default tables (Table 1 to Table 6)
+    if (tables.length === 0) {
+      const defaultTables = [
+        { tableNumber: 'Table 1', section: 'Main Room', capacity: 2 },
+        { tableNumber: 'Table 2', section: 'Main Room', capacity: 4 },
+        { tableNumber: 'Table 3', section: 'Main Room', capacity: 4 },
+        { tableNumber: 'Table 4', section: 'Main Room', capacity: 6 },
+        { tableNumber: 'Table 5', section: 'Outdoor Patio', capacity: 4 },
+        { tableNumber: 'Table 6', section: 'Outdoor Patio', capacity: 2 },
+      ];
+
+      await this.prisma.restaurantTable.createMany({
+        data: defaultTables.map((t) => ({
+          branchId,
+          ...t,
+        })),
+        skipDuplicates: true,
+      });
+
+      tables = await this.prisma.restaurantTable.findMany({
+        where: { branchId, isActive: true },
+        orderBy: [{ section: 'asc' }, { tableNumber: 'asc' }],
+      });
+    }
+
+    // Query open orders for this branch
+    const openOrders = await this.prisma.order.findMany({
+      where: {
+        branchId,
+        status: { in: ['PENDING', 'CONFIRMED', 'PREPARING', 'READY'] },
+        tableNumber: { not: null },
+      },
+      include: {
+        items: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Match open orders to tables
+    return tables.map((t) => {
+      const normTable = t.tableNumber.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const activeOrder = openOrders.find((o) => {
+        if (!o.tableNumber) return false;
+        const normOrderTable = o.tableNumber.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return (
+          normTable === normOrderTable ||
+          normTable.includes(normOrderTable) ||
+          normOrderTable.includes(normTable)
+        );
+      });
+
+      return {
+        ...t,
+        activeOrder: activeOrder
+          ? {
+              id: activeOrder.id,
+              orderNumber: activeOrder.orderNumber,
+              status: activeOrder.status,
+              totalAmount: Number(activeOrder.totalAmount),
+              customerName: activeOrder.customerName,
+              itemCount: activeOrder.items.reduce((sum, item) => sum + item.quantity, 0),
+              elapsedSeconds: Math.floor(
+                (Date.now() - new Date(activeOrder.createdAt).getTime()) / 1000,
+              ),
+              createdAt: activeOrder.createdAt,
+            }
+          : null,
+      };
+    });
+  }
+
+  // 9. Create a table
+  async createTable(
+    branchId: string,
+    data: { tableNumber: string; section?: string; capacity?: number },
+  ) {
+    const existing = await this.prisma.restaurantTable.findUnique({
+      where: { branchId_tableNumber: { branchId, tableNumber: data.tableNumber.trim() } },
+    });
+
+    if (existing) {
+      if (!existing.isActive) {
+        return this.prisma.restaurantTable.update({
+          where: { id: existing.id },
+          data: {
+            isActive: true,
+            section: data.section?.trim() || existing.section,
+            capacity: data.capacity || existing.capacity,
+          },
+        });
+      }
+      throw new ConflictException(`Table "${data.tableNumber}" already exists in this branch.`);
+    }
+
+    return this.prisma.restaurantTable.create({
+      data: {
+        branchId,
+        tableNumber: data.tableNumber.trim(),
+        section: data.section?.trim() || 'Main Room',
+        capacity: data.capacity || 4,
+      },
+    });
+  }
+
+  // 10. Bulk create tables
+  async bulkCreateTables(
+    branchId: string,
+    data: {
+      section?: string;
+      prefix?: string;
+      startNumber: number;
+      count: number;
+      capacity?: number;
+    },
+  ) {
+    const prefix = data.prefix?.trim() || 'Table ';
+    const section = data.section?.trim() || 'Main Room';
+    const capacity = data.capacity || 4;
+    const start = data.startNumber || 1;
+    const count = Math.min(Math.max(data.count || 1, 1), 50);
+
+    const created = [];
+    for (let i = start; i < start + count; i++) {
+      const tableNumber = `${prefix}${i}`;
+      try {
+        const item = await this.prisma.restaurantTable.upsert({
+          where: { branchId_tableNumber: { branchId, tableNumber } },
+          create: { branchId, tableNumber, section, capacity },
+          update: { isActive: true, section, capacity },
+        });
+        created.push(item);
+      } catch (e) {
+        // Skip errors
+      }
+    }
+    return created;
+  }
+
+  // 11. Update table
+  async updateTable(
+    tableId: string,
+    data: { tableNumber?: string; section?: string; capacity?: number; isActive?: boolean },
+  ) {
+    return this.prisma.restaurantTable.update({
+      where: { id: tableId },
+      data: {
+        ...(data.tableNumber ? { tableNumber: data.tableNumber.trim() } : {}),
+        ...(data.section !== undefined ? { section: data.section.trim() || 'Main Room' } : {}),
+        ...(data.capacity !== undefined ? { capacity: Number(data.capacity) || 4 } : {}),
+        ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
+      },
+    });
+  }
+
+  // 12. Delete table
+  async deleteTable(tableId: string) {
+    return this.prisma.restaurantTable.update({
+      where: { id: tableId },
+      data: { isActive: false },
+    });
+  }
 }

@@ -4,6 +4,7 @@ import type {
   Branch,
   CreateBranchInput,
   UpdateBranchInput,
+  RestaurantTable,
 } from '@instant-qr/shared-types';
 
 export const branchesApi = {
@@ -33,5 +34,36 @@ export const branchesApi = {
 
   deleteBranch: async (id: string): Promise<void> => {
     return apiClient.delete<void>(API_ENDPOINTS.BRANCHES.BY_ID(id));
+  },
+
+  // Table Management & Live Status
+  getBranchTables: async (branchId: string): Promise<RestaurantTable[]> => {
+    return apiClient.get<RestaurantTable[]>(`/branches/${branchId}/tables`);
+  },
+
+  createTable: async (
+    branchId: string,
+    data: { tableNumber: string; section?: string; capacity?: number },
+  ): Promise<RestaurantTable> => {
+    return apiClient.post<RestaurantTable>(`/branches/${branchId}/tables`, data);
+  },
+
+  bulkCreateTables: async (
+    branchId: string,
+    data: { section?: string; prefix?: string; startNumber: number; count: number; capacity?: number },
+  ): Promise<RestaurantTable[]> => {
+    return apiClient.post<RestaurantTable[]>(`/branches/${branchId}/tables/bulk`, data);
+  },
+
+  updateTable: async (
+    branchId: string,
+    tableId: string,
+    data: { tableNumber?: string; section?: string; capacity?: number; isActive?: boolean },
+  ): Promise<RestaurantTable> => {
+    return apiClient.patch<RestaurantTable>(`/branches/${branchId}/tables/${tableId}`, data);
+  },
+
+  deleteTable: async (branchId: string, tableId: string): Promise<void> => {
+    return apiClient.delete<void>(`/branches/${branchId}/tables/${tableId}`);
   },
 };

@@ -17,22 +17,62 @@ let AdminDashboardService = class AdminDashboardService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async getDashboardStats() {
-        const [totalRestaurants, activeRestaurants, totalBranches, activeBranches, totalProducts, totalCategories, totalUsers, totalOwners, totalSuperAdmins,] = await Promise.all([
-            this.prisma.restaurant.count({ where: { isDeleted: false } }),
-            this.prisma.restaurant.count({ where: { isDeleted: false, isActive: true } }),
-            this.prisma.branch.count({ where: { isDeleted: false } }),
-            this.prisma.branch.count({ where: { isDeleted: false, isActive: true } }),
-            this.prisma.product.count({ where: { isDeleted: false } }),
-            this.prisma.category.count({ where: { isDeleted: false } }),
+    async getDashboardStats(restaurantId, branchId, days = 30) {
+        const isRestaurantScoped = restaurantId && restaurantId !== 'ALL';
+        const isBranchScoped = branchId && branchId !== 'ALL';
+        const dateLimit = new Date();
+        dateLimit.setDate(dateLimit.getDate() - (days || 30));
+        const restWhere = { isDeleted: false };
+        if (isRestaurantScoped) {
+            restWhere.id = restaurantId;
+        }
+        const branchWhere = { isDeleted: false };
+        if (isRestaurantScoped) {
+            branchWhere.restaurantId = restaurantId;
+        }
+        if (isBranchScoped) {
+            branchWhere.id = branchId;
+        }
+        const prodWhere = { isDeleted: false };
+        if (isRestaurantScoped) {
+            prodWhere.restaurantId = restaurantId;
+        }
+        if (isBranchScoped) {
+            prodWhere.branchProducts = { some: { branchId } };
+        }
+        const catWhere = { isDeleted: false };
+        if (isRestaurantScoped) {
+            catWhere.restaurantId = restaurantId;
+        }
+        const orderWhere = {
+            createdAt: { gte: dateLimit },
+        };
+        if (isRestaurantScoped) {
+            orderWhere.restaurantId = restaurantId;
+        }
+        if (isBranchScoped) {
+            orderWhere.branchId = branchId;
+        }
+        const [totalRestaurants, activeRestaurants, totalBranches, activeBranches, totalProducts, totalCategories, totalUsers, totalOwners, totalSuperAdmins, orderAgg,] = await Promise.all([
+            this.prisma.restaurant.count({ where: restWhere }),
+            this.prisma.restaurant.count({ where: { ...restWhere, isActive: true } }),
+            this.prisma.branch.count({ where: branchWhere }),
+            this.prisma.branch.count({ where: { ...branchWhere, isActive: true } }),
+            this.prisma.product.count({ where: prodWhere }),
+            this.prisma.category.count({ where: catWhere }),
             this.prisma.user.count({ where: { isDeleted: false } }),
             this.prisma.user.count({ where: { isDeleted: false, role: 'ADMIN' } }),
             this.prisma.user.count({ where: { isDeleted: false, role: 'SUPER_ADMIN' } }),
+            this.prisma.order.aggregate({
+                _count: { id: true },
+                _sum: { totalAmount: true },
+                where: orderWhere,
+            }),
         ]);
         const pendingRestaurants = Math.max(0, totalRestaurants - activeRestaurants);
         const availabilityRate = totalBranches > 0 ? Math.round((activeBranches / totalBranches) * 100) : 100;
-        const realOrders = 0;
-        const realGmv = 0;
+        const realOrders = orderAgg._count.id || 0;
+        const realGmv = Number(orderAgg._sum.totalAmount || 0);
         return {
             restaurants: {
                 total: totalRestaurants,
@@ -62,24 +102,65 @@ let AdminDashboardService = class AdminDashboardService {
             },
         };
     }
-    async getDashboardVelocity() {
-        const points = [];
+    async getDashboardVelocity(restaurantId, branchId, days = 30) {
+        const isRestaurantScoped = restaurantId && restaurantId !== 'ALL';
+        const isBranchScoped = branchId && branchId !== 'ALL';
+        const numDays = Math.max(1, Math.min(days || 30, 90));
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - numDays);
+        const orderWhere = {
+            createdAt: { gte: startDate },
+        };
+        if (isRestaurantScoped) {
+            orderWhere.restaurantId = restaurantId;
+        }
+        if (isBranchScoped) {
+            orderWhere.branchId = branchId;
+        }
+        const orders = await this.prisma.order.findMany({
+            where: orderWhere,
+            select: {
+                totalAmount: true,
+                createdAt: true,
+            },
+            orderBy: { createdAt: 'asc' },
+        });
+        const dayMap = new Map();
         const now = new Date();
-        for (let i = 29; i >= 0; i--) {
+        for (let i = numDays - 1; i >= 0; i--) {
             const d = new Date();
             d.setDate(now.getDate() - i);
-            const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const key = d.toISOString().slice(0, 10);
+            dayMap.set(key, { orders: 0, gmv: 0 });
+        }
+        for (const ord of orders) {
+            const key = ord.createdAt.toISOString().slice(0, 10);
+            if (dayMap.has(key)) {
+                const cur = dayMap.get(key);
+                cur.orders += 1;
+                cur.gmv += Number(ord.totalAmount || 0);
+            }
+        }
+        const points = [];
+        for (const [key, val] of dayMap.entries()) {
+            const dateObj = new Date(key);
+            const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             points.push({
                 date: dateStr,
-                orders: 0,
-                gmv: 0,
+                orders: val.orders,
+                gmv: val.gmv,
             });
         }
         return points;
     }
-    async getRecentFleet() {
+    async getRecentFleet(restaurantId) {
+        const isRestaurantScoped = restaurantId && restaurantId !== 'ALL';
+        const where = { isDeleted: false };
+        if (isRestaurantScoped) {
+            where.id = restaurantId;
+        }
         const restaurants = await this.prisma.restaurant.findMany({
-            where: { isDeleted: false },
+            where,
             orderBy: { createdAt: 'desc' },
             take: 10,
             include: {

@@ -31,7 +31,14 @@ export class OrdersController {
     return this.ordersService.createOrder(dto);
   }
 
-  // 2. Customer: Live order status tracking
+  // 2. TV Order Ready Board: Wall displays & pickup screens
+  @Get('tv-board/:targetId')
+  @ApiOperation({ summary: 'Get active cooking and ready orders for TV Order Ready Board' })
+  async getTvBoardOrders(@Param('targetId') targetId: string) {
+    return this.ordersService.getTvBoardOrders(targetId);
+  }
+
+  // 3. Customer: Live order status tracking
   @Get(':id')
   @ApiOperation({ summary: 'Get order details and status for tracking' })
   async getOrderById(@Param('id') id: string) {

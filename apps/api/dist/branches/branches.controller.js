@@ -46,6 +46,21 @@ let BranchesController = class BranchesController {
     remove(id, user) {
         return this.branchesService.remove(id, user.id);
     }
+    getTables(branchId) {
+        return this.branchesService.getBranchTables(branchId);
+    }
+    createTable(branchId, body) {
+        return this.branchesService.createTable(branchId, body);
+    }
+    bulkCreateTables(branchId, body) {
+        return this.branchesService.bulkCreateTables(branchId, body);
+    }
+    updateTable(tableId, body) {
+        return this.branchesService.updateTable(tableId, body);
+    }
+    deleteTable(tableId) {
+        return this.branchesService.deleteTable(tableId);
+    }
 };
 exports.BranchesController = BranchesController;
 __decorate([
@@ -127,6 +142,59 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], BranchesController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Get)(':branchId/tables'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all tables and active open orders for a branch' }),
+    __param(0, (0, common_1.Param)('branchId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], BranchesController.prototype, "getTables", null);
+__decorate([
+    (0, common_1.Post)(':branchId/tables'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a new table for a branch' }),
+    __param(0, (0, common_1.Param)('branchId')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], BranchesController.prototype, "createTable", null);
+__decorate([
+    (0, common_1.Post)(':branchId/tables/bulk'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Bulk generate tables for a branch' }),
+    __param(0, (0, common_1.Param)('branchId')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], BranchesController.prototype, "bulkCreateTables", null);
+__decorate([
+    (0, common_1.Patch)(':branchId/tables/:tableId'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Update table properties (number, section, capacity)' }),
+    __param(0, (0, common_1.Param)('tableId')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], BranchesController.prototype, "updateTable", null);
+__decorate([
+    (0, common_1.Delete)(':branchId/tables/:tableId'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Deactivate / delete a table' }),
+    __param(0, (0, common_1.Param)('tableId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], BranchesController.prototype, "deleteTable", null);
 exports.BranchesController = BranchesController = __decorate([
     (0, swagger_1.ApiTags)('branches'),
     (0, common_1.Controller)('branches'),

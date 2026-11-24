@@ -78,6 +78,7 @@ model Restaurant {
   description     String?
   logoUrl         String?
   defaultCurrency String      @default("INR")
+  creditBalance   Int         @default(100)
   themeConfig     Json?
   paymentConfig   Json?       // e.g. { "enableCash": true, "enableStripe": false }
   isActive        Boolean     @default(true)
@@ -94,6 +95,7 @@ model Restaurant {
   products      Product[]
   orders        Order[]
   staffMembers  StaffMember[]
+  creditLedgers CreditLedger[]
 
   @@map("restaurants")
 }
@@ -139,9 +141,10 @@ model Branch {
   deletedBy     String?
 
   // Relations
-  restaurant     Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurant     Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   branchProducts BranchProduct[]
   orders         Order[]
+  tables         RestaurantTable[]
 
   @@map("branches")
 }
@@ -154,6 +157,7 @@ model Category {
   description   String?
   sortOrder     Int         @default(0)
   isActive      Boolean     @default(true)
+  translations  Json?       @default("{}")
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   isDeleted     Boolean     @default(false)
@@ -176,6 +180,7 @@ model Product {
   description   String?
   basePrice     Decimal         @db.Decimal(10, 2)
   imageUrl      String?
+  translations  Json?           @default("{}")
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   isDeleted     Boolean         @default(false)
@@ -225,6 +230,9 @@ model Order {
   subtotal        Decimal         @db.Decimal(10, 2)
   tax             Decimal         @db.Decimal(10, 2)
   totalAmount     Decimal         @db.Decimal(10, 2)
+  prepTimeMinutes Int?            // Estimated kitchen prep duration in minutes (e.g. 15)
+  prepStartedAt   DateTime?       // Timestamp when restaurant clicked Confirm & Paid
+  estimatedReadyAt DateTime?      // Target timestamp for readiness
   cancelReason    String?
   cancelledAt     DateTime?
   createdAt       DateTime        @default(now())
@@ -255,3 +263,71 @@ model OrderItem {
 
   @@map("order_items")
 }
+
+// 12. CreditLedger Model (Append-Only Transactional Ledger)
+model CreditLedger {
+  id           String     @id @default(uuid())
+  restaurantId String
+  delta        Int        // e.g. +100 for free signup bonus, -1 for confirmed order, +500 for pack
+  reason       String     // "SIGNUP_BONUS", "ORDER_CONFIRMED", "PACK_PURCHASE", "ADMIN_ADJUSTMENT"
+  refId        String?    // reference to orderId, paymentId, etc.
+  balanceAfter Int
+  createdAt    DateTime   @default(now())
+
+  // Relations
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId])
+  @@map("credit_ledger")
+}
+
+// 13. Dynamic Pack Model (Database-Driven Credit Plans)
+model Pack {
+  id                  String   @id @default(uuid())
+  code                String   @unique // FREE, STARTER, GROWTH, PRO, BUSINESS, CHAIN
+  name                String
+  ordersCount         Int
+  bonusCredits        Int      @default(0)
+  priceUsd            Decimal  @db.Decimal(10, 2)
+  priceInr            Decimal  @db.Decimal(10, 2)
+  regionalPricingJson Json?
+  featuresJson        Json?
+  isActive            Boolean  @default(true)
+  sortOrder           Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("packs")
+}
+
+// 14. RestaurantTable Model (Branch Table / Counter with Unique QR code)
+model RestaurantTable {
+  id           String      @id @default(uuid())
+  branchId     String
+  tableNumber  String      // e.g. "Table 1", "T-02", "Patio 3"
+  section      String      @default("Main Room") // e.g. "Main Room", "Patio", "Counter", "AC Hall"
+  capacity     Int         @default(4)
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  branch       Branch      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, tableNumber])
+  @@index([branchId])
+  @@map("restaurant_tables")
+}
+
+// 15. PlatformSetting Model (Global System, Branding & Gateway Configuration)
+model PlatformSetting {
+  key         String   @id // e.g. "SITE_BRANDING", "STRIPE_CONFIG"
+  value       Json     // JSON payload
+  description String?
+  isSecret    Boolean  @default(false)
+  updatedBy   String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@map("platform_settings")
+}
+

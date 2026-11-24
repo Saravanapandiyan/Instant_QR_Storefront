@@ -18,14 +18,21 @@ class LoginDto {
 }
 exports.LoginDto = LoginDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'owner@tacobar.com', description: 'User email address' }),
-    (0, class_validator_1.IsEmail)({}, { message: 'Please provide a valid email address' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'owner@tacobar.com or 9876543210',
+        description: 'User email address or registered mobile phone number',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Please provide your email address or mobile number' }),
     __metadata("design:type", String)
 ], LoginDto.prototype, "email", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'SecurePass123!', description: 'Password' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'SecurePass123! or 1234',
+        description: 'Password or 4-digit POS PIN',
+    }),
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)({ message: 'Password is required' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Password or PIN is required' }),
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
 //# sourceMappingURL=login.dto.js.map

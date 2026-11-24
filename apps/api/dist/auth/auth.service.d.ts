@@ -59,7 +59,7 @@ export declare class AuthService {
         };
         accessToken: string;
     }>;
-    private generateToken;
+    generateToken(userId: string, email: string, role: string): string;
     updateProfile(userId: string, dto: {
         name?: string;
         email?: string;

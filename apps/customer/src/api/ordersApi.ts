@@ -14,6 +14,7 @@ export interface CreateOrderInput {
   orderType: 'DINE_IN' | 'TAKEAWAY';
   orderNotes?: string;
   paymentMethod: 'CASH' | 'STRIPE';
+  turnstileToken?: string;
   items: CreateOrderItemInput[];
 }
 
@@ -33,6 +34,9 @@ export interface PlacedOrder {
   subtotal: number;
   tax: number;
   totalAmount: number;
+  prepTimeMinutes?: number | null;
+  prepStartedAt?: string | null;
+  estimatedReadyAt?: string | null;
   cancelReason?: string | null;
   createdAt: string;
   items: {
@@ -57,6 +61,10 @@ export interface PlacedOrder {
     slug: string;
     logoUrl?: string;
     defaultCurrency: string;
+    themeConfig?: {
+      receiptWidth?: '80mm' | '58mm';
+      [key: string]: any;
+    } | null;
   };
 }
 

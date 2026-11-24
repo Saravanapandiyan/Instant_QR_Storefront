@@ -51,23 +51,76 @@ export class AuthService {
     };
   }
 
-  // 2. Login an existing user
+  // 2. Login an existing user (by email or registered mobile number)
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email.toLowerCase() },
-      include: {
-        staffProfiles: {
-          include: {
-            restaurant: {
-              select: { id: true, name: true, slug: true },
+    const rawIdentifier = (dto.email || '').trim();
+    const cleanDigits = rawIdentifier.replace(/\D/g, '');
+    const isEmail = rawIdentifier.includes('@');
+
+    let user = null;
+
+    if (isEmail) {
+      user = await this.prisma.user.findUnique({
+        where: { email: rawIdentifier.toLowerCase() },
+        include: {
+          staffProfiles: {
+            include: {
+              restaurant: {
+                select: { id: true, name: true, slug: true },
+              },
             },
           },
         },
-      },
-    });
+      });
+    }
+
+    // If not found by email or identifier looks like a phone number, search by phone
+    if (!user && cleanDigits.length >= 7) {
+      const candidates = await this.prisma.user.findMany({
+        where: {
+          phone: { not: null },
+        },
+        include: {
+          staffProfiles: {
+            include: {
+              restaurant: {
+                select: { id: true, name: true, slug: true },
+              },
+            },
+          },
+        },
+      });
+
+      user =
+        candidates.find((u) => {
+          if (!u.phone) return false;
+          const uDigits = u.phone.replace(/\D/g, '');
+          return (
+            uDigits === cleanDigits ||
+            uDigits.endsWith(cleanDigits) ||
+            cleanDigits.endsWith(uDigits)
+          );
+        }) || null;
+    }
+
+    // Fallback: try direct email match even if no '@' symbol was provided
+    if (!user && !isEmail) {
+      user = await this.prisma.user.findUnique({
+        where: { email: rawIdentifier.toLowerCase() },
+        include: {
+          staffProfiles: {
+            include: {
+              restaurant: {
+                select: { id: true, name: true, slug: true },
+              },
+            },
+          },
+        },
+      });
+    }
 
     if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid email, mobile number, or password / PIN');
     }
 
     // If staff user and all staff profiles are inactive, reject
@@ -80,11 +133,32 @@ export class AuthService {
       }
     }
 
-    // Compare raw password with stored hash
-    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+    // Compare raw password with stored hash OR 4-digit PIN for staff
+    const trimmedInput = (dto.password || '').trim();
+    let isPasswordValid = false;
+
+    if (user.passwordHash) {
+      isPasswordValid = await bcrypt.compare(trimmedInput, user.passwordHash);
+    }
+
+    // If password hash comparison failed, check if input matches any active staffProfile's pinCode
+    if (!isPasswordValid && user.staffProfiles?.length > 0) {
+      const matchingStaff = user.staffProfiles.find(
+        (sp) => sp.isActive && sp.pinCode && sp.pinCode.trim() === trimmedInput,
+      );
+      if (matchingStaff) {
+        isPasswordValid = true;
+        // Keep user.passwordHash in sync so future standard bcrypt compares succeed
+        const syncedHash = await bcrypt.hash(trimmedInput, 10);
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { passwordHash: syncedHash },
+        });
+      }
+    }
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid email, mobile number, or password / PIN');
     }
 
     const accessToken = this.generateToken(user.id, user.email, user.role);
@@ -97,7 +171,7 @@ export class AuthService {
   }
 
   // Helper: Sign JWT token
-  private generateToken(userId: string, email: string, role: string): string {
+  generateToken(userId: string, email: string, role: string): string {
     const payload = { sub: userId, email, role };
     return this.jwtService.sign(payload);
   }

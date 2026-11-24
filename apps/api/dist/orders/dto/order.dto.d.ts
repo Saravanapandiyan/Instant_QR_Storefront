@@ -12,11 +12,13 @@ export declare class CreateOrderDto {
     orderType?: OrderType;
     orderNotes?: string;
     paymentMethod?: PaymentMethod;
+    turnstileToken?: string;
     items: OrderItemDto[];
 }
 export declare class UpdateOrderStatusDto {
     status: OrderStatus;
     cancelReason?: string;
+    prepTimeMinutes?: number;
 }
 export declare class UpdatePaymentStatusDto {
     paymentStatus: PaymentStatus;

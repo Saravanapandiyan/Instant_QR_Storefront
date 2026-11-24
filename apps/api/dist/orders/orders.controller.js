@@ -27,6 +27,9 @@ let OrdersController = class OrdersController {
     async createOrder(dto) {
         return this.ordersService.createOrder(dto);
     }
+    async getTvBoardOrders(targetId) {
+        return this.ordersService.getTvBoardOrders(targetId);
+    }
     async getOrderById(id) {
         return this.ordersService.getOrderById(id);
     }
@@ -60,6 +63,14 @@ __decorate([
     __metadata("design:paramtypes", [order_dto_1.CreateOrderDto]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "createOrder", null);
+__decorate([
+    (0, common_1.Get)('tv-board/:targetId'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get active cooking and ready orders for TV Order Ready Board' }),
+    __param(0, (0, common_1.Param)('targetId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "getTvBoardOrders", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Get order details and status for tracking' }),

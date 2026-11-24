@@ -2,13 +2,18 @@ import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { branchesApi } from '../api/branchesApi';
 import { QUERY_KEYS } from '../../../constants/query-keys';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { toast } from '../../../components/ui';
 import type { Branch, CreateBranchInput, UpdateBranchInput } from '@instant-qr/shared-types';
 
 export const useBranches = (restaurantId?: string) => {
   const queryClient = useQueryClient();
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
   const branchesKey = restaurantId
     ? QUERY_KEYS.branches.byRestaurant(restaurantId)
+    : user?.id
+    ? ['branches', 'mine', user.id]
     : QUERY_KEYS.branches.mine;
 
   // 1. Fetch branches
@@ -18,6 +23,7 @@ export const useBranches = (restaurantId?: string) => {
       restaurantId
         ? branchesApi.getBranchesByRestaurant(restaurantId)
         : branchesApi.getMyBranches(),
+    enabled: Boolean(user?.id && token),
   });
 
   // Display error toast if initial get fails

@@ -2,9 +2,9 @@ import { AdminDashboardService } from './admin-dashboard.service';
 export declare class AdminDashboardController {
     private readonly dashboardService;
     constructor(dashboardService: AdminDashboardService);
-    getStats(): Promise<import("./admin-dashboard.service").AdminDashboardStats>;
-    getVelocity(): Promise<import("./admin-dashboard.service").VelocityDataPoint[]>;
-    getRecentFleet(): Promise<{
+    getStats(restaurantId?: string, branchId?: string, days?: string): Promise<import("./admin-dashboard.service").AdminDashboardStats>;
+    getVelocity(restaurantId?: string, branchId?: string, days?: string): Promise<import("./admin-dashboard.service").VelocityDataPoint[]>;
+    getRecentFleet(restaurantId?: string): Promise<{
         id: string;
         name: string;
         slug: string;

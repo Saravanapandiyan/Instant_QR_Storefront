@@ -14,6 +14,7 @@ import { Button, Input, AppLogo, ThemeToggle } from '../../../components/ui';
 import { authApi } from '../api/authApi';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useBrandStore } from '../../../store/useBrandStore';
+import { ROUTES } from '../../../constants/routes';
 
 const COUNTRY_CODES = [
   { code: '+91', label: '🇮🇳 +91 (India)' },
@@ -69,7 +70,7 @@ export const RegisterForm: React.FC = () => {
         phone: data.phone || undefined,
       });
       setAuth(response);
-      navigate('/');
+      navigate(ROUTES.QUICK_SETUP);
     } catch (err: any) {
       setServerError(err.message || 'Registration failed. Please try again.');
     }

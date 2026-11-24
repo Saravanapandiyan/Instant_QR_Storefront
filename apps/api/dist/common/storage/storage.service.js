@@ -59,9 +59,18 @@ let StorageService = class StorageService {
         if (!file) {
             throw new common_1.BadRequestException('No file provided');
         }
-        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+        const allowedMimeTypes = [
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/avif',
+            'image/svg+xml',
+            'image/x-icon',
+            'image/vnd.microsoft.icon',
+            'image/ico',
+        ];
         if (!allowedMimeTypes.includes(file.mimetype)) {
-            throw new common_1.BadRequestException('Only JPG, PNG, WebP, and AVIF images are allowed');
+            throw new common_1.BadRequestException('Only JPG, PNG, WebP, SVG, and ICO images are allowed');
         }
         const maxSize = 5 * 1024 * 1024;
         if (file.size > maxSize) {
@@ -76,6 +85,47 @@ let StorageService = class StorageService {
         const destinationPath = path.join(targetFolder, uniqueFileName);
         await fs.promises.writeFile(destinationPath, file.buffer);
         return `${folder}/${uniqueFileName}`;
+    }
+    async downloadAndStoreUrl(imageUrl, folder = 'products') {
+        if (!imageUrl || !imageUrl.startsWith('http')) {
+            return imageUrl;
+        }
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 10000);
+            const res = await fetch(imageUrl, {
+                signal: controller.signal,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)',
+                    'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                },
+            });
+            clearTimeout(timeout);
+            if (!res.ok) {
+                console.warn(`Could not download image from ${imageUrl}, status: ${res.status}`);
+                return imageUrl;
+            }
+            const arrayBuffer = await res.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const contentType = res.headers.get('content-type') || '';
+            let ext = '.jpg';
+            if (contentType.includes('png'))
+                ext = '.png';
+            else if (contentType.includes('webp'))
+                ext = '.webp';
+            const targetFolder = path.join(this.uploadDir, folder);
+            if (!fs.existsSync(targetFolder)) {
+                fs.mkdirSync(targetFolder, { recursive: true });
+            }
+            const uniqueFileName = `${Date.now()}-${(0, crypto_1.randomUUID)()}${ext}`;
+            const destinationPath = path.join(targetFolder, uniqueFileName);
+            await fs.promises.writeFile(destinationPath, buffer);
+            return `/uploads/${folder}/${uniqueFileName}`;
+        }
+        catch (err) {
+            console.warn(`Failed to download and persist image from ${imageUrl}: ${err.message}`);
+            return imageUrl;
+        }
     }
     async deleteFile(relativePath) {
         if (!relativePath)

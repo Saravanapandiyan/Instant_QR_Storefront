@@ -23,9 +23,18 @@ export class StorageService {
         }
 
         // Allowed image types
-        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+        const allowedMimeTypes = [
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/avif',
+            'image/svg+xml',
+            'image/x-icon',
+            'image/vnd.microsoft.icon',
+            'image/ico',
+        ];
         if (!allowedMimeTypes.includes(file.mimetype)) {
-            throw new BadRequestException('Only JPG, PNG, WebP, and AVIF images are allowed');
+            throw new BadRequestException('Only JPG, PNG, WebP, SVG, and ICO images are allowed');
         }
 
         // Max 5MB size limit
@@ -52,7 +61,56 @@ export class StorageService {
         return `${folder}/${uniqueFileName}`;
     }
 
-    // 2. Delete a file from disk
+    // 2. Download an external image URL and persist it to disk
+    async downloadAndStoreUrl(imageUrl: string, folder: string = 'products'): Promise<string> {
+        if (!imageUrl || !imageUrl.startsWith('http')) {
+            return imageUrl;
+        }
+
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 10000);
+
+            const res = await fetch(imageUrl, {
+                signal: controller.signal,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)',
+                    'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                },
+            });
+            clearTimeout(timeout);
+
+            if (!res.ok) {
+                console.warn(`Could not download image from ${imageUrl}, status: ${res.status}`);
+                return imageUrl;
+            }
+
+            const arrayBuffer = await res.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+
+            // Determine extension from content-type or fallback to .jpg
+            const contentType = res.headers.get('content-type') || '';
+            let ext = '.jpg';
+            if (contentType.includes('png')) ext = '.png';
+            else if (contentType.includes('webp')) ext = '.webp';
+
+            const targetFolder = path.join(this.uploadDir, folder);
+            if (!fs.existsSync(targetFolder)) {
+                fs.mkdirSync(targetFolder, { recursive: true });
+            }
+
+            const uniqueFileName = `${Date.now()}-${randomUUID()}${ext}`;
+            const destinationPath = path.join(targetFolder, uniqueFileName);
+
+            await fs.promises.writeFile(destinationPath, buffer);
+            return `/uploads/${folder}/${uniqueFileName}`;
+        } catch (err: any) {
+            console.warn(`Failed to download and persist image from ${imageUrl}: ${err.message}`);
+            return imageUrl;
+        }
+    }
+
+    // 3. Delete a file from disk
     async deleteFile(relativePath: string): Promise<boolean> {
         if (!relativePath) return false;
 

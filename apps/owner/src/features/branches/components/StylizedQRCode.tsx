@@ -15,6 +15,7 @@ interface StylizedQRCodeProps {
   excavateCenter?: boolean;
   className?: string;
   svgRef?: React.RefObject<SVGSVGElement | null>;
+  id?: string;
 }
 
 /**
@@ -58,6 +59,7 @@ export const StylizedQRCode: React.FC<StylizedQRCodeProps> = ({
   excavateCenter = true,
   className = '',
   svgRef,
+  id,
 }) => {
   const gradId = useId().replace(/:/g, '');
 
@@ -285,6 +287,7 @@ export const StylizedQRCode: React.FC<StylizedQRCodeProps> = ({
   return (
     <svg
       ref={svgRef}
+      id={id}
       xmlns="http://www.w3.org/2000/svg"
       viewBox={viewBox}
       className={className}

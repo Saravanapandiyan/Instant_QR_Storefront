@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
+define(['./workbox-c3369df1'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -81,11 +81,33 @@ define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "/index.html",
-    "revision": "0.dc2lk1m16qk"
+    "revision": "0.k2kpmbeonqc"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
     allowlist: [/^\/$/]
   }));
+  workbox.registerRoute(/^https:\/\/images\.(unsplash|pexels)\.com\/.*/i, new workbox.StaleWhileRevalidate({
+    "cacheName": "external-food-images",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 100,
+      maxAgeSeconds: 604800
+    })]
+  }), 'GET');
+  workbox.registerRoute(/\/uploads\/.*\.(?:png|jpg|jpeg|svg|webp)$/i, new workbox.StaleWhileRevalidate({
+    "cacheName": "local-dish-uploads",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 100,
+      maxAgeSeconds: 604800
+    })]
+  }), 'GET');
+  workbox.registerRoute(/\/api\/v1\/(?:branch-products|branches)\/.*/i, new workbox.NetworkFirst({
+    "cacheName": "storefront-api-cache",
+    "networkTimeoutSeconds": 4,
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 20,
+      maxAgeSeconds: 86400
+    })]
+  }), 'GET');
 
 }));

@@ -28,6 +28,7 @@ import { useRestaurants } from '../restaurants/hooks/useRestaurants';
 import { useActiveStore } from '../../store/useActiveStore';
 import { BranchModal } from './components/BranchModal';
 import { InstagramQRModal } from './components/InstagramQRModal';
+import { TableQrModal } from './components/TableQrModal';
 import { getCustomerStorefrontUrl } from '../../lib/urls';
 import { getMediaUrl, cn } from '../../lib/utils';
 import { ROUTES } from '../../constants/routes';
@@ -67,6 +68,8 @@ export const BranchesPage: React.FC = () => {
   const [deletingBranch, setDeletingBranch] = useState<Branch | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [qrModalBranch, setQrModalBranch] = useState<Branch | null>(null);
+  const [qrModalTableNumber, setQrModalTableNumber] = useState<string | null>(null);
+  const [tableQrBranch, setTableQrBranch] = useState<Branch | null>(null);
 
   const handleCopyUrl = (slug: string) => {
     const fullUrl = getCustomerStorefrontUrl(slug);
@@ -477,14 +480,26 @@ export const BranchesPage: React.FC = () => {
 
                   {/* Card Bottom Actions */}
                   <div className="px-4 py-2.5 bg-surface-2/60 border-t border-border flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => navigate(`${ROUTES.MENU}?tab=branch&branchId=${branch.id}`)}
-                      className="px-2.5 py-1 rounded-[6px] bg-surface border border-border hover:border-primary/40 text-xs font-semibold text-text flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-                    >
-                      <UtensilsCrossed size={12} className="text-primary" />
-                      <span>Stock & Menu</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`${ROUTES.MENU}?tab=branch&branchId=${branch.id}`)}
+                        className="px-2.5 py-1 rounded-[6px] bg-surface border border-border hover:border-primary/40 text-xs font-semibold text-text flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                      >
+                        <UtensilsCrossed size={12} className="text-primary" />
+                        <span>Stock & Menu</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setTableQrBranch(branch)}
+                        className="px-2.5 py-1 rounded-[6px] bg-primary/10 border border-primary/20 hover:bg-primary/20 text-xs font-bold text-primary flex items-center gap-1.5 transition-colors cursor-pointer"
+                        title="Download or Print Table QR Codes"
+                      >
+                        <QrCode size={12} />
+                        <span>Table QRs</span>
+                      </button>
+                    </div>
 
                     <div className="flex items-center gap-1">
                       {can('branches', 'edit') && (
@@ -614,6 +629,15 @@ export const BranchesPage: React.FC = () => {
                               <UtensilsCrossed size={12} className="text-primary" />
                               <span>Stock</span>
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => setTableQrBranch(branch)}
+                              className="px-2 py-1 rounded-[6px] bg-primary/10 border border-primary/20 hover:bg-primary/20 text-xs font-bold text-primary flex items-center gap-1 transition-colors cursor-pointer"
+                              title="Download or Print Table QR Codes"
+                            >
+                              <QrCode size={12} />
+                              <span>Tables</span>
+                            </button>
                             {can('branches', 'edit') && (
                               <button
                                 type="button"
@@ -646,7 +670,7 @@ export const BranchesPage: React.FC = () => {
         )}
       </div>
 
-      {/* Instagram-Style Branded Stand QR Modal */}
+      {/* Storefront QR Studio Modal */}
       <InstagramQRModal
         branch={qrModalBranch}
         restaurant={
@@ -654,8 +678,26 @@ export const BranchesPage: React.FC = () => {
           (qrModalBranch ? restaurants.find((r) => r.id === qrModalBranch.restaurantId) : null)
         }
         isOpen={Boolean(qrModalBranch)}
-        onClose={() => setQrModalBranch(null)}
+        onClose={() => {
+          setQrModalBranch(null);
+          setQrModalTableNumber(null);
+        }}
+        initialTableNumber={qrModalTableNumber}
       />
+
+      {/* Unique Table QR Codes Generation & Print Modal */}
+      {tableQrBranch && (
+        <TableQrModal
+          isOpen={Boolean(tableQrBranch)}
+          onClose={() => setTableQrBranch(null)}
+          branch={tableQrBranch}
+          onOpenStudio={(tableNumber) => {
+            setQrModalBranch(tableQrBranch);
+            setQrModalTableNumber(tableNumber || null);
+            setTableQrBranch(null);
+          }}
+        />
+      )}
 
       {/* Create / Edit Branch Modal */}
       <BranchModal

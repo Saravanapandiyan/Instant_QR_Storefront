@@ -14,10 +14,12 @@ import { Button, Input, AppLogo, ThemeToggle } from '../../../components/ui';
 import { authApi } from '../api/authApi';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useBrandStore } from '../../../store/useBrandStore';
+import { useActiveStore } from '../../../store/useActiveStore';
+import { cn } from '../../../lib/utils';
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().min(1, 'Please enter your email or mobile number'),
+  password: z.string().min(1, 'Password or 4-digit PIN is required'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -46,9 +48,18 @@ export const LoginForm: React.FC = () => {
       setServerError(null);
       const response = await authApi.login(data);
       setAuth(response);
+
+      // If logging in as staff, ensure active restaurant is set to their assigned restaurant
+      if (response.user?.role === 'STAFF' && response.user.staffProfiles?.length) {
+        const staffRestId = response.user.staffProfiles[0].restaurantId;
+        if (staffRestId) {
+          useActiveStore.getState().setActiveRestaurantId(staffRestId);
+        }
+      }
+
       navigate('/');
     } catch (err: any) {
-      setServerError(err.message || 'Invalid email or password. Please try again.');
+      setServerError(err.message || 'Invalid email, mobile number, or password / PIN.');
     }
   };
 
@@ -124,7 +135,7 @@ export const LoginForm: React.FC = () => {
               Welcome back
             </h1>
             <p className="text-xs sm:text-sm text-muted mt-1">
-              Sign in to manage your branches, menus, and orders.
+              Sign in to manage your restaurant, branches, menus, and orders.
             </p>
           </div>
 
@@ -138,19 +149,19 @@ export const LoginForm: React.FC = () => {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <Input
-              label="Email Address"
-              type="email"
-              placeholder="owner@restaurant.com"
+              label="Email or Mobile Number"
+              type="text"
+              placeholder="e.g. name@restaurant.com or 9876543210"
               required
-              autoComplete="email"
+              autoComplete="username"
               error={errors.email?.message}
               {...register('email')}
             />
 
             <Input
-              label="Password"
+              label="Password or 4-Digit PIN"
               type={showPassword ? 'text' : 'password'}
-              placeholder="••••••••"
+              placeholder="Enter password or 4-digit PIN"
               required
               autoComplete="current-password"
               error={errors.password?.message}
@@ -175,6 +186,10 @@ export const LoginForm: React.FC = () => {
               }
               {...register('password')}
             />
+
+            <p className="text-[11px] text-muted -mt-2 leading-relaxed">
+              💡 You can sign in using your account password or your 4-digit POS / Kitchen PIN.
+            </p>
 
             <div className="pt-1">
               <Button

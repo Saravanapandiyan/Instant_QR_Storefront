@@ -92,6 +92,10 @@
   color-scheme: dark;
 }
 
+html {
+  font-size: 17px;
+}
+
 html,
 body {
   font-family: var(--font-body);
@@ -146,11 +150,12 @@ h6 {
 }
 
 /* ==========================================================================
-   THERMAL RECEIPT PRINT MEDIA RULES
-   Ensures only the dedicated thermal receipt portal is sent to the printer,
+   PRINT MEDIA RULES (Thermal Receipts & Table Standees)
+   Ensures only the dedicated portals are sent to the printer,
    hiding all dashboard UI, sidebars, modals, and toolbars.
    ========================================================================== */
-#thermal-receipt-portal {
+#thermal-receipt-portal,
+#table-standee-portal {
   display: none;
 }
 
@@ -174,6 +179,19 @@ h6 {
     position: static !important;
     margin: 0 auto !important;
     padding: 2mm 3mm 8mm 3mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Show table standees cleanly on page */
+  #table-standee-portal {
+    display: block !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 6mm !important;
     background: #ffffff !important;
     color: #000000 !important;
     box-shadow: none !important;

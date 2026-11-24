@@ -40,8 +40,59 @@ export interface VelocityDataPoint {
 export class AdminDashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // 1. Live Aggregate Statistics across the entire SaaS fleet
-  async getDashboardStats(): Promise<AdminDashboardStats> {
+  // 1. Scoped Aggregate Statistics across the fleet or specific brand/outlet
+  async getDashboardStats(
+    restaurantId?: string,
+    branchId?: string,
+    days = 30,
+  ): Promise<AdminDashboardStats> {
+    const isRestaurantScoped = restaurantId && restaurantId !== 'ALL';
+    const isBranchScoped = branchId && branchId !== 'ALL';
+
+    // Date range filter
+    const dateLimit = new Date();
+    dateLimit.setDate(dateLimit.getDate() - (days || 30));
+
+    // Restaurant counts
+    const restWhere: any = { isDeleted: false };
+    if (isRestaurantScoped) {
+      restWhere.id = restaurantId;
+    }
+
+    // Branch counts
+    const branchWhere: any = { isDeleted: false };
+    if (isRestaurantScoped) {
+      branchWhere.restaurantId = restaurantId;
+    }
+    if (isBranchScoped) {
+      branchWhere.id = branchId;
+    }
+
+    // Catalog counts
+    const prodWhere: any = { isDeleted: false };
+    if (isRestaurantScoped) {
+      prodWhere.restaurantId = restaurantId;
+    }
+    if (isBranchScoped) {
+      prodWhere.branchProducts = { some: { branchId } };
+    }
+
+    const catWhere: any = { isDeleted: false };
+    if (isRestaurantScoped) {
+      catWhere.restaurantId = restaurantId;
+    }
+
+    // Orders & Sales counts
+    const orderWhere: any = {
+      createdAt: { gte: dateLimit },
+    };
+    if (isRestaurantScoped) {
+      orderWhere.restaurantId = restaurantId;
+    }
+    if (isBranchScoped) {
+      orderWhere.branchId = branchId;
+    }
+
     const [
       totalRestaurants,
       activeRestaurants,
@@ -52,24 +103,29 @@ export class AdminDashboardService {
       totalUsers,
       totalOwners,
       totalSuperAdmins,
+      orderAgg,
     ] = await Promise.all([
-      this.prisma.restaurant.count({ where: { isDeleted: false } }),
-      this.prisma.restaurant.count({ where: { isDeleted: false, isActive: true } }),
-      this.prisma.branch.count({ where: { isDeleted: false } }),
-      this.prisma.branch.count({ where: { isDeleted: false, isActive: true } }),
-      this.prisma.product.count({ where: { isDeleted: false } }),
-      this.prisma.category.count({ where: { isDeleted: false } }),
+      this.prisma.restaurant.count({ where: restWhere }),
+      this.prisma.restaurant.count({ where: { ...restWhere, isActive: true } }),
+      this.prisma.branch.count({ where: branchWhere }),
+      this.prisma.branch.count({ where: { ...branchWhere, isActive: true } }),
+      this.prisma.product.count({ where: prodWhere }),
+      this.prisma.category.count({ where: catWhere }),
       this.prisma.user.count({ where: { isDeleted: false } }),
       this.prisma.user.count({ where: { isDeleted: false, role: 'ADMIN' } }),
       this.prisma.user.count({ where: { isDeleted: false, role: 'SUPER_ADMIN' } }),
+      this.prisma.order.aggregate({
+        _count: { id: true },
+        _sum: { totalAmount: true },
+        where: orderWhere,
+      }),
     ]);
 
     const pendingRestaurants = Math.max(0, totalRestaurants - activeRestaurants);
     const availabilityRate = totalBranches > 0 ? Math.round((activeBranches / totalBranches) * 100) : 100;
 
-    // Real live database orders (0 until orders are logged in Phase 6)
-    const realOrders = 0;
-    const realGmv = 0;
+    const realOrders = orderAgg._count.id || 0;
+    const realGmv = Number(orderAgg._sum.totalAmount || 0);
 
     return {
       restaurants: {
@@ -101,31 +157,83 @@ export class AdminDashboardService {
     };
   }
 
-  // 2. 30-Day Real Velocity Timeline
-  async getDashboardVelocity(): Promise<VelocityDataPoint[]> {
-    const points: VelocityDataPoint[] = [];
+  // 2. Real Velocity Timeline with real daily order/GMV points
+  async getDashboardVelocity(
+    restaurantId?: string,
+    branchId?: string,
+    days = 30,
+  ): Promise<VelocityDataPoint[]> {
+    const isRestaurantScoped = restaurantId && restaurantId !== 'ALL';
+    const isBranchScoped = branchId && branchId !== 'ALL';
+
+    const numDays = Math.max(1, Math.min(days || 30, 90));
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - numDays);
+
+    const orderWhere: any = {
+      createdAt: { gte: startDate },
+    };
+    if (isRestaurantScoped) {
+      orderWhere.restaurantId = restaurantId;
+    }
+    if (isBranchScoped) {
+      orderWhere.branchId = branchId;
+    }
+
+    // Fetch orders in period
+    const orders = await this.prisma.order.findMany({
+      where: orderWhere,
+      select: {
+        totalAmount: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const dayMap = new Map<string, { orders: number; gmv: number }>();
     const now = new Date();
 
-    for (let i = 29; i >= 0; i--) {
+    for (let i = numDays - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(now.getDate() - i);
-      const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const key = d.toISOString().slice(0, 10);
+      dayMap.set(key, { orders: 0, gmv: 0 });
+    }
 
-      // Live real database orders per day (currently 0)
+    for (const ord of orders) {
+      const key = ord.createdAt.toISOString().slice(0, 10);
+      if (dayMap.has(key)) {
+        const cur = dayMap.get(key)!;
+        cur.orders += 1;
+        cur.gmv += Number(ord.totalAmount || 0);
+      }
+    }
+
+    const points: VelocityDataPoint[] = [];
+    for (const [key, val] of dayMap.entries()) {
+      const dateObj = new Date(key);
+      const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       points.push({
         date: dateStr,
-        orders: 0,
-        gmv: 0,
+        orders: val.orders,
+        gmv: val.gmv,
       });
     }
 
     return points;
   }
 
-  // 3. Recent Tenant Fleet Overview
-  async getRecentFleet() {
+  // 3. Recent Tenant Fleet Overview (scoped if restaurantId provided)
+  async getRecentFleet(restaurantId?: string) {
+    const isRestaurantScoped = restaurantId && restaurantId !== 'ALL';
+
+    const where: any = { isDeleted: false };
+    if (isRestaurantScoped) {
+      where.id = restaurantId;
+    }
+
     const restaurants = await this.prisma.restaurant.findMany({
-      where: { isDeleted: false },
+      where,
       orderBy: { createdAt: 'desc' },
       take: 10,
       include: {
@@ -170,4 +278,3 @@ export class AdminDashboardService {
     }));
   }
 }
-

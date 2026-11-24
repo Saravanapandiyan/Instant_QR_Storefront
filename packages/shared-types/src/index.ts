@@ -91,6 +91,7 @@ export interface StorefrontThemePalette {
 
 export interface StorefrontThemeConfig {
   presetId?: string;     // E.g. 'terracotta' | 'emerald' | 'crimson' | 'amber' | 'espresso' | 'ocean' | 'midnight' | 'custom'
+  receiptWidth?: '80mm' | '58mm';
   light: StorefrontThemePalette;
   dark: StorefrontThemePalette;
 }
@@ -104,6 +105,7 @@ export interface Restaurant {
   description: string | null;
   logoUrl: string | null;
   defaultCurrency?: string;
+  creditBalance?: number;
   themeConfig?: StorefrontThemeConfig | null;
   isActive: boolean;
   createdAt: string | Date;
@@ -122,6 +124,7 @@ export interface CreateRestaurantInput {
   description?: string;
   logoUrl?: string;
   defaultCurrency?: string;
+  creditBalance?: number;
   themeConfig?: StorefrontThemeConfig | null;
 }
 
@@ -163,6 +166,7 @@ export interface Category {
   description: string | null;
   sortOrder: number;
   isActive: boolean;
+  translations?: Record<string, { name?: string; description?: string }> | null;
   createdAt: string | Date;
   updatedAt: string | Date;
   _count?: {
@@ -188,6 +192,7 @@ export interface Product {
   description: string | null;
   basePrice: number | string;
   imageUrl: string | null;
+  translations?: Record<string, { name?: string; description?: string }> | null;
   createdAt: string | Date;
   updatedAt: string | Date;
   category?: Category;
@@ -352,4 +357,42 @@ export interface UpdateStaffInput {
   assignedBranches?: string[];
   permissions?: StaffPermissions;
   isActive?: boolean;
+}
+
+// 10. Restaurant Table Object (Table QR Ordering & Floor Management)
+export interface RestaurantTable {
+  id: string;
+  branchId: string;
+  tableNumber: string;
+  section: string;
+  capacity: number;
+  isActive: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  activeOrder?: {
+    id: string;
+    orderNumber: number;
+    status: string;
+    totalAmount: number;
+    customerName: string;
+    itemCount: number;
+    elapsedSeconds: number;
+    createdAt: string;
+  } | null;
+}
+
+export interface CreateTableInput {
+  branchId: string;
+  tableNumber: string;
+  section?: string;
+  capacity?: number;
+}
+
+export interface BulkCreateTablesInput {
+  branchId: string;
+  section?: string;
+  prefix?: string;
+  startNumber: number;
+  count: number;
+  capacity?: number;
 }

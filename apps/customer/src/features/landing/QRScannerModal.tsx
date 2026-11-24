@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, X, ArrowRight, AlertCircle, RefreshCw } from 'lucide-react';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface QRScannerModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface QRScannerModalProps {
 }
 
 export function QRScannerModal({ isOpen, onClose }: QRScannerModalProps) {
+  useBodyScrollLock(isOpen);
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);

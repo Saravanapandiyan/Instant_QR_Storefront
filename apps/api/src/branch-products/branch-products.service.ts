@@ -223,6 +223,7 @@ export class BranchProductsService {
           id: p.id,
           name: p.name,
           description: p.description,
+          translations: p.translations,
           basePrice: p.basePrice,
           finalPrice,
           priceOverride: override?.priceOverride ?? null,
@@ -230,6 +231,7 @@ export class BranchProductsService {
           imageUrl: p.imageUrl,
           categoryId: p.categoryId,
           categoryName: p.category.name,
+          categoryTranslations: p.category.translations,
           isAvailable,
           isEnabled,
         };

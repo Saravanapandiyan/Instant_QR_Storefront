@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -15,12 +16,22 @@ import { OrderStatus, PaymentMethod, PaymentStatus, OrderType } from '@prisma/cl
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   // 1. Customer: Place new order with Cash
   async createOrder(dto: CreateOrderDto) {
     if (!dto.items || dto.items.length === 0) {
       throw new BadRequestException('Order must contain at least one item.');
+    }
+
+    // Verify Cloudflare Turnstile invisible CAPTCHA to stop bot orders
+    if (dto.turnstileToken) {
+      const isHuman = await this.verifyTurnstile(dto.turnstileToken);
+      if (!isHuman) {
+        throw new BadRequestException('Human verification failed. Automated bots are not allowed.');
+      }
     }
 
     // Resolve branch & restaurant
@@ -105,9 +116,18 @@ export class OrdersService {
     const tax = taxRate > 0 ? Math.round(subtotal * (taxRate / 100) * 100) / 100 : 0;
     const totalAmount = Math.round((subtotal + tax) * 100) / 100;
 
+    // Calculate next orderNumber scoped per restaurant
+    const lastOrderForRestaurant = await this.prisma.order.findFirst({
+      where: { restaurantId: branch.restaurantId },
+      orderBy: { orderNumber: 'desc' },
+      select: { orderNumber: true },
+    });
+    const nextOrderNumber = (lastOrderForRestaurant?.orderNumber ?? 0) + 1;
+
     // Create Order with nested items
     const order = await this.prisma.order.create({
       data: {
+        orderNumber: nextOrderNumber,
         restaurantId: branch.restaurantId,
         branchId: branch.id,
         tableNumber: dto.tableNumber?.trim() || null,
@@ -143,6 +163,8 @@ export class OrdersService {
             name: true,
             slug: true,
             currency: true,
+            address: true,
+            phone: true,
           },
         },
         restaurant: {
@@ -151,6 +173,7 @@ export class OrdersService {
             name: true,
             slug: true,
             defaultCurrency: true,
+            themeConfig: true,
           },
         },
       },
@@ -195,6 +218,7 @@ export class OrdersService {
             slug: true,
             logoUrl: true,
             defaultCurrency: true,
+            themeConfig: true,
           },
         },
       },
@@ -335,6 +359,86 @@ export class OrdersService {
     };
   }
 
+  // 3.1 Public TV Ready Board (Wall displays / pickup TV)
+  async getTvBoardOrders(targetId: string) {
+    let restaurantId: string | null = null;
+    let branchId: string | null = null;
+    let restaurantName = 'Kitchen';
+    let branchName = 'Main Counter';
+
+    // 1. Try finding as Branch
+    const branch = await this.prisma.branch.findFirst({
+      where: {
+        OR: [{ id: targetId }, { slug: targetId }],
+        isDeleted: false,
+      },
+      include: {
+        restaurant: {
+          select: { id: true, name: true, slug: true, logoUrl: true },
+        },
+      },
+    });
+
+    if (branch) {
+      restaurantId = branch.restaurantId;
+      branchId = branch.id;
+      restaurantName = branch.restaurant?.name || 'Restaurant';
+      branchName = branch.name;
+    } else {
+      // 2. Try finding as Restaurant directly
+      const restaurant = await this.prisma.restaurant.findUnique({
+        where: { id: targetId },
+        select: { id: true, name: true, slug: true, logoUrl: true },
+      });
+      if (restaurant) {
+        restaurantId = restaurant.id;
+        restaurantName = restaurant.name;
+      }
+    }
+
+    if (!restaurantId) {
+      throw new NotFoundException('Branch or Restaurant not found for TV board.');
+    }
+
+    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+    const whereClause: any = {
+      restaurantId,
+      status: { in: [OrderStatus.CONFIRMED, OrderStatus.PREPARING, OrderStatus.READY] },
+      createdAt: { gte: twelveHoursAgo },
+    };
+
+    if (branchId) {
+      whereClause.branchId = branchId;
+    }
+
+    const orders = await this.prisma.order.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        orderNumber: true,
+        orderType: true,
+        tableNumber: true,
+        customerName: true,
+        status: true,
+        prepTimeMinutes: true,
+        prepStartedAt: true,
+        estimatedReadyAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 50,
+    });
+
+    return {
+      restaurantName,
+      branchName,
+      restaurantId,
+      branchId,
+      orders,
+    };
+  }
+
   // 4. Owner: Update order status (Accept, Prep, Ready, Complete, Cancel)
   async updateOrderStatus(
     orderId: string,
@@ -369,25 +473,106 @@ export class OrdersService {
     if (dto.status === OrderStatus.CANCELLED) {
       updateData.cancelReason = dto.cancelReason || 'Cancelled by restaurant';
       updateData.cancelledAt = new Date();
+    } else if (dto.status === OrderStatus.CONFIRMED || dto.status === OrderStatus.PREPARING) {
+      const now = new Date();
+      const prepMinutes = dto.prepTimeMinutes || order.prepTimeMinutes || 15;
+      updateData.prepTimeMinutes = prepMinutes;
+      if (!order.prepStartedAt) {
+        updateData.prepStartedAt = now;
+      }
+      updateData.estimatedReadyAt = new Date(now.getTime() + prepMinutes * 60 * 1000);
+      // Auto-mark payment as PAID when staff accepts/confirms order at counter
+      if (order.status === OrderStatus.PENDING || order.paymentStatus === PaymentStatus.PENDING) {
+        updateData.paymentStatus = PaymentStatus.PAID;
+      }
     }
 
-    const updated = await this.prisma.order.update({
-      where: { id: orderId },
-      data: updateData,
-      include: {
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                imageUrl: true,
+    const updated = await this.prisma.$transaction(async (tx) => {
+      // Atomic 1-Credit Deduction on Order Acceptance / Kitchen Prep
+      if (
+        (dto.status === OrderStatus.CONFIRMED || dto.status === OrderStatus.PREPARING) &&
+        order.status === OrderStatus.PENDING
+      ) {
+        const existingDebit = await tx.creditLedger.findFirst({
+          where: {
+            restaurantId: order.restaurantId,
+            refId: order.id,
+            reason: 'ORDER_CONFIRMED',
+          },
+        });
+
+        if (!existingDebit) {
+          const currentRest = await tx.restaurant.findUnique({
+            where: { id: order.restaurantId },
+            select: { creditBalance: true, name: true },
+          });
+
+          // Grace buffer rule: Up to 20 orders allowed after balance hits 0 (balance down to -20)
+          if ((currentRest?.creditBalance ?? 0) <= -20) {
+            throw new BadRequestException(
+              `Credit balance exhausted (-20 grace buffer orders used). Please top up credits to accept new orders.`,
+            );
+          }
+
+          const rest = await tx.restaurant.update({
+            where: { id: order.restaurantId },
+            data: {
+              creditBalance: {
+                decrement: 1,
+              },
+            },
+            select: { creditBalance: true },
+          });
+
+          await tx.creditLedger.create({
+            data: {
+              restaurantId: order.restaurantId,
+              delta: -1,
+              reason: 'ORDER_CONFIRMED',
+              refId: order.id,
+              balanceAfter: rest.creditBalance,
+            },
+          });
+        }
+      }
+
+      return tx.order.update({
+        where: { id: orderId },
+        data: updateData,
+        include: {
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  imageUrl: true,
+                },
               },
             },
           },
+          branch: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              currency: true,
+              address: true,
+              phone: true,
+            },
+          },
+          restaurant: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              logoUrl: true,
+              defaultCurrency: true,
+              creditBalance: true,
+            },
+          },
         },
-        branch: { select: { id: true, name: true } },
-      },
+      });
     });
 
     return {
@@ -537,5 +722,27 @@ export class OrdersService {
       enableStripe: false,
       stripeStatus: 'COMING_SOON',
     };
+  }
+
+  // Cloudflare Turnstile token verification helper
+  private async verifyTurnstile(token: string): Promise<boolean> {
+    const secretKey =
+      process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA'; // Cloudflare official testing secret
+    try {
+      const formData = new URLSearchParams();
+      formData.append('secret', secretKey);
+      formData.append('response', token);
+
+      const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString(),
+      });
+      const data = await res.json();
+      return Boolean(data.success);
+    } catch (err: any) {
+      this.logger.warn(`Turnstile check network error: ${err.message}`);
+      return true; // Fail open on network errors so genuine diners are not blocked
+    }
   }
 }

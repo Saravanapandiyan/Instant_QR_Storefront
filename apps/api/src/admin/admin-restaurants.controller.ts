@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, Query, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Query, Body, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
@@ -34,6 +34,28 @@ export class AdminRestaurantsController {
     @Body() body: { isActive: boolean },
   ) {
     return this.restaurantsService.updateRestaurantStatus(id, body.isActive);
+  }
+
+  @Post(':id/credits/adjust')
+  @ApiOperation({ summary: 'Super Admin: Manually adjust restaurant credits (+/-)' })
+  adjustRestaurantCredits(
+    @Param('id') id: string,
+    @Body() body: { delta: number; reason: string; notes?: string },
+    @Request() req: any,
+  ) {
+    return this.restaurantsService.adjustRestaurantCredits(
+      id,
+      body.delta,
+      body.reason,
+      body.notes,
+      req.user.id,
+    );
+  }
+
+  @Post(':id/impersonate')
+  @ApiOperation({ summary: 'Super Admin: Impersonate restaurant owner' })
+  impersonateRestaurant(@Param('id') id: string) {
+    return this.restaurantsService.impersonateRestaurant(id);
   }
 }
 

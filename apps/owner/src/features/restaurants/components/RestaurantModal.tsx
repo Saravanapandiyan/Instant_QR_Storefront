@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Utensils, ArrowRight, X, AlertCircle, Upload, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { Button, Input } from '../../../components/ui';
 import { getMediaUrl } from '../../../lib/utils';
+import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 import { SUPPORTED_CURRENCIES } from '../../../config/currencies.config';
 import type { Restaurant } from '@instant-qr/shared-types';
 
@@ -29,6 +30,7 @@ export const RestaurantModal: React.FC<RestaurantModalProps> = ({
   restaurant,
   onSubmit,
 }) => {
+  useBodyScrollLock(isOpen);
   const [serverError, setServerError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);

@@ -38,6 +38,7 @@ export const API_ENDPOINTS = {
   },
   ORDERS: {
     BASE: '/orders',
+    TV_BOARD: (targetId: string) => `/orders/tv-board/${targetId}`,
     BY_RESTAURANT: (restaurantId: string) => `/orders/restaurant/${restaurantId}`,
     UPDATE_STATUS: (orderId: string) => `/orders/${orderId}/status`,
     UPDATE_PAYMENT: (orderId: string) => `/orders/${orderId}/payment`,

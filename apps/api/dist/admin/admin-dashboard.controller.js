@@ -8,6 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminDashboardController = void 0;
 const common_1 = require("@nestjs/common");
@@ -20,14 +23,14 @@ let AdminDashboardController = class AdminDashboardController {
     constructor(dashboardService) {
         this.dashboardService = dashboardService;
     }
-    getStats() {
-        return this.dashboardService.getDashboardStats();
+    getStats(restaurantId, branchId, days) {
+        return this.dashboardService.getDashboardStats(restaurantId, branchId, days ? parseInt(days, 10) : 30);
     }
-    getVelocity() {
-        return this.dashboardService.getDashboardVelocity();
+    getVelocity(restaurantId, branchId, days) {
+        return this.dashboardService.getDashboardVelocity(restaurantId, branchId, days ? parseInt(days, 10) : 30);
     }
-    getRecentFleet() {
-        return this.dashboardService.getRecentFleet();
+    getRecentFleet(restaurantId) {
+        return this.dashboardService.getRecentFleet(restaurantId);
     }
 };
 exports.AdminDashboardController = AdminDashboardController;
@@ -35,26 +38,31 @@ __decorate([
     (0, common_1.Get)('stats'),
     (0, swagger_1.ApiOperation)({ summary: 'Get aggregated platform statistics for Admin Dashboard' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Platform counts and growth metrics.' }),
-    (0, swagger_1.ApiResponse)({ status: 401, description: 'Unauthorized' }),
-    (0, swagger_1.ApiResponse)({ status: 403, description: 'Forbidden (Requires SUPER_ADMIN role)' }),
+    __param(0, (0, common_1.Query)('restaurantId')),
+    __param(1, (0, common_1.Query)('branchId')),
+    __param(2, (0, common_1.Query)('days')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", void 0)
 ], AdminDashboardController.prototype, "getStats", null);
 __decorate([
     (0, common_1.Get)('velocity'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get 30-day order and GMV velocity telemetry' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Get order and GMV velocity telemetry for date range' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Timeline points for charting.' }),
+    __param(0, (0, common_1.Query)('restaurantId')),
+    __param(1, (0, common_1.Query)('branchId')),
+    __param(2, (0, common_1.Query)('days')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", void 0)
 ], AdminDashboardController.prototype, "getVelocity", null);
 __decorate([
     (0, common_1.Get)('recent-fleet'),
     (0, swagger_1.ApiOperation)({ summary: 'Get recently onboarded restaurant tenants and fleet size' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'List of recent restaurant fleets.' }),
+    __param(0, (0, common_1.Query)('restaurantId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], AdminDashboardController.prototype, "getRecentFleet", null);
 exports.AdminDashboardController = AdminDashboardController = __decorate([

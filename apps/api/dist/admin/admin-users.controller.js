@@ -29,6 +29,15 @@ let AdminUsersController = class AdminUsersController {
     getUserById(id) {
         return this.usersService.getUserById(id);
     }
+    createUser(body) {
+        return this.usersService.createUser(body);
+    }
+    updateUser(id, body, req) {
+        return this.usersService.updateUser(id, body, req.user?.id);
+    }
+    deleteUser(id, req) {
+        return this.usersService.deleteUser(id, req.user?.id);
+    }
     updateUserRole(id, body, req) {
         return this.usersService.updateUserRole(id, body.role, req.user?.id);
     }
@@ -56,6 +65,33 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], AdminUsersController.prototype, "getUserById", null);
+__decorate([
+    (0, common_1.Post)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Super Admin: Create a new user account' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [admin_users_service_1.CreateAdminUserDto]),
+    __metadata("design:returntype", void 0)
+], AdminUsersController.prototype, "createUser", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Super Admin: Update user profile and reset credentials' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, admin_users_service_1.UpdateAdminUserDto, Object]),
+    __metadata("design:returntype", void 0)
+], AdminUsersController.prototype, "updateUser", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Super Admin: Delete/deactivate user' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], AdminUsersController.prototype, "deleteUser", null);
 __decorate([
     (0, common_1.Patch)(':id/role'),
     (0, swagger_1.ApiOperation)({ summary: 'Update a user role (SUPER_ADMIN, ADMIN, MANAGER, STAFF)' }),

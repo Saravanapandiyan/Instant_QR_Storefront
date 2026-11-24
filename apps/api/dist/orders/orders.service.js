@@ -8,19 +8,27 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var OrdersService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrdersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
-let OrdersService = class OrdersService {
+let OrdersService = OrdersService_1 = class OrdersService {
     prisma;
+    logger = new common_1.Logger(OrdersService_1.name);
     constructor(prisma) {
         this.prisma = prisma;
     }
     async createOrder(dto) {
         if (!dto.items || dto.items.length === 0) {
             throw new common_1.BadRequestException('Order must contain at least one item.');
+        }
+        if (dto.turnstileToken) {
+            const isHuman = await this.verifyTurnstile(dto.turnstileToken);
+            if (!isHuman) {
+                throw new common_1.BadRequestException('Human verification failed. Automated bots are not allowed.');
+            }
         }
         const branch = await this.prisma.branch.findFirst({
             where: {
@@ -86,8 +94,15 @@ let OrdersService = class OrdersService {
             : 0;
         const tax = taxRate > 0 ? Math.round(subtotal * (taxRate / 100) * 100) / 100 : 0;
         const totalAmount = Math.round((subtotal + tax) * 100) / 100;
+        const lastOrderForRestaurant = await this.prisma.order.findFirst({
+            where: { restaurantId: branch.restaurantId },
+            orderBy: { orderNumber: 'desc' },
+            select: { orderNumber: true },
+        });
+        const nextOrderNumber = (lastOrderForRestaurant?.orderNumber ?? 0) + 1;
         const order = await this.prisma.order.create({
             data: {
+                orderNumber: nextOrderNumber,
                 restaurantId: branch.restaurantId,
                 branchId: branch.id,
                 tableNumber: dto.tableNumber?.trim() || null,
@@ -123,6 +138,8 @@ let OrdersService = class OrdersService {
                         name: true,
                         slug: true,
                         currency: true,
+                        address: true,
+                        phone: true,
                     },
                 },
                 restaurant: {
@@ -131,6 +148,7 @@ let OrdersService = class OrdersService {
                         name: true,
                         slug: true,
                         defaultCurrency: true,
+                        themeConfig: true,
                     },
                 },
             },
@@ -172,6 +190,7 @@ let OrdersService = class OrdersService {
                         slug: true,
                         logoUrl: true,
                         defaultCurrency: true,
+                        themeConfig: true,
                     },
                 },
             },
@@ -285,6 +304,76 @@ let OrdersService = class OrdersService {
             orders,
         };
     }
+    async getTvBoardOrders(targetId) {
+        let restaurantId = null;
+        let branchId = null;
+        let restaurantName = 'Kitchen';
+        let branchName = 'Main Counter';
+        const branch = await this.prisma.branch.findFirst({
+            where: {
+                OR: [{ id: targetId }, { slug: targetId }],
+                isDeleted: false,
+            },
+            include: {
+                restaurant: {
+                    select: { id: true, name: true, slug: true, logoUrl: true },
+                },
+            },
+        });
+        if (branch) {
+            restaurantId = branch.restaurantId;
+            branchId = branch.id;
+            restaurantName = branch.restaurant?.name || 'Restaurant';
+            branchName = branch.name;
+        }
+        else {
+            const restaurant = await this.prisma.restaurant.findUnique({
+                where: { id: targetId },
+                select: { id: true, name: true, slug: true, logoUrl: true },
+            });
+            if (restaurant) {
+                restaurantId = restaurant.id;
+                restaurantName = restaurant.name;
+            }
+        }
+        if (!restaurantId) {
+            throw new common_1.NotFoundException('Branch or Restaurant not found for TV board.');
+        }
+        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+        const whereClause = {
+            restaurantId,
+            status: { in: [client_1.OrderStatus.CONFIRMED, client_1.OrderStatus.PREPARING, client_1.OrderStatus.READY] },
+            createdAt: { gte: twelveHoursAgo },
+        };
+        if (branchId) {
+            whereClause.branchId = branchId;
+        }
+        const orders = await this.prisma.order.findMany({
+            where: whereClause,
+            select: {
+                id: true,
+                orderNumber: true,
+                orderType: true,
+                tableNumber: true,
+                customerName: true,
+                status: true,
+                prepTimeMinutes: true,
+                prepStartedAt: true,
+                estimatedReadyAt: true,
+                createdAt: true,
+                updatedAt: true,
+            },
+            orderBy: { updatedAt: 'desc' },
+            take: 50,
+        });
+        return {
+            restaurantName,
+            branchName,
+            restaurantId,
+            branchId,
+            orders,
+        };
+    }
     async updateOrderStatus(orderId, ownerUserId, dto) {
         const order = await this.prisma.order.findUnique({
             where: { id: orderId },
@@ -310,23 +399,93 @@ let OrdersService = class OrdersService {
             updateData.cancelReason = dto.cancelReason || 'Cancelled by restaurant';
             updateData.cancelledAt = new Date();
         }
-        const updated = await this.prisma.order.update({
-            where: { id: orderId },
-            data: updateData,
-            include: {
-                items: {
-                    include: {
-                        product: {
-                            select: {
-                                id: true,
-                                name: true,
-                                imageUrl: true,
+        else if (dto.status === client_1.OrderStatus.CONFIRMED || dto.status === client_1.OrderStatus.PREPARING) {
+            const now = new Date();
+            const prepMinutes = dto.prepTimeMinutes || order.prepTimeMinutes || 15;
+            updateData.prepTimeMinutes = prepMinutes;
+            if (!order.prepStartedAt) {
+                updateData.prepStartedAt = now;
+            }
+            updateData.estimatedReadyAt = new Date(now.getTime() + prepMinutes * 60 * 1000);
+            if (order.status === client_1.OrderStatus.PENDING || order.paymentStatus === client_1.PaymentStatus.PENDING) {
+                updateData.paymentStatus = client_1.PaymentStatus.PAID;
+            }
+        }
+        const updated = await this.prisma.$transaction(async (tx) => {
+            if ((dto.status === client_1.OrderStatus.CONFIRMED || dto.status === client_1.OrderStatus.PREPARING) &&
+                order.status === client_1.OrderStatus.PENDING) {
+                const existingDebit = await tx.creditLedger.findFirst({
+                    where: {
+                        restaurantId: order.restaurantId,
+                        refId: order.id,
+                        reason: 'ORDER_CONFIRMED',
+                    },
+                });
+                if (!existingDebit) {
+                    const currentRest = await tx.restaurant.findUnique({
+                        where: { id: order.restaurantId },
+                        select: { creditBalance: true, name: true },
+                    });
+                    if ((currentRest?.creditBalance ?? 0) <= -20) {
+                        throw new common_1.BadRequestException(`Credit balance exhausted (-20 grace buffer orders used). Please top up credits to accept new orders.`);
+                    }
+                    const rest = await tx.restaurant.update({
+                        where: { id: order.restaurantId },
+                        data: {
+                            creditBalance: {
+                                decrement: 1,
+                            },
+                        },
+                        select: { creditBalance: true },
+                    });
+                    await tx.creditLedger.create({
+                        data: {
+                            restaurantId: order.restaurantId,
+                            delta: -1,
+                            reason: 'ORDER_CONFIRMED',
+                            refId: order.id,
+                            balanceAfter: rest.creditBalance,
+                        },
+                    });
+                }
+            }
+            return tx.order.update({
+                where: { id: orderId },
+                data: updateData,
+                include: {
+                    items: {
+                        include: {
+                            product: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    imageUrl: true,
+                                },
                             },
                         },
                     },
+                    branch: {
+                        select: {
+                            id: true,
+                            name: true,
+                            slug: true,
+                            currency: true,
+                            address: true,
+                            phone: true,
+                        },
+                    },
+                    restaurant: {
+                        select: {
+                            id: true,
+                            name: true,
+                            slug: true,
+                            logoUrl: true,
+                            defaultCurrency: true,
+                            creditBalance: true,
+                        },
+                    },
                 },
-                branch: { select: { id: true, name: true } },
-            },
+            });
         });
         return {
             message: `Order #${updated.orderNumber} status updated to ${dto.status}.`,
@@ -449,9 +608,28 @@ let OrdersService = class OrdersService {
             stripeStatus: 'COMING_SOON',
         };
     }
+    async verifyTurnstile(token) {
+        const secretKey = process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
+        try {
+            const formData = new URLSearchParams();
+            formData.append('secret', secretKey);
+            formData.append('response', token);
+            const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString(),
+            });
+            const data = await res.json();
+            return Boolean(data.success);
+        }
+        catch (err) {
+            this.logger.warn(`Turnstile check network error: ${err.message}`);
+            return true;
+        }
+    }
 };
 exports.OrdersService = OrdersService;
-exports.OrdersService = OrdersService = __decorate([
+exports.OrdersService = OrdersService = OrdersService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], OrdersService);

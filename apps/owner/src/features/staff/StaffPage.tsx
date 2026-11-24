@@ -112,6 +112,48 @@ export const StaffPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  // Helper to ensure permissions object is fully formed with all modules
+  const normalizePermissions = (raw: any, role: StaffRole = 'CUSTOM'): StaffPermissions => {
+    const fallback = ROLE_PRESET_PERMISSIONS[role] || ROLE_PRESET_PERMISSIONS.CUSTOM;
+    if (!raw || typeof raw !== 'object') {
+      return fallback;
+    }
+    return {
+      orders: {
+        view: Boolean(raw.orders?.view ?? fallback.orders.view),
+        accept: Boolean(raw.orders?.accept ?? fallback.orders.accept),
+        collectCash: Boolean(raw.orders?.collectCash ?? fallback.orders.collectCash),
+        cancel: Boolean(raw.orders?.cancel ?? fallback.orders.cancel),
+      },
+      menu: {
+        view: Boolean(raw.menu?.view ?? fallback.menu.view),
+        create: Boolean(raw.menu?.create ?? fallback.menu.create),
+        edit: Boolean(raw.menu?.edit ?? fallback.menu.edit),
+        delete: Boolean(raw.menu?.delete ?? fallback.menu.delete),
+        toggleStock: Boolean(raw.menu?.toggleStock ?? fallback.menu.toggleStock),
+      },
+      branches: {
+        view: Boolean(raw.branches?.view ?? fallback.branches.view),
+        create: Boolean(raw.branches?.create ?? fallback.branches.create),
+        edit: Boolean(raw.branches?.edit ?? fallback.branches.edit),
+        delete: Boolean(raw.branches?.delete ?? fallback.branches.delete),
+        manageTables: Boolean(raw.branches?.manageTables ?? fallback.branches.manageTables),
+      },
+      overview: {
+        view: Boolean(raw.overview?.view ?? fallback.overview.view),
+        viewFinancials: Boolean(raw.overview?.viewFinancials ?? fallback.overview.viewFinancials),
+      },
+      payments: {
+        view: Boolean(raw.payments?.view ?? fallback.payments.view),
+        manage: Boolean(raw.payments?.manage ?? fallback.payments.manage),
+      },
+      staff: {
+        view: Boolean(raw.staff?.view ?? fallback.staff.view),
+        manage: Boolean(raw.staff?.manage ?? fallback.staff.manage),
+      },
+    };
+  };
+
   // Open modal for Edit
   const handleOpenEditModal = (staff: StaffMember) => {
     setEditingStaff(staff);
@@ -135,7 +177,7 @@ export const StaffPage: React.FC = () => {
       setSelectedBranches(assigned);
     }
 
-    setPermissions(staff.permissions);
+    setPermissions(normalizePermissions(staff.permissions, currentRole));
     setIsModalOpen(true);
   };
 
@@ -154,13 +196,16 @@ export const StaffPage: React.FC = () => {
     value: boolean
   ) => {
     setRolePreset('CUSTOM');
-    setPermissions((prev) => ({
-      ...prev,
-      [moduleKey]: {
-        ...prev[moduleKey],
-        [actionKey]: value,
-      },
-    }));
+    setPermissions((prev) => {
+      const safePrev = normalizePermissions(prev, 'CUSTOM');
+      return {
+        ...safePrev,
+        [moduleKey]: {
+          ...safePrev[moduleKey],
+          [actionKey]: value,
+        },
+      };
+    });
   };
 
   // Toggle branch selection
@@ -197,6 +242,7 @@ export const StaffPage: React.FC = () => {
       if (editingStaff) {
         await staffApi.update(editingStaff.id, {
           name: name.trim(),
+          email: email.trim().toLowerCase(),
           phone: phone.trim() || undefined,
           countryCode: countryCode.trim() || undefined,
           password: password ? password : undefined,
@@ -613,12 +659,16 @@ export const StaffPage: React.FC = () => {
                     <input
                       type="email"
                       required
-                      disabled={Boolean(editingStaff)}
                       placeholder="e.g. cashier@ananda.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-border text-text focus:outline-none focus:border-primary disabled:opacity-60"
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-border text-text focus:outline-none focus:border-primary"
                     />
+                    {editingStaff && email.includes('@instantqr.internal') && (
+                      <p className="text-[10px] text-primary mt-1">
+                        💡 Auto-generated setup email. You can replace this with a real email address, or log in with the registered phone number + PIN.
+                      </p>
+                    )}
                   </div>
 
                   {/* Phone */}
@@ -838,7 +888,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={permissions.orders.view}
+                        checked={permissions?.orders?.view ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('orders', 'view', e.target.checked)
                         }
@@ -852,7 +902,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
                       <input
                         type="checkbox"
-                        checked={permissions.orders.accept}
+                        checked={permissions?.orders?.accept ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('orders', 'accept', e.target.checked)
                         }
@@ -864,7 +914,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
                       <input
                         type="checkbox"
-                        checked={permissions.orders.collectCash}
+                        checked={permissions?.orders?.collectCash ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('orders', 'collectCash', e.target.checked)
                         }
@@ -876,7 +926,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
                       <input
                         type="checkbox"
-                        checked={permissions.orders.cancel}
+                        checked={permissions?.orders?.cancel ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('orders', 'cancel', e.target.checked)
                         }
@@ -897,7 +947,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={permissions.menu.view}
+                        checked={permissions?.menu?.view ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('menu', 'view', e.target.checked)
                         }
@@ -911,7 +961,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
                       <input
                         type="checkbox"
-                        checked={permissions.menu.create}
+                        checked={permissions?.menu?.create ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('menu', 'create', e.target.checked)
                         }
@@ -923,7 +973,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
                       <input
                         type="checkbox"
-                        checked={permissions.menu.edit}
+                        checked={permissions?.menu?.edit ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('menu', 'edit', e.target.checked)
                         }
@@ -935,7 +985,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
                       <input
                         type="checkbox"
-                        checked={permissions.menu.delete}
+                        checked={permissions?.menu?.delete ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('menu', 'delete', e.target.checked)
                         }
@@ -947,7 +997,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs text-success font-semibold cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={permissions.menu.toggleStock}
+                        checked={permissions?.menu?.toggleStock ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('menu', 'toggleStock', e.target.checked)
                         }
@@ -968,7 +1018,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={permissions.branches.view}
+                        checked={permissions?.branches?.view ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('branches', 'view', e.target.checked)
                         }
@@ -982,7 +1032,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
                       <input
                         type="checkbox"
-                        checked={permissions.branches.create}
+                        checked={permissions?.branches?.create ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('branches', 'create', e.target.checked)
                         }
@@ -994,7 +1044,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
                       <input
                         type="checkbox"
-                        checked={permissions.branches.manageTables}
+                        checked={permissions?.branches?.manageTables ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('branches', 'manageTables', e.target.checked)
                         }
@@ -1006,7 +1056,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
                       <input
                         type="checkbox"
-                        checked={permissions.branches.delete}
+                        checked={permissions?.branches?.delete ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('branches', 'delete', e.target.checked)
                         }
@@ -1027,7 +1077,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={permissions.overview.view}
+                        checked={permissions?.overview?.view ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('overview', 'view', e.target.checked)
                         }
@@ -1041,7 +1091,7 @@ export const StaffPage: React.FC = () => {
                     <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
                       <input
                         type="checkbox"
-                        checked={permissions.overview.viewFinancials}
+                        checked={permissions?.overview?.viewFinancials ?? false}
                         onChange={(e) =>
                           handlePermissionToggle('overview', 'viewFinancials', e.target.checked)
                         }
@@ -1063,7 +1113,7 @@ export const StaffPage: React.FC = () => {
                       <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
                         <input
                           type="checkbox"
-                          checked={permissions.payments.view}
+                          checked={permissions?.payments?.view ?? false}
                           onChange={(e) =>
                             handlePermissionToggle('payments', 'view', e.target.checked)
                           }
@@ -1074,7 +1124,7 @@ export const StaffPage: React.FC = () => {
                       <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
                         <input
                           type="checkbox"
-                          checked={permissions.payments.manage}
+                          checked={permissions?.payments?.manage ?? false}
                           onChange={(e) =>
                             handlePermissionToggle('payments', 'manage', e.target.checked)
                           }
@@ -1094,7 +1144,7 @@ export const StaffPage: React.FC = () => {
                       <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
                         <input
                           type="checkbox"
-                          checked={permissions.staff.view}
+                          checked={permissions?.staff?.view ?? false}
                           onChange={(e) =>
                             handlePermissionToggle('staff', 'view', e.target.checked)
                           }
@@ -1105,7 +1155,7 @@ export const StaffPage: React.FC = () => {
                       <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
                         <input
                           type="checkbox"
-                          checked={permissions.staff.manage}
+                          checked={permissions?.staff?.manage ?? false}
                           onChange={(e) =>
                             handlePermissionToggle('staff', 'manage', e.target.checked)
                           }

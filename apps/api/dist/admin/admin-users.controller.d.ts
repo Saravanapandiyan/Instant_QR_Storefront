@@ -1,4 +1,4 @@
-import { AdminUsersService, AdminUsersQuery, UpdateUserRoleDto, UpdateUserStatusDto } from './admin-users.service';
+import { AdminUsersService, AdminUsersQuery, CreateAdminUserDto, UpdateAdminUserDto, UpdateUserRoleDto, UpdateUserStatusDto } from './admin-users.service';
 export declare class AdminUsersController {
     private readonly usersService;
     constructor(usersService: AdminUsersService);
@@ -27,6 +27,17 @@ export declare class AdminUsersController {
                 id: string;
                 isActive: boolean;
             }[];
+            staffProfiles: {
+                restaurant: {
+                    name: string;
+                    slug: string;
+                    id: string;
+                };
+                id: string;
+                isActive: boolean;
+                role: string;
+                pinCode: string | null;
+            }[];
         }[];
     }>;
     getUserById(id: string): Promise<{
@@ -54,6 +65,101 @@ export declare class AdminUsersController {
         countryCode: string | null;
         email: string;
         isPlatformAdmin: boolean;
+        staffProfiles: {
+            restaurant: {
+                name: string;
+                slug: string;
+                id: string;
+            };
+            id: string;
+            isActive: boolean;
+            role: string;
+            assignedBranches: import("@prisma/client/runtime/library").JsonValue;
+            permissions: import("@prisma/client/runtime/library").JsonValue;
+            pinCode: string | null;
+        }[];
+    }>;
+    createUser(body: CreateAdminUserDto): Promise<{
+        isActive: boolean;
+        formattedPhone: string | null;
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isDeleted: boolean;
+        restaurants: {
+            name: string;
+            slug: string;
+            id: string;
+            isActive: boolean;
+            branches: {
+                name: string;
+                slug: string;
+                id: string;
+                isActive: boolean;
+            }[];
+        }[];
+        role: import("@prisma/client").$Enums.Role;
+        phone: string | null;
+        countryCode: string | null;
+        email: string;
+        isPlatformAdmin: boolean;
+        staffProfiles: {
+            restaurant: {
+                name: string;
+                slug: string;
+                id: string;
+            };
+            id: string;
+            isActive: boolean;
+            role: string;
+            assignedBranches: import("@prisma/client/runtime/library").JsonValue;
+            permissions: import("@prisma/client/runtime/library").JsonValue;
+            pinCode: string | null;
+        }[];
+    }>;
+    updateUser(id: string, body: UpdateAdminUserDto, req: any): Promise<{
+        isActive: boolean;
+        formattedPhone: string | null;
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isDeleted: boolean;
+        restaurants: {
+            name: string;
+            slug: string;
+            id: string;
+            isActive: boolean;
+            branches: {
+                name: string;
+                slug: string;
+                id: string;
+                isActive: boolean;
+            }[];
+        }[];
+        role: import("@prisma/client").$Enums.Role;
+        phone: string | null;
+        countryCode: string | null;
+        email: string;
+        isPlatformAdmin: boolean;
+        staffProfiles: {
+            restaurant: {
+                name: string;
+                slug: string;
+                id: string;
+            };
+            id: string;
+            isActive: boolean;
+            role: string;
+            assignedBranches: import("@prisma/client/runtime/library").JsonValue;
+            permissions: import("@prisma/client/runtime/library").JsonValue;
+            pinCode: string | null;
+        }[];
+    }>;
+    deleteUser(id: string, req: any): Promise<{
+        success: boolean;
+        message: string;
     }>;
     updateUserRole(id: string, body: UpdateUserRoleDto, req: any): Promise<{
         message: string;

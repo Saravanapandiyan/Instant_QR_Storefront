@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   X,
   Download,
@@ -21,129 +21,124 @@ import {
 import { Button, toast } from '../../../components/ui';
 import { getCustomerStorefrontUrl } from '../../../lib/urls';
 import { getMediaUrl } from '../../../lib/utils';
+import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 import {
   StylizedQRCode,
   type QRDotPattern,
   type QREyePattern,
   type QRShape,
 } from './StylizedQRCode';
-import type { Branch, Restaurant } from '@instant-qr/shared-types';
+import type { Branch, Restaurant, RestaurantTable } from '@instant-qr/shared-types';
+import { branchesApi } from '../api/branchesApi';
 
 export interface InstagramQRModalProps {
   branch: Branch | null;
   restaurant?: Restaurant | null;
   isOpen: boolean;
   onClose: () => void;
+  initialTableNumber?: string | null;
+  tables?: RestaurantTable[];
 }
 
-// 4 Professional Restaurant Stand Layouts
-export type StandTemplate = 'brand' | 'acrylic' | 'luxury' | 'badge';
-
-// Appetizing Culinary Color Themes
-export type ColorTheme =
-  | 'terracotta'
-  | 'crimson'
-  | 'emerald'
-  | 'slate'
-  | 'navy'
-  | 'mono';
-
-// Center Emblem Options
-export type CenterIconType = 'logo' | 'cutlery' | 'coffee' | 'pizza' | 'bar' | 'none';
-
-interface ThemeConfig {
-  name: string;
-  bgGradient: string;
-  cardBg: string;
-  primaryColor: string;
-  secondaryColor: string;
-  qrGradient: {
-    color1: string;
-    color2: string;
-  };
-  accentPill: string;
-  borderGlow: string;
-}
-
-const THEME_CONFIGS: Record<ColorTheme, ThemeConfig> = {
-  terracotta: {
-    name: 'Warm Flame',
-    bgGradient: 'from-amber-600 via-orange-600 to-rose-700',
-    cardBg: 'bg-gradient-to-br from-amber-600 via-orange-600 to-rose-700',
-    primaryColor: '#ea580c',
-    secondaryColor: '#c2410c',
-    qrGradient: { color1: '#ea580c', color2: '#e11d48' },
-    accentPill: 'bg-white/20 text-white backdrop-blur-md border border-white/30',
-    borderGlow: 'shadow-[0_20px_50px_rgba(234,88,12,0.35)]',
-  },
-  crimson: {
-    name: 'Ruby Crimson',
-    bgGradient: 'from-red-600 via-rose-600 to-red-800',
-    cardBg: 'bg-gradient-to-br from-red-600 via-rose-600 to-red-800',
-    primaryColor: '#dc2626',
-    secondaryColor: '#991b1b',
-    qrGradient: { color1: '#dc2626', color2: '#be123c' },
-    accentPill: 'bg-white/20 text-white backdrop-blur-md border border-white/30',
-    borderGlow: 'shadow-[0_20px_50px_rgba(220,38,38,0.35)]',
-  },
-  emerald: {
-    name: 'Fresh Mint & Basil',
-    bgGradient: 'from-emerald-600 via-teal-700 to-emerald-900',
-    cardBg: 'bg-gradient-to-br from-emerald-600 via-teal-700 to-emerald-900',
-    primaryColor: '#059669',
-    secondaryColor: '#047857',
-    qrGradient: { color1: '#059669', color2: '#0d9488' },
-    accentPill: 'bg-white/20 text-white backdrop-blur-md border border-white/30',
-    borderGlow: 'shadow-[0_20px_50px_rgba(5,150,105,0.35)]',
-  },
-  slate: {
-    name: 'Obsidian & Gold',
-    bgGradient: 'from-zinc-950 via-stone-900 to-black',
-    cardBg: 'bg-gradient-to-br from-zinc-950 via-stone-900 to-black',
-    primaryColor: '#d97706',
-    secondaryColor: '#b45309',
-    qrGradient: { color1: '#d97706', color2: '#92400e' },
-    accentPill: 'bg-amber-400/20 text-amber-300 backdrop-blur-md border border-amber-400/30',
-    borderGlow: 'shadow-[0_20px_50px_rgba(217,119,6,0.3)]',
-  },
-  navy: {
-    name: 'Royal Sapphire',
-    bgGradient: 'from-blue-700 via-indigo-800 to-slate-950',
-    cardBg: 'bg-gradient-to-br from-blue-700 via-indigo-800 to-slate-950',
-    primaryColor: '#2563eb',
-    secondaryColor: '#1d4ed8',
-    qrGradient: { color1: '#2563eb', color2: '#3730a3' },
-    accentPill: 'bg-white/20 text-white backdrop-blur-md border border-white/30',
-    borderGlow: 'shadow-[0_20px_50px_rgba(37,99,235,0.35)]',
-  },
-  mono: {
-    name: 'Charcoal & White',
-    bgGradient: 'from-zinc-900 to-black',
-    cardBg: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-black',
-    primaryColor: '#18181b',
-    secondaryColor: '#27272a',
-    qrGradient: { color1: '#18181b', color2: '#27272a' },
-    accentPill: 'bg-white/15 text-white backdrop-blur-md border border-white/20',
-    borderGlow: 'shadow-[0_20px_50px_rgba(24,24,27,0.3)]',
-  },
-};
+import {
+  type StandTemplate,
+  type ColorTheme,
+  type CenterIconType,
+  type ThemeConfig,
+  THEME_CONFIGS,
+  renderStandeeToCanvas,
+  renderSvgStringToImage,
+  getCenterIconEmoji,
+  getSavedStandeeDesign,
+  saveStandeeDesign,
+} from './standeeRenderer';
 
 export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
   branch,
   restaurant,
   isOpen,
   onClose,
+  initialTableNumber,
+  tables,
 }) => {
+  useBodyScrollLock(isOpen);
+  const initialDesign = getSavedStandeeDesign(branch?.id);
+
   // Customization state
-  const [template, setTemplate] = useState<StandTemplate>('brand');
-  const [selectedTheme, setSelectedTheme] = useState<ColorTheme>('terracotta');
-  const [dotPattern, setDotPattern] = useState<QRDotPattern>('dots');
-  const [eyePattern, setEyePattern] = useState<QREyePattern>('squircle');
-  const [shape, setShape] = useState<QRShape>('square');
-  const [centerIcon, setCenterIcon] = useState<CenterIconType>('logo');
+  const [template, setTemplate] = useState<StandTemplate>(initialDesign.template);
+  const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(initialDesign.selectedTheme);
+  const [dotPattern, setDotPattern] = useState<QRDotPattern>(initialDesign.dotPattern);
+  const [eyePattern, setEyePattern] = useState<QREyePattern>(initialDesign.eyePattern);
+  const [shape, setShape] = useState<QRShape>(initialDesign.shape);
+  const [centerIcon, setCenterIcon] = useState<CenterIconType>(initialDesign.centerIcon);
+
+  const [selectedTableNumber, setSelectedTableNumber] = useState<string | null>(
+    initialTableNumber || null
+  );
+  const [allTables, setAllTables] = useState<RestaurantTable[]>(tables || []);
 
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
+
+  // Synchronize state with saved design whenever modal opens or branch changes
+  useEffect(() => {
+    if (isOpen && branch?.id) {
+      const saved = getSavedStandeeDesign(branch.id);
+      setTemplate(saved.template);
+      setSelectedTheme(saved.selectedTheme);
+      setDotPattern(saved.dotPattern);
+      setEyePattern(saved.eyePattern);
+      setShape(saved.shape);
+      setCenterIcon(saved.centerIcon);
+    }
+  }, [isOpen, branch?.id]);
+
+  // Design selection handlers that persist immediately to localStorage
+  const handleSelectTemplate = (tpl: StandTemplate) => {
+    setTemplate(tpl);
+    saveStandeeDesign(branch?.id, { template: tpl });
+  };
+
+  const handleSelectTheme = (thm: ColorTheme) => {
+    setSelectedTheme(thm);
+    saveStandeeDesign(branch?.id, { selectedTheme: thm });
+  };
+
+  const handleSelectDotPattern = (pat: QRDotPattern) => {
+    setDotPattern(pat);
+    saveStandeeDesign(branch?.id, { dotPattern: pat });
+  };
+
+  const handleSelectEyePattern = (eye: QREyePattern) => {
+    setEyePattern(eye);
+    saveStandeeDesign(branch?.id, { eyePattern: eye });
+  };
+
+  const handleSelectShape = (sh: QRShape) => {
+    setShape(sh);
+    saveStandeeDesign(branch?.id, { shape: sh });
+  };
+
+  const handleSelectCenterIcon = (ic: CenterIconType) => {
+    setCenterIcon(ic);
+    saveStandeeDesign(branch?.id, { centerIcon: ic });
+  };
+
+  // Sync initial table
+  useEffect(() => {
+    if (initialTableNumber !== undefined) {
+      setSelectedTableNumber(initialTableNumber);
+    }
+  }, [initialTableNumber]);
+
+  // Sync / fetch tables
+  useEffect(() => {
+    if (tables && tables.length > 0) {
+      setAllTables(tables);
+    } else if (branch?.id && isOpen) {
+      branchesApi.getBranchTables(branch.id).then(setAllTables).catch(() => {});
+    }
+  }, [branch?.id, tables, isOpen]);
 
   // Reference directly to our live SVG element
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -155,7 +150,10 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
   const currentTheme = THEME_CONFIGS[selectedTheme];
   const restaurantName = restaurant?.name || branch.restaurant?.name || 'Restaurant';
   const logoUrl = getMediaUrl(restaurant?.logoUrl || branch.restaurant?.logoUrl);
-  const customerUrl = getCustomerStorefrontUrl(branch.slug);
+  const baseCustomerUrl = getCustomerStorefrontUrl(branch.slug);
+  const customerUrl = selectedTableNumber
+    ? `${baseCustomerUrl}?table=${encodeURIComponent(selectedTableNumber)}`
+    : baseCustomerUrl;
 
   // Convert the rendered SVG element into an HTMLImageElement at high resolution
   const renderSvgToImage = async (sizePx: number): Promise<HTMLImageElement> => {
@@ -291,240 +289,30 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
       const qrImg = await renderSvgToImage(600);
 
       const width = 1200;
-      const height = 1600;
+      const height = template === 'badge' ? 1200 : 1600;
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Could not initialize 2D context');
 
-      const drawRoundRect = (
-        x: number,
-        y: number,
-        w: number,
-        h: number,
-        r: number
-      ) => {
-        ctx.beginPath();
-        ctx.roundRect(x, y, w, h, r);
-      };
+      renderStandeeToCanvas(ctx, {
+        width,
+        height,
+        template,
+        colorTheme: selectedTheme,
+        restaurantName,
+        branchAddressOrName: branch.address || branch.name,
+        tableNumber: selectedTableNumber,
+        customerUrl,
+        qrImg,
+        centerIcon,
+      });
 
-      if (template === 'luxury') {
-        // --- LUXURY FINE DINING STAND ---
-        ctx.fillStyle = '#09090b';
-        ctx.fillRect(0, 0, width, height);
-
-        ctx.strokeStyle = '#d97706';
-        ctx.lineWidth = 4;
-        drawRoundRect(50, 50, width - 100, height - 100, 32);
-        ctx.stroke();
-
-        ctx.strokeStyle = 'rgba(217, 119, 6, 0.3)';
-        ctx.lineWidth = 2;
-        drawRoundRect(66, 66, width - 132, height - 132, 24);
-        ctx.stroke();
-
-        ctx.fillStyle = '#f59e0b';
-        ctx.font = '28px serif';
-        ctx.fillText('✦', 80, 105);
-        ctx.fillText('✦', width - 95, 105);
-        ctx.fillText('✦', 80, height - 85);
-        ctx.fillText('✦', width - 95, height - 85);
-
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#fef3c7';
-        ctx.font = 'italic 34px "Times New Roman", Georgia, serif';
-        ctx.fillText('Carte du Jour  •  Digital Dining', width / 2, 230);
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 64px "Times New Roman", Georgia, serif';
-        ctx.fillText(restaurantName, width / 2, 320);
-
-        ctx.fillStyle = 'rgba(254, 243, 199, 0.8)';
-        ctx.font = '28px "Times New Roman", Georgia, serif';
-        ctx.fillText(branch.address || branch.name, width / 2, 380);
-
-        drawRoundRect(width / 2 - 340, 460, 680, 680, 36);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-        ctx.strokeStyle = '#d97706';
-        ctx.lineWidth = 6;
-        ctx.stroke();
-
-        ctx.drawImage(qrImg, width / 2 - 300, 500, 600, 600);
-        await drawCenterEmblemOnCanvas(ctx, width / 2, 800, 130);
-
-        ctx.fillStyle = '#fef3c7';
-        ctx.font = 'bold 42px "Times New Roman", Georgia, serif';
-        ctx.fillText('Scan to View Menu & Order', width / 2, 1260);
-
-        ctx.fillStyle = 'rgba(254, 243, 199, 0.75)';
-        ctx.font = '28px "Times New Roman", Georgia, serif';
-        ctx.fillText('Point your phone camera directly at the code', width / 2, 1315);
-
-        ctx.fillStyle = 'rgba(217, 119, 6, 0.9)';
-        ctx.font = 'bold 26px monospace';
-        ctx.fillText(customerUrl, width / 2, 1420);
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.font = '22px sans-serif';
-        ctx.fillText('Instant QR Storefront', width / 2, 1510);
-      } else if (template === 'acrylic') {
-        // --- MODERN TABLETOP TENT ---
-        ctx.fillStyle = '#f8fafc';
-        ctx.fillRect(0, 0, width, height);
-
-        const topGrad = ctx.createLinearGradient(0, 0, width, 320);
-        topGrad.addColorStop(0, currentTheme.primaryColor);
-        topGrad.addColorStop(1, currentTheme.secondaryColor);
-        ctx.fillStyle = topGrad;
-        ctx.fillRect(0, 0, width, 300);
-
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillText('DINE-IN ORDERING', width / 2, 110);
-
-        ctx.font = 'bold 64px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillText(restaurantName, width / 2, 195);
-
-        ctx.font = 'normal 28px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.fillText(branch.address || branch.name, width / 2, 245);
-
-        const qrBoxY = 380;
-        ctx.fillStyle = '#ffffff';
-        drawRoundRect(width / 2 - 340, qrBoxY, 680, 680, 40);
-        ctx.fill();
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 4;
-        ctx.stroke();
-
-        ctx.drawImage(qrImg, width / 2 - 300, qrBoxY + 40, 600, 600);
-        await drawCenterEmblemOnCanvas(ctx, width / 2, qrBoxY + 340, 130);
-
-        const stepsY = qrBoxY + 740;
-        ctx.fillStyle = '#ffffff';
-        drawRoundRect(100, stepsY, width - 200, 200, 28);
-        ctx.fill();
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillStyle = '#0f172a';
-        ctx.textAlign = 'left';
-        ctx.fillText('1. Scan QR with Camera', 160, stepsY + 65);
-        ctx.fillText('2. Select Dishes & Customize', 160, stepsY + 115);
-        ctx.fillText('3. Direct Kitchen Order Dispatch', 160, stepsY + 165);
-
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#64748b';
-        ctx.font = '500 24px monospace';
-        ctx.fillText(customerUrl, width / 2, 1470);
-
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = 'normal 20px sans-serif';
-        ctx.fillText('Powered by Instant QR Storefront', width / 2, 1530);
-      } else if (template === 'badge') {
-        // --- BISTRO ROUND DECAL / COASTER ---
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, width, height);
-
-        ctx.beginPath();
-        ctx.arc(width / 2, height / 2, 540, 0, Math.PI * 2);
-        ctx.fillStyle = currentTheme.primaryColor;
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(width / 2, height / 2, 500, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-
-        ctx.textAlign = 'center';
-        ctx.fillStyle = currentTheme.primaryColor;
-        ctx.font = 'bold 44px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillText(restaurantName.toUpperCase(), width / 2, height / 2 - 330);
-
-        ctx.fillStyle = '#64748b';
-        ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillText('SCAN FOR DIGITAL MENU', width / 2, height / 2 - 280);
-
-        ctx.drawImage(qrImg, width / 2 - 260, height / 2 - 210, 520, 520);
-        await drawCenterEmblemOnCanvas(ctx, width / 2, height / 2 + 50, 115);
-
-        ctx.fillStyle = '#0f172a';
-        ctx.font = 'bold 34px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillText('TOUCHLESS ORDERING', width / 2, height / 2 + 370);
-
-        ctx.fillStyle = '#64748b';
-        ctx.font = '600 22px monospace';
-        ctx.fillText(customerUrl, width / 2, height / 2 + 420);
-      } else {
-        // --- DEFAULT: SIGNATURE RESTAURANT STANDEE ---
-        const grad = ctx.createLinearGradient(0, 0, width, height);
-        grad.addColorStop(0, currentTheme.qrGradient.color1);
-        grad.addColorStop(0.5, currentTheme.primaryColor);
-        grad.addColorStop(1, currentTheme.secondaryColor);
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, width, height);
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-        ctx.beginPath();
-        ctx.arc(width - 100, 150, 240, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
-        ctx.beginPath();
-        ctx.arc(100, height - 150, 280, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillText('WELCOME & DINE-IN', width / 2, 180);
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 64px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillText(restaurantName, width / 2, 275);
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.font = 'normal 30px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillText(branch.address || branch.name, width / 2, 335);
-
-        drawRoundRect(width / 2 - 340, 420, 680, 680, 48);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.lineWidth = 6;
-        ctx.stroke();
-
-        ctx.drawImage(qrImg, width / 2 - 300, 460, 600, 600);
-        await drawCenterEmblemOnCanvas(ctx, width / 2, 760, 130);
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 44px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillText('SCAN FOR DIGITAL MENU', width / 2, 1200);
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.font = 'normal 26px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillText('Point your phone camera • No app download required', width / 2, 1255);
-
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-        drawRoundRect(width / 2 - 380, 1330, 760, 72, 24);
-        ctx.fill();
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '600 24px monospace';
-        ctx.fillText(customerUrl, width / 2, 1375);
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.font = 'normal 20px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.fillText('Powered by Instant QR Storefront', width / 2, 1490);
-      }
-
-      const fileName = `${branch.slug}-${template}-stand.png`;
+      const tableSuffix = selectedTableNumber
+        ? `-${selectedTableNumber.toLowerCase().replace(/\s+/g, '-')}`
+        : '';
+      const fileName = `${branch.slug}${tableSuffix}-${template}-stand.png`;
       const link = document.createElement('a');
       link.download = fileName;
       link.href = canvas.toDataURL('image/png', 1.0);
@@ -540,12 +328,14 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
   };
 
   // Shared Center Emblem Renderer
-  const renderCenterEmblemOverlay = (sizeClass = 'w-12 h-12', borderClass = 'border-primary') => {
+  const renderCenterEmblemOverlay = (sizeClass = 'w-12 h-12', borderColor?: string) => {
     if (centerIcon === 'none') return null;
+    const borderStyle = borderColor ? { borderColor } : { borderColor: currentTheme.primaryColor };
     return (
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div
-          className={`${sizeClass} rounded-full bg-white shadow-md border-2 ${borderClass} flex items-center justify-center overflow-hidden p-1`}
+          className={`${sizeClass} rounded-full bg-white shadow-md border-2 flex items-center justify-center overflow-hidden p-1`}
+          style={borderStyle}
         >
           {centerIcon === 'logo' && logoUrl ? (
             <img
@@ -559,14 +349,8 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                 }
               }}
             />
-          ) : centerIcon === 'coffee' ? (
-            <span className="text-lg">☕</span>
-          ) : centerIcon === 'pizza' ? (
-            <span className="text-lg">🍕</span>
-          ) : centerIcon === 'bar' ? (
-            <span className="text-lg">🍸</span>
           ) : (
-            <span className="text-lg">🍽️</span>
+            <span className="text-lg">{getCenterIconEmoji(centerIcon) || '🍽️'}</span>
           )}
         </div>
       </div>
@@ -622,6 +406,37 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
               </span>
             </div>
 
+            {/* Target QR Mode / Table Selector */}
+            <div className="p-3 rounded-xl bg-surface-2 border border-border space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-text flex items-center gap-1.5">
+                  <UtensilsCrossed size={13} className="text-primary" />
+                  <span>Target Table / QR Mode</span>
+                </span>
+                {selectedTableNumber && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTableNumber(null)}
+                    className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
+                  >
+                    Reset to Main Storefront
+                  </button>
+                )}
+              </div>
+              <select
+                value={selectedTableNumber || ''}
+                onChange={(e) => setSelectedTableNumber(e.target.value || null)}
+                className="w-full px-3 py-1.5 rounded-lg border border-border bg-surface text-text text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+              >
+                <option value="">Main Storefront QR (All Tables / Walk-in)</option>
+                {allTables.map((t) => (
+                  <option key={t.id} value={t.tableNumber}>
+                    {t.tableNumber} • {t.section || 'Main Room'} ({t.capacity || 4} Guests)
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* 1. Stand Template Layouts */}
             <div className="space-y-2">
               <div className="flex items-center gap-1.5 text-xs font-bold text-text">
@@ -638,7 +453,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                   <button
                     key={tpl.id}
                     type="button"
-                    onClick={() => setTemplate(tpl.id as StandTemplate)}
+                    onClick={() => handleSelectTemplate(tpl.id as StandTemplate)}
                     className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                       template === tpl.id
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 font-bold text-text'
@@ -658,25 +473,25 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                 <Layers size={13} className="text-primary" />
                 <span>QR Module Pattern</span>
               </div>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+              <div className="grid grid-cols-5 gap-1.5">
                 {[
-                  { id: 'dots', label: 'Modern Dots', sub: '● Circles' },
-                  { id: 'tiles', label: 'Soft Tiles', sub: '▢ Mosaic' },
-                  { id: 'diamond', label: 'Diamond Cut', sub: '◆ Gems' },
-                  { id: 'bars', label: 'Liquid Bars', sub: '▬ Capsules' },
-                  { id: 'square', label: 'Crisp Square', sub: '■ Classic' },
+                  { id: 'dots', label: '● Dots', sub: 'Circles' },
+                  { id: 'tiles', label: '▢ Tiles', sub: 'Mosaic' },
+                  { id: 'diamond', label: '◆ Diamond', sub: 'Gems' },
+                  { id: 'bars', label: '▬ Bars', sub: 'Capsules' },
+                  { id: 'square', label: '■ Classic', sub: 'Square' },
                 ].map((pattern) => (
                   <button
                     key={pattern.id}
                     type="button"
-                    onClick={() => setDotPattern(pattern.id as QRDotPattern)}
-                    className={`py-1.5 px-2 rounded-lg border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
+                    onClick={() => handleSelectDotPattern(pattern.id as QRDotPattern)}
+                    className={`py-2 px-1 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
                       dotPattern === pattern.id
-                        ? 'border-primary bg-primary/10 text-primary font-bold'
+                        ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
                         : 'border-border hover:border-text/30 bg-surface text-muted'
                     }`}
                   >
-                    <span className="text-xs leading-tight">{pattern.label}</span>
+                    <span className="text-xs font-semibold leading-tight">{pattern.label}</span>
                     <span className="text-[10px] opacity-70 leading-tight mt-0.5">{pattern.sub}</span>
                   </button>
                 ))}
@@ -700,8 +515,8 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                     <button
                       key={eye.id}
                       type="button"
-                      onClick={() => setEyePattern(eye.id as QREyePattern)}
-                      className={`py-1.5 px-1.5 rounded-lg border text-center text-xs transition-all cursor-pointer ${
+                      onClick={() => handleSelectEyePattern(eye.id as QREyePattern)}
+                      className={`py-1.5 px-1.5 rounded-lg border text-center text-xs font-medium transition-all cursor-pointer ${
                         eyePattern === eye.id
                           ? 'border-primary bg-primary/10 text-primary font-bold'
                           : 'border-border hover:border-text/30 bg-surface text-muted'
@@ -727,8 +542,8 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                     <button
                       key={sh.id}
                       type="button"
-                      onClick={() => setShape(sh.id as QRShape)}
-                      className={`py-1.5 px-2 rounded-lg border text-center text-xs transition-all cursor-pointer ${
+                      onClick={() => handleSelectShape(sh.id as QRShape)}
+                      className={`py-1.5 px-2 rounded-lg border text-center text-xs font-medium transition-all cursor-pointer ${
                         shape === sh.id
                           ? 'border-primary bg-primary/10 text-primary font-bold'
                           : 'border-border hover:border-text/30 bg-surface text-muted'
@@ -755,7 +570,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                     <button
                       key={themeKey}
                       type="button"
-                      onClick={() => setSelectedTheme(themeKey)}
+                      onClick={() => handleSelectTheme(themeKey)}
                       className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-medium transition-all cursor-pointer text-left ${
                         isSelected
                           ? 'border-primary ring-2 ring-primary/20 bg-surface-2 font-bold text-text'
@@ -776,7 +591,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
               <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => setCenterIcon('logo')}
+                  onClick={() => handleSelectCenterIcon('logo')}
                   className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                     centerIcon === 'logo'
                       ? 'border-primary bg-primary/10 text-primary font-bold'
@@ -796,7 +611,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => setCenterIcon(item.id as CenterIconType)}
+                    onClick={() => handleSelectCenterIcon(item.id as CenterIconType)}
                     className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                       centerIcon === item.id
                         ? 'border-primary bg-primary/10 text-primary font-bold'
@@ -911,6 +726,11 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                 <h3 className="text-xl font-serif font-bold text-amber-100 tracking-wide line-clamp-1">
                   {restaurantName}
                 </h3>
+                {selectedTableNumber && (
+                  <div className="inline-block px-3 py-0.5 border-y border-amber-400/50 text-amber-200 font-serif font-bold text-xs tracking-widest uppercase my-0.5">
+                    {selectedTableNumber}
+                  </div>
+                )}
                 <p className="text-[11px] text-amber-200/70 font-serif line-clamp-1">
                   {branch.address || branch.name}
                 </p>
@@ -932,7 +752,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                   excavateCenter={centerIcon !== 'none'}
                   className="w-[190px] h-[190px]"
                 />
-                {renderCenterEmblemOverlay('w-12 h-12', 'border-amber-600')}
+                {renderCenterEmblemOverlay('w-12 h-12', '#d97706')}
               </div>
 
               <div className="space-y-1 relative z-10 pb-1">
@@ -953,6 +773,11 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                 <h3 className="text-lg font-black tracking-tight leading-tight line-clamp-1">
                   {restaurantName}
                 </h3>
+                {selectedTableNumber && (
+                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/20 text-white font-black text-[11px] tracking-wider uppercase mt-1">
+                    {selectedTableNumber}
+                  </span>
+                )}
                 <p className="text-[10px] opacity-80 truncate">{branch.address || branch.name}</p>
               </div>
 
@@ -968,7 +793,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                   excavateCenter={centerIcon !== 'none'}
                   className="w-[190px] h-[190px]"
                 />
-                {renderCenterEmblemOverlay('w-12 h-12', 'border-zinc-300')}
+                {renderCenterEmblemOverlay('w-12 h-12', currentTheme.primaryColor)}
               </div>
 
               <div className="px-4 pb-4 pt-2 space-y-1.5 text-left text-[11px] font-medium text-zinc-600 bg-zinc-50 border-t border-zinc-100">
@@ -989,11 +814,30 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
           )}
 
           {template === 'badge' && (
-            <div className="w-[300px] h-[300px] sm:w-[320px] sm:h-[320px] rounded-full p-6 bg-white text-zinc-900 shadow-2xl border-8 border-primary flex flex-col items-center justify-between text-center relative overflow-hidden">
+            <div
+              className="w-[300px] h-[300px] sm:w-[320px] sm:h-[320px] rounded-full p-6 bg-white text-zinc-900 shadow-2xl border-8 flex flex-col items-center justify-between text-center relative overflow-hidden"
+              style={{ borderColor: currentTheme.primaryColor }}
+            >
               <div className="space-y-0.5 pt-1">
-                <span className="text-[11px] font-black uppercase tracking-wider text-primary">
+                <span
+                  className="text-[11px] font-black uppercase tracking-wider block truncate max-w-[220px]"
+                  style={{ color: currentTheme.primaryColor }}
+                >
                   {restaurantName}
                 </span>
+                {selectedTableNumber && (
+                  <div>
+                    <span
+                      className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full inline-block mt-0.5"
+                      style={{
+                        backgroundColor: `${currentTheme.primaryColor}15`,
+                        color: currentTheme.primaryColor,
+                      }}
+                    >
+                      {selectedTableNumber}
+                    </span>
+                  </div>
+                )}
                 <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
                   Scan for Digital Menu
                 </p>
@@ -1011,7 +855,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                   excavateCenter={centerIcon !== 'none'}
                   className="w-[160px] h-[160px]"
                 />
-                {renderCenterEmblemOverlay('w-10 h-10', 'border-primary')}
+                {renderCenterEmblemOverlay('w-10 h-10', currentTheme.primaryColor)}
               </div>
 
               <div className="pb-1 text-[9px] font-extrabold uppercase tracking-widest text-zinc-700">
@@ -1028,10 +872,18 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
               <div className="absolute -bottom-12 -left-12 w-36 h-36 rounded-full bg-black/20 blur-xl pointer-events-none" />
 
               <div className="space-y-1.5 w-full relative z-10">
-                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${currentTheme.accentPill}`}>
-                  <Sparkles size={11} />
-                  <span>Digital Menu & Ordering</span>
-                </span>
+                <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${currentTheme.accentPill}`}>
+                    <Sparkles size={11} />
+                    <span>Digital Menu & Ordering</span>
+                  </span>
+                  {selectedTableNumber && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/25 text-white border border-white/35">
+                      <UtensilsCrossed size={10} />
+                      <span>{selectedTableNumber}</span>
+                    </span>
+                  )}
+                </div>
 
                 <h3 className="text-lg font-black tracking-tight leading-tight drop-shadow-xs line-clamp-1">
                   {restaurantName}
@@ -1057,7 +909,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                   excavateCenter={centerIcon !== 'none'}
                   className="w-[185px] h-[185px]"
                 />
-                {renderCenterEmblemOverlay('w-12 h-12', 'border-primary')}
+                {renderCenterEmblemOverlay('w-12 h-12', currentTheme.primaryColor)}
               </div>
 
               <div className="space-y-1 relative z-10">

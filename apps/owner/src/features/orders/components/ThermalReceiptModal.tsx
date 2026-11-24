@@ -4,6 +4,7 @@ import { Printer, X, Receipt, Check, FileText } from 'lucide-react';
 import type { Order } from '../api/ordersApi';
 import type { Restaurant, Branch } from '@instant-qr/shared-types';
 import { useCurrencyStore } from '../../../store/useCurrencyStore';
+import { restaurantsApi } from '../../restaurants/api/restaurantsApi';
 
 export type ThermalPaperSize = '80mm' | '58mm';
 
@@ -27,13 +28,38 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
   const { formatPrice } = useCurrencyStore();
 
   const [paperSize, setPaperSize] = useState<ThermalPaperSize>(() => {
+    const configWidth = (restaurant?.themeConfig as any)?.receiptWidth;
+    if (configWidth === '58mm' || configWidth === '80mm') return configWidth;
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved === '58mm' ? '58mm' : '80mm';
   });
 
+  useEffect(() => {
+    const configWidth = (restaurant?.themeConfig as any)?.receiptWidth;
+    if (configWidth === '58mm' || configWidth === '80mm') {
+      setPaperSize(configWidth);
+    }
+  }, [restaurant]);
+
   const handleSelectSize = (size: ThermalPaperSize) => {
     setPaperSize(size);
     localStorage.setItem(STORAGE_KEY, size);
+    if (restaurant?.id) {
+      const currentConfig =
+        typeof restaurant.themeConfig === 'object' && restaurant.themeConfig !== null
+          ? (restaurant.themeConfig as Record<string, any>)
+          : {};
+      restaurantsApi
+        .updateRestaurant(restaurant.id, {
+          themeConfig: {
+            ...currentConfig,
+            receiptWidth: size,
+          } as any,
+        })
+        .catch((err) =>
+          console.warn('Failed to persist receipt width to restaurant profile:', err),
+        );
+    }
   };
 
   // Close on Escape key

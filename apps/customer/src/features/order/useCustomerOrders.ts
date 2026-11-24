@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { PlacedOrder } from '../../api/ordersApi';
 import { fetchOrderDetails } from '../../api/ordersApi';
+import { notifyCustomerOrderReady } from '../../utils/customerAudio';
 
 const STORAGE_KEY = 'iqr_customer_orders_v1';
 
@@ -136,6 +137,17 @@ export function useCustomerOrders(branchSlug?: string) {
         const fresh = await fetchOrderDetails(activeOrder.id);
         if (isMounted && fresh) {
           updateOrderStatus(fresh.id, fresh.status, fresh.paymentStatus);
+
+          // Trigger audible chime and vibration if order is READY
+          if (fresh.status === 'READY') {
+            notifyCustomerOrderReady({
+              orderId: fresh.id,
+              orderNumber: fresh.orderNumber,
+              orderType: fresh.orderType,
+              tableNumber: fresh.tableNumber,
+              restaurantName: fresh.restaurant?.name,
+            });
+          }
         }
       } catch (err) {
         // quiet error on polling

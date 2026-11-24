@@ -20,9 +20,13 @@ import {
   ChevronRight,
   Download,
   QrCode,
+  Globe,
+  Volume2,
+  ShieldCheck,
+  Check,
 } from 'lucide-react';
 import { usePWAInstall } from '../../hooks/usePWAInstall.ts';
-import { fetchStorefrontBySlug } from '../../api/storefrontApi.ts';
+import { fetchStorefrontBySlug, fetchPlatformBranding, type PlatformBranding } from '../../api/storefrontApi.ts';
 import { placeCashOrder } from '../../api/ordersApi.ts';
 import { useStorefrontTheme } from '../../store/useStorefrontTheme.ts';
 import { useCartStore } from '../../store/useCartStore.ts';
@@ -31,7 +35,15 @@ import { OrderTrackingModal } from '../order/OrderTrackingModal.tsx';
 import { MyOrdersModal } from '../order/MyOrdersModal.tsx';
 import { QRScannerModal } from '../landing/QRScannerModal.tsx';
 import { useCustomerOrders } from '../order/useCustomerOrders.ts';
-import type { StorefrontMenuData, StorefrontItem } from '../../types/storefront.ts';
+import {
+  requestNotificationPermission,
+  notifyCustomerOrderReady,
+} from '../../utils/customerAudio.ts';
+import type {
+  StorefrontMenuData,
+  StorefrontItem,
+  StorefrontCategory,
+} from '../../types/storefront.ts';
 
 function getAssetUrl(url: string | null | undefined): string | null {
   if (!url) return null;
@@ -39,6 +51,19 @@ function getAssetUrl(url: string | null | undefined): string | null {
   const clean = url.replace(/^\/?(uploads\/)?/, '');
   return `/uploads/${clean}`;
 }
+
+const STOREFRONT_LANGUAGES = [
+  { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧' },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳' },
+  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳' },
+  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളம்', flag: '🇮🇳' },
+  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
+  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇦🇪' },
+  { code: 'ms', name: 'Malay', nativeName: 'Bahasa Melayu', flag: '🇲🇾' },
+];
 
 export function StorefrontPage() {
   const { branchSlug } = useParams<{ branchSlug: string }>();
@@ -48,6 +73,68 @@ export function StorefrontPage() {
   const [menuData, setMenuData] = useState<StorefrontMenuData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [branding, setBranding] = useState<PlatformBranding | null>(null);
+
+  useEffect(() => {
+    fetchPlatformBranding().then(setBranding).catch(() => {});
+  }, []);
+
+  // Online / Offline State Tracking for PWA resilience
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine : true,
+  );
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      if (branchSlug) {
+        fetchStorefrontBySlug(branchSlug).then(setMenuData).catch(() => {});
+      }
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [branchSlug]);
+
+  // Localization / Multilingual
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
+    return localStorage.getItem('instadine_customer_lang') || 'en';
+  });
+
+  const getTranslatedItem = useCallback(
+    (item: StorefrontItem | null) => {
+      if (!item) return { name: '', description: '' };
+      if (selectedLanguage === 'en' || !item.translations) {
+        return { name: item.name, description: item.description };
+      }
+      const trans = (item.translations as any)[selectedLanguage];
+      return {
+        name: trans?.name || item.name,
+        description: trans?.description || item.description,
+      };
+    },
+    [selectedLanguage],
+  );
+
+  const getTranslatedCategory = useCallback(
+    (category: StorefrontCategory | null) => {
+      if (!category) return { name: '', description: '' };
+      if (selectedLanguage === 'en' || !category.translations) {
+        return { name: category.name, description: category.description };
+      }
+      const trans = (category.translations as any)[selectedLanguage];
+      return {
+        name: trans?.name || category.name,
+        description: trans?.description || category.description,
+      };
+    },
+    [selectedLanguage],
+  );
 
   // Filters
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -106,10 +193,13 @@ export function StorefrontPage() {
 
   // Checkout order form state
   const [searchParams] = useSearchParams();
-  const [orderType, setOrderType] = useState<'DINE_IN' | 'TAKEAWAY'>('DINE_IN');
-  const [tableNumber, setTableNumber] = useState<string>(
-    searchParams.get('table') || searchParams.get('t') || '',
+  const rawTableParam = searchParams.get('table') || searchParams.get('t') || '';
+  const isTableFromQr = Boolean(rawTableParam.trim());
+
+  const [orderType, setOrderType] = useState<'DINE_IN' | 'TAKEAWAY'>(
+    isTableFromQr ? 'DINE_IN' : 'DINE_IN',
   );
+  const [tableNumber, setTableNumber] = useState<string>(rawTableParam);
   const [customerName, setCustomerName] = useState<string>(
     () => localStorage.getItem('iqr_customer_name') || '',
   );
@@ -122,6 +212,55 @@ export function StorefrontPage() {
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [isMyOrdersOpen, setIsMyOrdersOpen] = useState<boolean>(false);
 
+  // Cloudflare Turnstile state & invisible widget ref
+  const [turnstileToken, setTurnstileToken] = useState<string>('');
+  const turnstileWidgetRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
+
+  useEffect(() => {
+    // If table is scanned from QR, ensure order type is locked to DINE_IN
+    if (isTableFromQr && rawTableParam) {
+      setTableNumber(rawTableParam);
+      setOrderType('DINE_IN');
+    }
+  }, [isTableFromQr, rawTableParam]);
+
+  // Initialize invisible Cloudflare Turnstile verification
+  useEffect(() => {
+    let timer: any;
+    const initTurnstile = () => {
+      if (
+        typeof window !== 'undefined' &&
+        (window as any).turnstile &&
+        turnstileWidgetRef.current &&
+        !turnstileWidgetId.current
+      ) {
+        try {
+          turnstileWidgetId.current = (window as any).turnstile.render(turnstileWidgetRef.current, {
+            sitekey: (import.meta.env as any).VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA', // Official always-pass Cloudflare invisible test key
+            callback: (token: string) => {
+              setTurnstileToken(token);
+            },
+            'expired-callback': () => {
+              setTurnstileToken('');
+              if (turnstileWidgetId.current) {
+                (window as any).turnstile.reset(turnstileWidgetId.current);
+              }
+            },
+            appearance: 'interaction-only',
+          });
+        } catch (e) {
+          console.warn('Turnstile initialization notice:', e);
+        }
+      }
+    };
+
+    if (isMobileCartOpen) {
+      timer = setTimeout(initTurnstile, 400);
+    }
+    return () => clearTimeout(timer);
+  }, [isMobileCartOpen]);
+
   // Customer order session store
   const {
     orders: customerOrders,
@@ -129,6 +268,19 @@ export function StorefrontPage() {
     savePlacedOrder,
     updateOrderStatus,
   } = useCustomerOrders(branchSlug);
+
+  // Play melodic ready chime and alert when active order is ready
+  useEffect(() => {
+    if (activeOrder && activeOrder.status === 'READY') {
+      notifyCustomerOrderReady({
+        orderId: activeOrder.id,
+        orderNumber: activeOrder.orderNumber,
+        orderType: activeOrder.orderType,
+        tableNumber: activeOrder.tableNumber,
+        restaurantName: activeOrder.restaurantName,
+      });
+    }
+  }, [activeOrder?.id, activeOrder?.status]);
 
   // Load menu data
   useEffect(() => {
@@ -239,8 +391,11 @@ export function StorefrontPage() {
 
   const activeCategoryName =
     selectedCategory === 'all'
-      ? 'Main Dish'
-      : categories.find((c) => c.id === selectedCategory)?.name || 'Dishes';
+      ? 'All Dishes'
+      : (() => {
+          const cat = categories.find((c) => c.id === selectedCategory);
+          return cat ? getTranslatedCategory(cat).name : 'Dishes';
+        })();
 
   return (
     <div
@@ -278,9 +433,16 @@ export function StorefrontPage() {
           </div>
 
           <div>
-            <h1 className="text-xs sm:text-sm font-bold tracking-tight leading-tight" style={{ color: 'var(--sf-text)' }}>
-              {restaurant.name}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xs sm:text-sm font-bold tracking-tight leading-tight" style={{ color: 'var(--sf-text)' }}>
+                {restaurant.name}
+              </h1>
+              {tableNumber && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-primary/10 text-primary border border-primary/20">
+                  🍽️ {tableNumber.startsWith('Table') ? tableNumber : `Table ${tableNumber}`}
+                </span>
+              )}
+            </div>
             {branch.address && (
               <p className="text-[10px] sm:text-[11px] mt-0.5 leading-none" style={{ color: 'var(--sf-muted)' }}>
                 {branch.address}
@@ -370,6 +532,34 @@ export function StorefrontPage() {
             </button>
           )}
 
+          {/* Language Selector */}
+          <div className="relative flex items-center">
+            <select
+              aria-label="Select Menu Language"
+              value={selectedLanguage}
+              onChange={(e) => {
+                setSelectedLanguage(e.target.value);
+                localStorage.setItem('instadine_customer_lang', e.target.value);
+              }}
+              className="appearance-none pl-2 pr-6 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer focus:outline-none"
+              style={{
+                backgroundColor: 'var(--sf-surface)',
+                borderColor: 'var(--sf-border)',
+                color: 'var(--sf-text)',
+              }}
+            >
+              {STOREFRONT_LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.flag} {l.nativeName}
+                </option>
+              ))}
+            </select>
+            <Globe
+              className="w-3 h-3 absolute right-1.5 pointer-events-none opacity-60"
+              style={{ color: 'var(--sf-text)' }}
+            />
+          </div>
+
           <button
             onClick={toggleDarkMode}
             className="p-1.5 rounded-lg opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
@@ -406,9 +596,16 @@ export function StorefrontPage() {
             </div>
 
             <div>
-              <h1 className="text-sm font-bold tracking-tight leading-tight" style={{ color: 'var(--sf-text)' }}>
-                {restaurant.name}
-              </h1>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h1 className="text-sm font-bold tracking-tight leading-tight" style={{ color: 'var(--sf-text)' }}>
+                  {restaurant.name}
+                </h1>
+                {tableNumber && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-primary/10 text-primary border border-primary/20">
+                    🍽️ {tableNumber.startsWith('Table') ? tableNumber : `Table ${tableNumber}`}
+                  </span>
+                )}
+              </div>
               {branch.address && (
                 <p className="text-[10px] mt-0.5" style={{ color: 'var(--sf-muted)' }}>
                   {branch.address}
@@ -456,6 +653,34 @@ export function StorefrontPage() {
               )}
             </button>
 
+            {/* Mobile Language Selector */}
+            <div className="relative flex items-center">
+              <select
+                aria-label="Select Menu Language"
+                value={selectedLanguage}
+                onChange={(e) => {
+                  setSelectedLanguage(e.target.value);
+                  localStorage.setItem('instadine_customer_lang', e.target.value);
+                }}
+                className="appearance-none pl-2 pr-5 py-1 rounded-lg border text-[11px] font-bold transition-all cursor-pointer focus:outline-none"
+                style={{
+                  backgroundColor: 'var(--sf-surface)',
+                  borderColor: 'var(--sf-border)',
+                  color: 'var(--sf-text)',
+                }}
+              >
+                {STOREFRONT_LANGUAGES.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.flag} {l.nativeName}
+                  </option>
+                ))}
+              </select>
+              <Globe
+                className="w-2.5 h-2.5 absolute right-1.5 pointer-events-none opacity-60"
+                style={{ color: 'var(--sf-text)' }}
+              />
+            </div>
+
             <button
               onClick={toggleDarkMode}
               className="p-1.5 rounded-lg opacity-70"
@@ -464,6 +689,14 @@ export function StorefrontPage() {
             </button>
           </div>
         </div>
+
+        {/* Offline Cache Notice */}
+        {(!isOnline || (menuData as any)?.isOfflineCached) && (
+          <div className="mb-2 px-3 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-[11px] font-bold text-amber-700 dark:text-amber-300 flex items-center justify-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+            <span>Offline Mode • Browsing saved menu cache</span>
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative mb-2.5">
@@ -528,7 +761,7 @@ export function StorefrontPage() {
                     }
               }
             >
-              {cat.name}
+              {getTranslatedCategory(cat).name}
             </button>
           ))}
         </div>
@@ -599,7 +832,7 @@ export function StorefrontPage() {
                       }
                 }
               >
-                <span className="truncate">{cat.name}</span>
+                <span className="truncate">{getTranslatedCategory(cat).name}</span>
                 <span className="text-[10px] opacity-75 ml-1">{categoryCounts[cat.id] || 0}</span>
               </button>
             ))}
@@ -628,6 +861,7 @@ export function StorefrontPage() {
               const qty = getItemQuantity(item.id);
               const isSoldOut = !item.isAvailable;
               const price = Number(item.finalPrice || item.basePrice || 0);
+              const translated = getTranslatedItem(item);
 
               return (
                 <div
@@ -663,12 +897,12 @@ export function StorefrontPage() {
                     </div>
 
                     <h3 className="font-bold text-xs sm:text-sm tracking-tight leading-snug truncate" style={{ color: 'var(--sf-text)' }}>
-                      {item.name}
+                      {translated.name}
                     </h3>
 
-                    {item.description && (
+                    {translated.description && (
                       <p className="text-[10px] sm:text-[11px] line-clamp-1 mt-0.5 leading-relaxed" style={{ color: 'var(--sf-muted)' }}>
-                        {item.description}
+                        {translated.description}
                       </p>
                     )}
 
@@ -764,6 +998,7 @@ export function StorefrontPage() {
               const qty = getItemQuantity(item.id);
               const isSoldOut = !item.isAvailable;
               const price = Number(item.finalPrice || item.basePrice || 0);
+              const translated = getTranslatedItem(item);
 
               return (
                 <div
@@ -825,7 +1060,7 @@ export function StorefrontPage() {
                     <div>
                       <div className="flex items-start justify-between gap-1 mb-0.5">
                         <h3 className="font-bold text-xs sm:text-sm tracking-tight leading-snug truncate" style={{ color: 'var(--sf-text)' }}>
-                          {item.name}
+                          {translated.name}
                         </h3>
                         <span className="font-bold text-xs sm:text-sm whitespace-nowrap" style={{ color: 'var(--sf-text)' }}>
                           {currencySymbol}
@@ -833,9 +1068,9 @@ export function StorefrontPage() {
                         </span>
                       </div>
 
-                      {item.description && (
+                      {translated.description && (
                         <p className="text-[10px] sm:text-[11px] line-clamp-1 leading-relaxed" style={{ color: 'var(--sf-muted)' }}>
-                          {item.description}
+                          {translated.description}
                         </p>
                       )}
                     </div>
@@ -1033,6 +1268,62 @@ export function StorefrontPage() {
           </div>
         </aside>
       </div>
+
+      {/* =========================================================================
+          STOREFRONT COMPACT BRANDED FOOTER
+         ========================================================================= */}
+      <footer
+        className="mt-6 mb-16 py-4 px-4 text-center border-t transition-colors"
+        style={{
+          borderColor: 'var(--sf-border)',
+          color: 'var(--sf-text)',
+        }}
+      >
+        <div className="max-w-lg mx-auto flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs opacity-75">
+          <span className="font-bold tracking-tight">
+            {restaurant?.name || branch?.name || 'Restaurant'}
+          </span>
+          <span className="opacity-40">•</span>
+          <span className="inline-flex items-center gap-1 opacity-80">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Touchless Menu</span>
+          </span>
+          {branding?.showPoweredByBadge !== false && (
+            <>
+              <span className="opacity-40">•</span>
+              <a
+                href={
+                  branding?.poweredByLink || (
+                    typeof window !== 'undefined' &&
+                    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                      ? `http://localhost:5173/auth/register?ref=storefront&from=${encodeURIComponent(branch?.slug || '')}`
+                      : `/auth/register?ref=storefront&from=${encodeURIComponent(branch?.slug || '')}`
+                  )
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 hover:opacity-100 hover:underline transition-all cursor-pointer"
+                title={branding?.siteTagline || "Touchless QR storefront"}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>
+                  {branding?.poweredByText ? (
+                    <span>{branding.poweredByText}</span>
+                  ) : (
+                    <>Powered by <strong className="font-extrabold text-orange-600 dark:text-orange-400">InstaDine</strong></>
+                  )}
+                </span>
+              </a>
+            </>
+          )}
+          {branding?.customFooterNote && (
+            <>
+              <span className="opacity-40">•</span>
+              <span className="opacity-75">{branding.customFooterNote}</span>
+            </>
+          )}
+        </div>
+      </footer>
 
       {/* =========================================================================
           MOBILE STICKY BOTTOM CART BAR (< 768px)
@@ -1264,15 +1555,27 @@ export function StorefrontPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 shrink-0">
               {orderType === 'DINE_IN' && (
                 <div className="sm:col-span-2">
-                  <label className="text-[11px] font-bold block mb-1" style={{ color: 'var(--sf-text)' }}>
-                    Table Number
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-bold block" style={{ color: 'var(--sf-text)' }}>
+                      Table Number
+                    </label>
+                    {isTableFromQr && (
+                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-500/20">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" /> Auto-filled from QR
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     placeholder="e.g. Table 4, T-12..."
                     value={tableNumber}
+                    readOnly={isTableFromQr}
                     onChange={(e) => setTableNumber(e.target.value)}
-                    className="w-full text-xs p-2 rounded-xl border focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className={`w-full text-xs p-2 rounded-xl border focus:outline-none ${
+                      isTableFromQr
+                        ? 'opacity-90 font-bold bg-surface-2 cursor-not-allowed'
+                        : 'focus:ring-1 focus:ring-orange-500'
+                    }`}
                     style={{
                       backgroundColor: 'var(--sf-bg)',
                       borderColor: 'var(--sf-border)',
@@ -1405,6 +1708,16 @@ export function StorefrontPage() {
             </div>
 
             {/* Place Cash Order Button */}
+            {/* Cloudflare Turnstile Invisible CAPTCHA container */}
+            <div ref={turnstileWidgetRef} className="my-1 flex justify-center scale-90" />
+            <div
+              className="flex items-center justify-center gap-1.5 text-[10px] opacity-70 mb-2 font-medium"
+              style={{ color: 'var(--sf-muted)' }}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Protected by Cloudflare Turnstile • Human Verified</span>
+            </div>
+
             <button
               onClick={async () => {
                 if (cartItems.length === 0) return;
@@ -1436,6 +1749,7 @@ export function StorefrontPage() {
                     orderType,
                     orderNotes: cookingInstructions.trim() || undefined,
                     paymentMethod: 'CASH',
+                    turnstileToken: turnstileToken || undefined,
                     items: cartItems.map((ci) => ({
                       productId: ci.item.id,
                       quantity: ci.quantity,
@@ -1453,6 +1767,8 @@ export function StorefrontPage() {
                   clearCart();
                   setIsMobileCartOpen(false);
                   setPlacedOrderId(res.order.id);
+                  // Request browser notification permission so alert sounds & banners fire reliably
+                  requestNotificationPermission().catch(() => {});
                 } catch (err: any) {
                   setCheckoutError(err.message || 'Failed to place order.');
                 } finally {
@@ -1496,20 +1812,26 @@ export function StorefrontPage() {
         >
           <div
             onClick={() => setPlacedOrderId(activeOrder.id)}
-            className="p-3 rounded-2xl shadow-2xl border flex items-center justify-between cursor-pointer active:scale-[0.99] transition-all backdrop-blur-md ring-1 ring-black/5 hover:shadow-xl"
+            className={`p-3 rounded-2xl shadow-2xl border flex items-center justify-between cursor-pointer active:scale-[0.99] transition-all backdrop-blur-md ${
+              activeOrder.status === 'READY'
+                ? 'ring-2 ring-emerald-500 shadow-emerald-500/20'
+                : 'ring-1 ring-black/5 hover:shadow-xl'
+            }`}
             style={{
               backgroundColor: 'var(--sf-surface)',
-              borderColor: 'var(--sf-primary)',
+              borderColor: activeOrder.status === 'READY' ? '#10b981' : 'var(--sf-primary)',
               color: 'var(--sf-text)',
             }}
           >
             <div className="flex items-center gap-3 overflow-hidden">
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shrink-0 shadow-xs"
-                style={{ backgroundColor: 'var(--sf-primary)' }}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shrink-0 shadow-xs ${
+                  activeOrder.status === 'READY' ? 'bg-emerald-500 animate-bounce' : ''
+                }`}
+                style={activeOrder.status !== 'READY' ? { backgroundColor: 'var(--sf-primary)' } : undefined}
               >
                 {activeOrder.status === 'READY' ? (
-                  <Bell className="w-5 h-5 animate-bounce" />
+                  <Bell className="w-5 h-5 text-white" />
                 ) : (
                   <ChefHat className="w-5 h-5 animate-pulse" />
                 )}
@@ -1520,17 +1842,14 @@ export function StorefrontPage() {
                     Order #{activeOrder.orderNumber}
                   </span>
                   <span
-                    className="px-2 py-0.2 rounded-full text-[10px] font-bold"
-                    style={{
-                      backgroundColor:
-                        activeOrder.status === 'READY'
-                          ? 'rgba(16, 185, 129, 0.15)'
-                          : 'rgba(249, 115, 22, 0.15)',
-                      color: activeOrder.status === 'READY' ? '#10b981' : '#f97316',
-                    }}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                      activeOrder.status === 'READY'
+                        ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 animate-pulse'
+                        : 'bg-orange-500/15 text-orange-600'
+                    }`}
                   >
                     {activeOrder.status === 'READY'
-                      ? 'Ready to Serve!'
+                      ? '🎉 Ready to Collect!'
                       : activeOrder.status === 'PREPARING'
                       ? 'Kitchen Preparing'
                       : 'Order Received'}
@@ -1538,16 +1857,21 @@ export function StorefrontPage() {
                 </div>
                 <p className="text-[11px] opacity-75 truncate mt-0.5">
                   {activeOrder.itemCount} {activeOrder.itemCount === 1 ? 'dish' : 'dishes'} • {currencySymbol}
-                  {activeOrder.totalAmount.toFixed(2)} • Tap to view status
+                  {activeOrder.totalAmount.toFixed(2)} • {activeOrder.status === 'READY' ? 'Sound alert played • Tap to view' : 'Tap to view status'}
                 </p>
               </div>
             </div>
 
             <div
-              className="flex items-center gap-1 text-xs font-black shrink-0 pl-2"
-              style={{ color: 'var(--sf-primary)' }}
+              className={`flex items-center gap-1.5 text-xs font-black shrink-0 pl-2 ${
+                activeOrder.status === 'READY' ? 'text-emerald-600 dark:text-emerald-400' : ''
+              }`}
+              style={activeOrder.status !== 'READY' ? { color: 'var(--sf-primary)' } : undefined}
             >
-              <span>Live Track</span>
+              {activeOrder.status === 'READY' && (
+                <Volume2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+              )}
+              <span>{activeOrder.status === 'READY' ? 'View Ticket' : 'Live Track'}</span>
               <ChevronRight className="w-4 h-4" />
             </div>
           </div>
@@ -1584,6 +1908,8 @@ export function StorefrontPage() {
       <DishDetailModal
         item={selectedDishForModal}
         currencySymbol={currencySymbol}
+        displayName={getTranslatedItem(selectedDishForModal).name}
+        displayDescription={getTranslatedItem(selectedDishForModal).description}
         initialQuantity={selectedDishForModal ? getItemQuantity(selectedDishForModal.id) : 1}
         initialNotes={selectedDishForModal ? getItemNotes(selectedDishForModal.id) : ''}
         onClose={() => setSelectedDishForModal(null)}

@@ -35,9 +35,9 @@ export interface VelocityDataPoint {
 export declare class AdminDashboardService {
     private readonly prisma;
     constructor(prisma: PrismaService);
-    getDashboardStats(): Promise<AdminDashboardStats>;
-    getDashboardVelocity(): Promise<VelocityDataPoint[]>;
-    getRecentFleet(): Promise<{
+    getDashboardStats(restaurantId?: string, branchId?: string, days?: number): Promise<AdminDashboardStats>;
+    getDashboardVelocity(restaurantId?: string, branchId?: string, days?: number): Promise<VelocityDataPoint[]>;
+    getRecentFleet(restaurantId?: string): Promise<{
         id: string;
         name: string;
         slug: string;

@@ -2,12 +2,16 @@ import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard,
   ClipboardList,
+  ChefHat,
   Utensils,
   Store,
   UtensilsCrossed,
   Users,
   CreditCard,
   Settings,
+  Coins,
+  Tv,
+  BarChart3,
 } from 'lucide-react';
 import { ROUTES } from '../constants/routes';
 
@@ -40,6 +44,21 @@ export const SIDEBAR_NAV_GROUPS: NavGroupConfig[] = [
         icon: ClipboardList,
         isLive: true,
       },
+      {
+        label: 'Kitchen (KDS)',
+        path: ROUTES.KDS,
+        icon: ChefHat,
+      },
+      {
+        label: 'TV Order Board',
+        path: ROUTES.TV_DISPLAY,
+        icon: Tv,
+      },
+      {
+        label: 'Sales & Analytics',
+        path: ROUTES.ANALYTICS,
+        icon: BarChart3,
+      },
     ],
   },
   {
@@ -70,8 +89,13 @@ export const SIDEBAR_NAV_GROUPS: NavGroupConfig[] = [
     ],
   },
   {
-    groupTitle: 'BILLING',
+    groupTitle: 'BILLING & CREDITS',
     items: [
+      {
+        label: 'Plans & Credits',
+        path: ROUTES.BILLING,
+        icon: Coins,
+      },
       {
         label: 'Payment Settings',
         path: ROUTES.PAYMENTS,

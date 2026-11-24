@@ -5,6 +5,7 @@ interface ActiveStoreState {
   activeBranchId: string | null;
   setActiveRestaurantId: (id: string | null) => void;
   setActiveBranchId: (id: string | null) => void;
+  resetActiveStore: () => void;
 }
 
 export const useActiveStore = create<ActiveStoreState>((set) => {
@@ -31,6 +32,12 @@ export const useActiveStore = create<ActiveStoreState>((set) => {
         localStorage.removeItem('activeBranchId');
       }
       set({ activeBranchId: id });
+    },
+
+    resetActiveStore: () => {
+      localStorage.removeItem('activeRestaurantId');
+      localStorage.removeItem('activeBranchId');
+      set({ activeRestaurantId: null, activeBranchId: null });
     },
   };
 });

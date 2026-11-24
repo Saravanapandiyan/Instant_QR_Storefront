@@ -32,6 +32,12 @@ let AdminRestaurantsController = class AdminRestaurantsController {
     updateRestaurantStatus(id, body) {
         return this.restaurantsService.updateRestaurantStatus(id, body.isActive);
     }
+    adjustRestaurantCredits(id, body, req) {
+        return this.restaurantsService.adjustRestaurantCredits(id, body.delta, body.reason, body.notes, req.user.id);
+    }
+    impersonateRestaurant(id) {
+        return this.restaurantsService.impersonateRestaurant(id);
+    }
 };
 exports.AdminRestaurantsController = AdminRestaurantsController;
 __decorate([
@@ -63,6 +69,24 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], AdminRestaurantsController.prototype, "updateRestaurantStatus", null);
+__decorate([
+    (0, common_1.Post)(':id/credits/adjust'),
+    (0, swagger_1.ApiOperation)({ summary: 'Super Admin: Manually adjust restaurant credits (+/-)' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], AdminRestaurantsController.prototype, "adjustRestaurantCredits", null);
+__decorate([
+    (0, common_1.Post)(':id/impersonate'),
+    (0, swagger_1.ApiOperation)({ summary: 'Super Admin: Impersonate restaurant owner' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminRestaurantsController.prototype, "impersonateRestaurant", null);
 exports.AdminRestaurantsController = AdminRestaurantsController = __decorate([
     (0, swagger_1.ApiTags)('admin-restaurants'),
     (0, swagger_1.ApiBearerAuth)(),

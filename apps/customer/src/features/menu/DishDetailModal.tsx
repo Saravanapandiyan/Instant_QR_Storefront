@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, Minus, Utensils, Sparkles, AlertCircle } from 'lucide-react';
 import type { StorefrontItem } from '../../types/storefront.ts';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface DishDetailModalProps {
   item: StorefrontItem | null;
   currencySymbol: string;
   initialQuantity?: number;
   initialNotes?: string;
+  displayName?: string;
+  displayDescription?: string;
   onClose: () => void;
   onConfirm: (item: StorefrontItem, quantity: number, notes: string) => void;
 }
@@ -32,6 +35,8 @@ export function DishDetailModal({
   currencySymbol,
   initialQuantity = 1,
   initialNotes = '',
+  displayName,
+  displayDescription,
   onClose,
   onConfirm,
 }: DishDetailModalProps) {
@@ -46,14 +51,7 @@ export function DishDetailModal({
   }, [item, initialQuantity, initialNotes]);
 
   // Lock background scroll when modal is open
-  useEffect(() => {
-    if (item) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = 'unset';
-      };
-    }
-  }, [item]);
+  useBodyScrollLock(Boolean(item));
 
   if (!item) return null;
 
@@ -187,16 +185,16 @@ export function DishDetailModal({
 
               <div className="flex items-start justify-between gap-3">
                 <h2 className="text-sm sm:text-base md:text-lg font-bold tracking-tight" style={{ color: 'var(--sf-text)' }}>
-                  {item.name}
+                  {displayName || item.name}
                 </h2>
                 <div className="text-sm sm:text-base md:text-lg font-bold whitespace-nowrap" style={{ color: 'var(--sf-primary)' }}>
                   {currencySymbol}{price}
                 </div>
               </div>
 
-              {item.description ? (
+              {(displayDescription || item.description) ? (
                 <p className="mt-1.5 text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--sf-muted)' }}>
-                  {item.description}
+                  {displayDescription || item.description}
                 </p>
               ) : (
                 <p className="mt-1 text-xs italic" style={{ color: 'var(--sf-muted)' }}>

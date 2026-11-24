@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   ClipboardList,
@@ -26,6 +26,11 @@ import {
   Lock,
   Calendar,
   Printer,
+  Volume2,
+  VolumeX,
+  Sparkles,
+  Flame,
+  Layers,
 } from 'lucide-react';
 import { getMediaUrl } from '../../lib/utils';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
@@ -38,6 +43,15 @@ import { toast } from '../../components/ui';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { usePermissions } from '../../hooks/usePermissions';
 import { ThermalReceiptModal } from './components/ThermalReceiptModal';
+import { PrepTimeModal } from './components/PrepTimeModal';
+import { TableLiveView } from './components/TableLiveView';
+import {
+  startContinuousAlarm,
+  stopContinuousAlarm,
+  playOrderChimeOnce,
+  isSoundMuted,
+  setSoundMuted,
+} from '../../lib/audioAlert';
 
 type DatePreset = 'ALL' | 'TODAY' | 'YESTERDAY' | 'THIS_WEEK' | 'THIS_MONTH' | 'CUSTOM';
 
@@ -115,6 +129,7 @@ export const OrdersPage: React.FC = () => {
   const [customEndDate, setCustomEndDate] = useState<string>(todayYMD);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [mainView, setMainView] = useState<'orders' | 'tables'>('orders');
 
   const [data, setData] = useState<OrdersListResponse>({
     counts: { all: 0, pending: 0, preparing: 0, ready: 0, completed: 0, cancelled: 0 },
@@ -129,6 +144,19 @@ export const OrdersPage: React.FC = () => {
 
   // Modal for thermal receipt printing
   const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
+
+  // Modal for kitchen preparation time selection
+  const [preppingOrder, setPreppingOrder] = useState<Order | null>(null);
+
+  // Sound alert state
+  const [isMuted, setIsMuted] = useState<boolean>(() => isSoundMuted());
+
+  // Live second ticker for running kitchen duration
+  const [now, setNow] = useState<number>(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const printingRestaurant = useMemo(() => {
     if (!printingOrder) return null;
@@ -182,7 +210,17 @@ export const OrdersPage: React.FC = () => {
       fetchOrders(false);
     }, 5000);
 
-    return () => clearInterval(interval);
+    const handleOrdersUpdated = () => {
+      fetchOrders(false);
+    };
+    window.addEventListener('instadine:orders_updated', handleOrdersUpdated);
+    window.addEventListener('instadine:new_order', handleOrdersUpdated);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('instadine:orders_updated', handleOrdersUpdated);
+      window.removeEventListener('instadine:new_order', handleOrdersUpdated);
+    };
   }, [fetchOrders]);
 
   // Status transitions
@@ -194,6 +232,28 @@ export const OrdersPage: React.FC = () => {
       await fetchOrders(false);
     } catch (err: any) {
       toast.error(err.message || 'Failed to update order status.');
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
+  // Open prep modal when accepting order
+  const handleOpenPrepModal = (order: Order) => {
+    stopContinuousAlarm();
+    setPreppingOrder(order);
+  };
+
+  // Confirm prep time & deduct 1 credit
+  const handleConfirmPrep = async (orderId: string, prepTimeMinutes: number) => {
+    setIsSubmittingAction(true);
+    try {
+      await ordersApi.updateOrderStatus(orderId, 'PREPARING', undefined, prepTimeMinutes);
+      toast.success(`Order #${preppingOrder?.orderNumber || ''} marked Paid & in prep! 1 Credit deducted.`);
+      setPreppingOrder(null);
+      await fetchOrders(false);
+      window.dispatchEvent(new CustomEvent('instadine:orders_updated'));
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to accept order.');
     } finally {
       setIsSubmittingAction(false);
     }
@@ -241,41 +301,58 @@ export const OrdersPage: React.FC = () => {
     .filter((b) => !selectedRestaurantId || b.restaurantId === selectedRestaurantId)
     .filter((b) => isBranchAllowed(b.id));
 
-  const getStatusBadge = (status: Order['status']) => {
+  const currentBranch = useMemo(() => {
+    if (selectedBranchId && selectedBranchId !== 'ALL') {
+      return branches.find((b) => b.id === selectedBranchId) || null;
+    }
+    return filteredBranches[0] || branches[0] || null;
+  }, [selectedBranchId, filteredBranches, branches]);
+
+  const getStatusBadge = (status: Order['status'], order?: Order) => {
     switch (status) {
       case 'PENDING':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shadow-2xs">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-            <span>New</span>
+            <span>New Order</span>
           </span>
         );
       case 'CONFIRMED':
-      case 'PREPARING':
+      case 'PREPARING': {
+        let durationInfo = '';
+        if (order) {
+          const startTimeMs = order.prepStartedAt
+            ? new Date(order.prepStartedAt).getTime()
+            : new Date(order.createdAt).getTime();
+          const elapsedMin = Math.floor(Math.max(0, now - startTimeMs) / 60000);
+          const targetMin = order.prepTimeMinutes || 15;
+          durationInfo = ` (${elapsedMin}m / ${targetMin}m)`;
+        }
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-primary-soft text-primary-soft-text border border-primary/20">
-            <ChefHat className="w-3 h-3 text-primary" />
-            <span>Kitchen</span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-primary-soft text-primary-soft-text border border-primary/20 shadow-2xs">
+            <ChefHat className="w-3.5 h-3.5 text-primary" />
+            <span>In Kitchen{durationInfo}</span>
           </span>
         );
+      }
       case 'READY':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-            <Bell className="w-3 h-3 text-emerald-600" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 shadow-2xs">
+            <Bell className="w-3.5 h-3.5 text-emerald-600 animate-bounce" />
             <span>Ready</span>
           </span>
         );
       case 'COMPLETED':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium bg-surface-2 text-muted border border-border">
-            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-            <span>Done</span>
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 shadow-2xs">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Completed</span>
           </span>
         );
       case 'CANCELLED':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium bg-danger/10 text-danger border border-danger/20">
-            <XCircle className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-medium bg-danger/10 text-danger border border-danger/20 shadow-2xs">
+            <XCircle className="w-3.5 h-3.5" />
             <span>Cancelled</span>
           </span>
         );
@@ -346,6 +423,35 @@ export const OrdersPage: React.FC = () => {
               </div>
             )}
 
+            {/* Audible Alert Sound Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                const nextMuted = !isMuted;
+                setIsMuted(nextMuted);
+                setSoundMuted(nextMuted);
+                if (!nextMuted) {
+                  playOrderChimeOnce();
+                  toast.success('Audible order alerts enabled.');
+                } else {
+                  toast.info('Audible order alerts muted.');
+                }
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer shadow-xs ${
+                isMuted
+                  ? 'bg-surface border-border text-muted hover:text-text'
+                  : 'bg-primary/10 border-primary/30 text-primary'
+              }`}
+              title={isMuted ? 'Click to enable repeating sound alert on incoming orders' : 'Click to mute sound alert'}
+            >
+              {isMuted ? (
+                <VolumeX className="w-3.5 h-3.5 text-muted" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5 text-primary animate-pulse" />
+              )}
+              <span>{isMuted ? 'Sound: Muted' : 'Sound: ON'}</span>
+            </button>
+
             {/* View Mode Toggle */}
             <div className="flex items-center bg-surface-2 p-1 rounded-xl border border-border gap-0.5">
               <button
@@ -388,8 +494,73 @@ export const OrdersPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Date Range Filter Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Main View Switcher: Authentic Tab Navigation Bar */}
+        <div className="border-b border-border">
+          <nav className="flex items-center gap-2 sm:gap-6" aria-label="Order Views">
+            <button
+              type="button"
+              onClick={() => setMainView('orders')}
+              className={`relative pb-3.5 pt-1 px-1 font-bold text-sm flex items-center gap-2 transition-all cursor-pointer ${
+                mainView === 'orders'
+                  ? 'text-primary'
+                  : 'text-muted hover:text-text'
+              }`}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>Orders Queue</span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-xs font-bold transition-colors ${
+                  mainView === 'orders'
+                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    : 'bg-surface-2 text-muted border border-border'
+                }`}
+              >
+                {data.counts.all}
+              </span>
+              {mainView === 'orders' && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMainView('tables')}
+              className={`relative pb-3.5 pt-1 px-1 font-bold text-sm flex items-center gap-2 transition-all cursor-pointer ${
+                mainView === 'tables'
+                  ? 'text-primary'
+                  : 'text-muted hover:text-text'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span>Table View (Floor Plan)</span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                Live Open Orders
+              </span>
+              {mainView === 'tables' && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+              )}
+            </button>
+          </nav>
+        </div>
+
+        {mainView === 'tables' ? (
+          currentBranch ? (
+            <TableLiveView
+              branch={currentBranch}
+              onSelectOrder={(orderId) => {
+                const ord = data.orders.find((o) => o.id === orderId);
+                if (ord) setPrintingOrder(ord);
+              }}
+            />
+          ) : (
+            <div className="p-12 text-center text-xs text-muted bg-surface rounded-2xl border border-border">
+              Please configure an outlet to view the live floor plan.
+            </div>
+          )
+        ) : (
+          <>
+            {/* Date Range Filter Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="inline-flex items-center gap-1.5 text-xs font-bold text-muted mr-1">
               <Calendar className="w-3.5 h-3.5 text-primary" />
@@ -504,9 +675,39 @@ export const OrdersPage: React.FC = () => {
           /* =========================================================================
              PRECISE MATCH: BESPOKE ORDER TICKET CARD (100% Theme Shades, No Hardcoding)
              ========================================================================= */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
             {data.orders.map((order) => {
               const isPaid = order.paymentStatus === 'PAID';
+              const isPreparing = order.status === 'CONFIRMED' || order.status === 'PREPARING';
+
+              // Duration calculation for live kitchen tracking
+              const startTimeMs = order.prepStartedAt
+                ? new Date(order.prepStartedAt).getTime()
+                : new Date(order.createdAt).getTime();
+              const targetMinutes = order.prepTimeMinutes || 15;
+              const targetMs = targetMinutes * 60 * 1000;
+              const elapsedMs = Math.max(0, now - startTimeMs);
+
+              const elapsedSec = Math.floor(elapsedMs / 1000);
+              const elapsedMin = Math.floor(elapsedSec / 60);
+              const elapsedSecMod = elapsedSec % 60;
+              const formattedElapsed = `${String(elapsedMin).padStart(2, '0')}:${String(elapsedSecMod).padStart(2, '0')}`;
+              const formattedTarget = `${String(targetMinutes).padStart(2, '0')}:00`;
+
+              const ratio = elapsedMs / targetMs;
+              const isOverdue = ratio >= 1.0;
+              const isExpediting = ratio >= 0.75 && !isOverdue;
+              const progressPct = Math.min(100, Math.round(ratio * 100));
+
+              const overdueSec = Math.max(0, Math.floor((elapsedMs - targetMs) / 1000));
+              const overdueMin = Math.floor(overdueSec / 60);
+              const overdueSecMod = overdueSec % 60;
+              const formattedOverdue = `+${overdueMin}:${String(overdueSecMod).padStart(2, '0')}`;
+
+              const remainingSec = Math.max(0, Math.floor((targetMs - elapsedMs) / 1000));
+              const remMin = Math.floor(remainingSec / 60);
+              const remSec = remainingSec % 60;
+              const formattedRemaining = `${remMin}:${String(remSec).padStart(2, '0')}`;
 
               return (
                 <div
@@ -514,63 +715,108 @@ export const OrdersPage: React.FC = () => {
                   className="rounded-[24px] bg-surface border border-border shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden"
                 >
                   <div>
-                    {/* Top Header Banner: Status pill on left, time on right */}
-                    <div className="bg-surface-2 px-4 py-2.5 flex items-center justify-between border-b border-border">
-                      <div>
+                    {/* Top Header Banner: Status pill on left, time on right (Clean, Unbreakable Layout) */}
+                    <div className="bg-surface-2 px-4 py-2.5 flex items-center justify-between border-b border-border gap-2">
+                      <div className="shrink-0">
                         {order.status === 'PENDING' && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary text-on-primary shadow-xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-on-primary animate-pulse" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                             New Order
                           </span>
                         )}
-                        {(order.status === 'CONFIRMED' || order.status === 'PREPARING') && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-warning text-white shadow-xs">
-                            <ChefHat className="w-3 h-3 text-white" />
+                        {isPreparing && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-primary/15 text-primary border border-primary/25 shadow-2xs">
+                            <ChefHat className="w-3.5 h-3.5 text-primary" />
                             In Kitchen
                           </span>
                         )}
                         {order.status === 'READY' && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-success text-white shadow-xs">
-                            <Bell className="w-3 h-3 text-white animate-bounce" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 shadow-2xs">
+                            <Bell className="w-3.5 h-3.5 text-emerald-600 animate-bounce" />
                             Ready
                           </span>
                         )}
                         {order.status === 'COMPLETED' && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-surface border border-border text-muted shadow-xs">
-                            <CheckCircle2 className="w-3 h-3 text-success" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 shadow-2xs">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                             Completed
                           </span>
                         )}
                         {order.status === 'CANCELLED' && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-danger text-on-danger shadow-xs">
-                            <XCircle className="w-3 h-3 text-on-danger" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-danger/10 text-danger border border-danger/20 shadow-2xs">
+                            <XCircle className="w-3.5 h-3.5 text-danger" />
                             Cancelled
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setPrintingOrder(order)}
-                          className="px-2 py-0.5 rounded-lg text-text bg-surface-2 hover:bg-border transition-colors border border-border flex items-center gap-1 text-[11px] font-bold cursor-pointer"
-                          title="Print Thermal Receipt"
-                        >
-                          <Printer className="w-3.5 h-3.5 text-primary" />
-                          <span>Bill</span>
-                        </button>
-
-                        <div className="flex items-center gap-1 text-xs font-semibold text-muted">
-                          <Clock className="w-3.5 h-3.5 text-muted" />
-                          <span>
-                            {new Date(order.createdAt).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-muted whitespace-nowrap shrink-0">
+                        <Clock className="w-3.5 h-3.5 text-muted shrink-0" />
+                        <span>
+                          {new Date(order.createdAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
                       </div>
                     </div>
+
+                    {/* Live Preparation Duration Timer Banner for In Kitchen Orders */}
+                    {isPreparing && (
+                      <div className="border-b border-border">
+                        <div
+                          className={`px-4 py-2 flex items-center justify-between text-xs font-mono font-bold ${
+                            isOverdue
+                              ? 'bg-danger/15 text-danger'
+                              : isExpediting
+                              ? 'bg-warning/15 text-warning'
+                              : 'bg-primary/10 text-primary'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 font-bold">
+                            <Flame className="w-3.5 h-3.5 shrink-0 text-primary animate-pulse" />
+                            <span>Duration: {formattedElapsed} / {formattedTarget}m</span>
+                          </div>
+
+                          {isOverdue ? (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-danger text-on-danger animate-pulse">
+                              {formattedOverdue} Overdue
+                            </span>
+                          ) : isExpediting ? (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-warning/20 text-warning">
+                              {formattedRemaining} left
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/20 text-primary">
+                              {formattedRemaining} left
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Animated Progress Bar */}
+                        <div className="w-full h-1 bg-surface-2 overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-1000 ease-linear ${
+                              isOverdue ? 'bg-danger' : isExpediting ? 'bg-warning' : 'bg-primary'
+                            }`}
+                            style={{ width: `${progressPct}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Ready Banner */}
+                    {order.status === 'READY' && (
+                      <div className="px-4 py-2 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-b border-emerald-500/20 text-xs font-bold flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Bell className="w-3.5 h-3.5 text-emerald-600 animate-bounce" />
+                          <span>Ready to Serve / Collect</span>
+                        </div>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20">
+                          {order.orderType === 'DINE_IN' ? `Table ${order.tableNumber || '-'}` : 'Counter'}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Card Inner Content */}
                     <div className="p-4 space-y-3">
@@ -725,12 +971,12 @@ export const OrdersPage: React.FC = () => {
                         {order.status === 'PENDING' && can('orders', 'accept') && (
                           <button
                             type="button"
-                            onClick={() => handleUpdateStatus(order.id, 'PREPARING')}
+                            onClick={() => handleOpenPrepModal(order)}
                             disabled={isSubmittingAction}
                             className="w-full py-2.5 px-4 rounded-2xl font-bold text-sm bg-primary hover:bg-primary-hover text-on-primary shadow-xs flex items-center justify-center gap-2 active:scale-[0.99] transition-all cursor-pointer"
                           >
-                            <CheckCircle2 className="w-4 h-4 text-on-primary" />
-                            <span>Accept Order</span>
+                            <ChefHat className="w-4 h-4 text-on-primary" />
+                            <span>Confirm Order</span>
                           </button>
                         )}
 
@@ -762,10 +1008,10 @@ export const OrdersPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setPrintingOrder(order)}
-                          className="w-full py-2 px-3 rounded-xl border border-border bg-surface-2/70 hover:bg-surface-2 font-bold text-xs text-text flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                          className="w-full py-2.5 px-3 rounded-xl border border-border bg-surface-2/80 hover:bg-surface-2 font-bold text-xs text-text flex items-center justify-center gap-2 transition-colors cursor-pointer"
                         >
                           <Printer className="w-3.5 h-3.5 text-primary" />
-                          <span>Print Receipt</span>
+                          <span>Print Receipt / Bill</span>
                         </button>
 
                         {/* Cancel Action */}
@@ -887,7 +1133,7 @@ export const OrdersPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="py-2.5 px-3 whitespace-nowrap">
-                          <div className="scale-90 origin-left">{getStatusBadge(order.status)}</div>
+                          <div className="scale-90 origin-left">{getStatusBadge(order.status, order)}</div>
                         </td>
                         <td className="py-2.5 px-3 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
@@ -903,11 +1149,11 @@ export const OrdersPage: React.FC = () => {
                             {order.status === 'PENDING' && can('orders', 'accept') ? (
                             <button
                               type="button"
-                              onClick={() => handleUpdateStatus(order.id, 'PREPARING')}
+                              onClick={() => handleOpenPrepModal(order)}
                               disabled={isSubmittingAction}
                               className="px-2.5 py-1 rounded-lg text-xs font-bold bg-primary hover:bg-primary-hover text-on-primary shadow-xs cursor-pointer"
                             >
-                              Accept
+                              Confirm Order
                             </button>
                           ) : (order.status === 'CONFIRMED' || order.status === 'PREPARING') && can('orders', 'accept') ? (
                             <button
@@ -942,6 +1188,8 @@ export const OrdersPage: React.FC = () => {
             </div>
           </div>
         )}
+      </>
+    )}
 
         {/* Cancel Confirmation Modal */}
         {cancellingOrder && (
@@ -1026,6 +1274,15 @@ export const OrdersPage: React.FC = () => {
           order={printingOrder}
           restaurant={printingRestaurant}
           branch={printingBranch}
+        />
+
+        {/* Preparation Time Selector & 1-Credit Deduction Modal */}
+        <PrepTimeModal
+          isOpen={Boolean(preppingOrder)}
+          onClose={() => setPreppingOrder(null)}
+          order={preppingOrder}
+          onConfirm={handleConfirmPrep}
+          isSubmitting={isSubmittingAction}
         />
       </div>
     </DashboardLayout>

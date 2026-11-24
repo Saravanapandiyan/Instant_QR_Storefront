@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { restaurantsApi } from '../api/restaurantsApi';
 import { QUERY_KEYS } from '../../../constants/query-keys';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { toast } from '../../../components/ui';
 import type {
   Restaurant,
@@ -11,11 +12,14 @@ import type {
 
 export const useRestaurants = () => {
   const queryClient = useQueryClient();
-  const restaurantsKey = QUERY_KEYS.restaurants.mine;
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+  const restaurantsKey = user?.id ? ['restaurants', 'mine', user.id] : QUERY_KEYS.restaurants.mine;
 
   const query = useQuery({
     queryKey: restaurantsKey,
     queryFn: restaurantsApi.getMyRestaurants,
+    enabled: Boolean(user?.id && token),
   });
 
   useEffect(() => {

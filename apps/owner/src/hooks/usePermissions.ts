@@ -69,8 +69,11 @@ export const usePermissions = () => {
 
     switch (path) {
       case ROUTES.DASHBOARD:
-        return Boolean(permissions.overview?.view);
+      case ROUTES.ANALYTICS:
+        return Boolean(permissions.overview?.view || permissions.orders?.view);
       case ROUTES.ORDERS:
+      case ROUTES.KDS:
+      case ROUTES.TV_DISPLAY:
         return Boolean(permissions.orders?.view);
       case ROUTES.MENU:
         return Boolean(permissions.menu?.view);
@@ -78,6 +81,8 @@ export const usePermissions = () => {
         return Boolean(permissions.branches?.view);
       case ROUTES.PAYMENTS:
       case ROUTES.BILLING:
+      case ROUTES.BILLING_PLANS:
+      case ROUTES.BILLING_HISTORY:
         return Boolean(permissions.payments?.view);
       case ROUTES.STAFF:
         return Boolean(permissions.staff?.view);
@@ -98,8 +103,13 @@ export const usePermissions = () => {
     return assignedBranches.includes(branchId);
   };
 
+  const isSuperAdmin = useMemo(() => {
+    return user?.role === 'SUPER_ADMIN' || Boolean((user as any)?.isPlatformAdmin);
+  }, [user]);
+
   return {
     isOwner,
+    isSuperAdmin,
     userRole: isOwner ? 'OWNER' : (staffProfile?.role || 'STAFF'),
     staffProfile,
     assignedBranches,

@@ -16,6 +16,7 @@ export declare class CategoriesController {
         deletedBy: string | null;
         restaurantId: string;
         sortOrder: number;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     findAllByRestaurant(restaurantId: string): Promise<({
         _count: {
@@ -33,6 +34,7 @@ export declare class CategoriesController {
         deletedBy: string | null;
         restaurantId: string;
         sortOrder: number;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     })[]>;
     findOne(id: string): Promise<{
         description: string | null;
@@ -46,6 +48,7 @@ export declare class CategoriesController {
         deletedBy: string | null;
         restaurantId: string;
         sortOrder: number;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     update(id: string, updateCategoryDto: UpdateCategoryDto): Promise<{
         description: string | null;
@@ -59,6 +62,7 @@ export declare class CategoriesController {
         deletedBy: string | null;
         restaurantId: string;
         sortOrder: number;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     remove(id: string, user: any): Promise<{
         description: string | null;
@@ -72,5 +76,6 @@ export declare class CategoriesController {
         deletedBy: string | null;
         restaurantId: string;
         sortOrder: number;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
 }

@@ -21,6 +21,10 @@ const branch_products_module_1 = require("./branch-products/branch-products.modu
 const admin_module_1 = require("./admin/admin.module");
 const orders_module_1 = require("./orders/orders.module");
 const staff_module_1 = require("./staff/staff.module");
+const ai_module_1 = require("./ai/ai.module");
+const packs_module_1 = require("./packs/packs.module");
+const credits_module_1 = require("./credits/credits.module");
+const analytics_module_1 = require("./analytics/analytics.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -38,6 +42,10 @@ exports.AppModule = AppModule = __decorate([
             admin_module_1.AdminModule,
             orders_module_1.OrdersModule,
             staff_module_1.StaffModule,
+            ai_module_1.AiModule,
+            packs_module_1.PacksModule,
+            credits_module_1.CreditsModule,
+            analytics_module_1.AnalyticsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

@@ -14,6 +14,7 @@ export declare class BranchesController {
             themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
             id: string;
             ownerId: string;
+            creditBalance: number;
             paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
             isActive: boolean;
             createdAt: Date;
@@ -49,6 +50,7 @@ export declare class BranchesController {
             themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
             id: string;
             ownerId: string;
+            creditBalance: number;
             paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
             isActive: boolean;
             createdAt: Date;
@@ -83,6 +85,7 @@ export declare class BranchesController {
             themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
             id: string;
             ownerId: string;
+            creditBalance: number;
             paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
             isActive: boolean;
             createdAt: Date;
@@ -117,6 +120,7 @@ export declare class BranchesController {
             themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
             id: string;
             ownerId: string;
+            creditBalance: number;
             paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
             isActive: boolean;
             createdAt: Date;
@@ -151,6 +155,7 @@ export declare class BranchesController {
             themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
             id: string;
             ownerId: string;
+            creditBalance: number;
             paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
             isActive: boolean;
             createdAt: Date;
@@ -190,5 +195,80 @@ export declare class BranchesController {
         phone: string | null;
         countryCode: string | null;
         currency: string;
+    }>;
+    getTables(branchId: string): Promise<{
+        activeOrder: {
+            id: string;
+            orderNumber: number;
+            status: import("@prisma/client").$Enums.OrderStatus;
+            totalAmount: number;
+            customerName: string;
+            itemCount: number;
+            elapsedSeconds: number;
+            createdAt: Date;
+        } | null;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        tableNumber: string;
+        section: string;
+        branchId: string;
+        capacity: number;
+    }[]>;
+    createTable(branchId: string, body: {
+        tableNumber: string;
+        section?: string;
+        capacity?: number;
+    }): Promise<{
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        tableNumber: string;
+        section: string;
+        branchId: string;
+        capacity: number;
+    }>;
+    bulkCreateTables(branchId: string, body: {
+        section?: string;
+        prefix?: string;
+        startNumber: number;
+        count: number;
+        capacity?: number;
+    }): Promise<{
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        tableNumber: string;
+        section: string;
+        branchId: string;
+        capacity: number;
+    }[]>;
+    updateTable(tableId: string, body: {
+        tableNumber?: string;
+        section?: string;
+        capacity?: number;
+        isActive?: boolean;
+    }): Promise<{
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        tableNumber: string;
+        section: string;
+        branchId: string;
+        capacity: number;
+    }>;
+    deleteTable(tableId: string): Promise<{
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        tableNumber: string;
+        section: string;
+        branchId: string;
+        capacity: number;
     }>;
 }

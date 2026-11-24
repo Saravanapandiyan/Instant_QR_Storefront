@@ -1,17 +1,24 @@
 import { PrismaService } from '../prisma/prisma.service';
+import { AuthService } from '../auth/auth.service';
+import { CreditsService } from '../credits/credits.service';
 export declare class AdminRestaurantsQuery {
     search?: string;
     status?: 'ALL' | 'ACTIVE' | 'PENDING_REVIEW' | 'SUSPENDED';
+    planTier?: 'ALL' | 'FREE' | 'PAID';
 }
 export declare class AdminRestaurantsService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly authService;
+    private readonly creditsService;
+    constructor(prisma: PrismaService, authService: AuthService, creditsService: CreditsService);
     getRestaurants(query: AdminRestaurantsQuery): Promise<{
         counts: {
             all: number;
             active: number;
             pendingReview: number;
             suspended: number;
+            free: number;
+            paid: number;
         };
         restaurants: {
             id: string;
@@ -20,12 +27,15 @@ export declare class AdminRestaurantsService {
             description: string | null;
             logoUrl: string | null;
             defaultCurrency: string;
+            creditBalance: number;
+            planTier: "PAID" | "FREE";
             isActive: boolean;
             status: string;
             createdAt: Date;
             owner: {
                 name: string;
                 id: string;
+                role: import("@prisma/client").$Enums.Role;
                 phone: string | null;
                 countryCode: string | null;
                 email: string;
@@ -33,6 +43,7 @@ export declare class AdminRestaurantsService {
             branchesCount: number;
             productsCount: number;
             categoriesCount: number;
+            ordersCount: number;
             branches: {
                 name: string;
                 slug: string;
@@ -91,6 +102,7 @@ export declare class AdminRestaurantsService {
         themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         ownerId: string;
+        creditBalance: number;
         paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
         isActive: boolean;
         createdAt: Date;
@@ -106,5 +118,33 @@ export declare class AdminRestaurantsService {
         isActive: boolean;
         status: string;
         message: string;
+    }>;
+    adjustRestaurantCredits(restaurantId: string, delta: number, reason: string, notes: string | undefined, adminUserId: string): Promise<{
+        success: boolean;
+        message: string;
+        newBalance: number;
+        entry: {
+            id: string;
+            createdAt: Date;
+            restaurantId: string;
+            delta: number;
+            reason: string;
+            refId: string | null;
+            balanceAfter: number;
+        };
+    }>;
+    impersonateRestaurant(restaurantId: string): Promise<{
+        accessToken: string;
+        user: {
+            name: string;
+            id: string;
+            role: import("@prisma/client").$Enums.Role;
+            email: string;
+        };
+        restaurant: {
+            id: string;
+            name: string;
+            slug: string;
+        };
     }>;
 }

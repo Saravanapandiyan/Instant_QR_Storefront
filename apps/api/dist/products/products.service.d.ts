@@ -22,6 +22,7 @@ export declare class ProductsService {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
         imageUrl: string | null;
@@ -54,6 +55,7 @@ export declare class ProductsService {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
         imageUrl: string | null;
@@ -81,6 +83,7 @@ export declare class ProductsService {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
+            translations: import("@prisma/client/runtime/library").JsonValue | null;
             categoryId: string;
             basePrice: import("@prisma/client/runtime/library").Decimal;
             imageUrl: string | null;
@@ -115,6 +118,7 @@ export declare class ProductsService {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
         imageUrl: string | null;
@@ -142,6 +146,7 @@ export declare class ProductsService {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
         imageUrl: string | null;
@@ -156,6 +161,7 @@ export declare class ProductsService {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
         imageUrl: string | null;

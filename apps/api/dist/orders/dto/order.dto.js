@@ -42,6 +42,7 @@ class CreateOrderDto {
     orderType;
     orderNotes;
     paymentMethod;
+    turnstileToken;
     items;
 }
 exports.CreateOrderDto = CreateOrderDto;
@@ -81,6 +82,11 @@ __decorate([
     __metadata("design:type", String)
 ], CreateOrderDto.prototype, "paymentMethod", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateOrderDto.prototype, "turnstileToken", void 0);
+__decorate([
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ValidateNested)({ each: true }),
     (0, class_transformer_1.Type)(() => OrderItemDto),
@@ -89,6 +95,7 @@ __decorate([
 class UpdateOrderStatusDto {
     status;
     cancelReason;
+    prepTimeMinutes;
 }
 exports.UpdateOrderStatusDto = UpdateOrderStatusDto;
 __decorate([
@@ -100,6 +107,13 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateOrderStatusDto.prototype, "cancelReason", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.Max)(180),
+    __metadata("design:type", Number)
+], UpdateOrderStatusDto.prototype, "prepTimeMinutes", void 0);
 class UpdatePaymentStatusDto {
     paymentStatus;
 }

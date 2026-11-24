@@ -8,6 +8,7 @@ export interface Category {
   description?: string;
   sortOrder: number;
   isActive: boolean;
+  translations?: Record<string, { name: string; description?: string }> | null;
   _count?: {
     products: number;
   };
@@ -22,6 +23,7 @@ export interface Product {
   basePrice: string | number;
   price?: string | number;
   imageUrl?: string;
+  translations?: Record<string, { name: string; description?: string }> | null;
   category?: {
     id: string;
     name: string;
@@ -78,4 +80,42 @@ export const updateProduct = async (id: string, data: FormData | Partial<Product
 
 export const deleteProduct = async (id: string): Promise<void> => {
   await apiClient.delete(API_ENDPOINTS.PRODUCTS.BY_ID(id));
+};
+
+// 3. Translation API (Multilingual Gemini Flash)
+export interface SupportedLanguage {
+  code: string;
+  name: string;
+  nativeName: string;
+  flag: string;
+}
+
+export const getSupportedLanguages = async (): Promise<SupportedLanguage[]> => {
+  return apiClient.get<SupportedLanguage[]>('/ai/supported-languages');
+};
+
+export const translateMenu = async (restaurantId: string, targetLanguages: string[]) => {
+  return apiClient.post<{
+    success: boolean;
+    languages: string[];
+    totalUpdated: number;
+    message: string;
+  }>('/ai/translate-menu', {
+    restaurantId,
+    targetLanguages,
+  });
+};
+
+export const updateProductTranslation = async (
+  productId: string,
+  data: { langCode: string; name: string; description?: string },
+) => {
+  return apiClient.put(`/ai/translation/product/${productId}`, data);
+};
+
+export const updateCategoryTranslation = async (
+  categoryId: string,
+  data: { langCode: string; name: string; description?: string },
+) => {
+  return apiClient.put(`/ai/translation/category/${categoryId}`, data);
 };

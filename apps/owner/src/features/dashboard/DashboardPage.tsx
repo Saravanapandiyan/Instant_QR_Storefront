@@ -13,6 +13,9 @@ import {
   XCircle,
   ArrowRight,
   Printer,
+  Sparkles,
+  Plus,
+  Coins,
 } from 'lucide-react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Button, toast } from '../../components/ui';
@@ -20,10 +23,12 @@ import { useBranches } from '../branches/hooks/useBranches';
 import { useRestaurants } from '../restaurants/hooks/useRestaurants';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useActiveStore } from '../../store/useActiveStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { usePermissions } from '../../hooks/usePermissions';
 import { BranchModal } from '../branches/components/BranchModal';
 import { InstagramQRModal } from '../branches/components/InstagramQRModal';
 import { ThermalReceiptModal } from '../orders/components/ThermalReceiptModal';
+import { QuickSetupWizard } from '../quick-setup/QuickSetupWizard';
 import { getProducts, getCategories } from '../menu/api/menu-api';
 import { ordersApi, type Order } from '../orders/api/ordersApi';
 import { getCustomerStorefrontUrl } from '../../lib/urls';
@@ -44,12 +49,14 @@ export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQuickSetupOpen, setIsQuickSetupOpen] = useState(false);
   const [qrModalBranch, setQrModalBranch] = useState<Branch | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
   const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const { formatPrice } = useCurrencyStore();
   const { setActiveRestaurantId, setActiveBranchId } = useActiveStore();
+  const user = useAuthStore((state) => state.user);
   const { can } = usePermissions();
 
   // Fetch restaurants and branches
@@ -60,8 +67,8 @@ export const DashboardPage: React.FC = () => {
 
   // Fetch real Digital Menu stats across all restaurants
   const { data: menuStats, isLoading: isMenuLoading } = useQuery({
-    queryKey: ['overview-menu-stats', restaurantIdsKey],
-    enabled: restaurants.length > 0,
+    queryKey: ['overview-menu-stats', user?.id, restaurantIdsKey],
+    enabled: restaurants.length > 0 && !!user?.id,
     queryFn: async () => {
       const results = await Promise.all(
         restaurants.map(async (rest) => {
@@ -85,8 +92,8 @@ export const DashboardPage: React.FC = () => {
   // Fetch real Orders across all restaurants (polling every 10s for live dashboard updates)
   const canViewOrders = can('orders', 'view');
   const { data: allOrders = [], isLoading: isOrdersLoading } = useQuery({
-    queryKey: ['overview-orders', restaurantIdsKey],
-    enabled: restaurants.length > 0 && canViewOrders,
+    queryKey: ['overview-orders', user?.id, restaurantIdsKey],
+    enabled: restaurants.length > 0 && canViewOrders && !!user?.id,
     refetchInterval: 10000,
     queryFn: async () => {
       const responses = await Promise.all(
@@ -268,7 +275,73 @@ export const DashboardPage: React.FC = () => {
               Manage your branches, digital QR table stands, and orders.
             </p>
           </div>
+          <div className="flex items-center gap-2.5">
+            {/* Prepaid Credits Balance Button */}
+            <button
+              type="button"
+              onClick={() => navigate(ROUTES.BILLING)}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border bg-surface text-text hover:bg-surface-2 transition-all cursor-pointer shadow-2xs"
+              title="View Prepaid Credit Balance & Recharge"
+            >
+              <Coins className="w-4 h-4 text-primary" />
+              <span className="text-xs font-black">
+                {typeof restaurants[0]?.creditBalance === 'number'
+                  ? `${restaurants[0].creditBalance} Credits`
+                  : 'Credits'}
+              </span>
+              <span className="text-[10px] text-primary font-bold hover:underline">
+                Recharge &rarr;
+              </span>
+            </button>
+
+            {branches.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="px-4 py-2 rounded-xl bg-primary text-white font-bold text-xs shadow-md hover:bg-primary/90 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" /> New Branch
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsQuickSetupOpen(true)}
+                className="px-4 py-2 rounded-xl bg-primary text-white font-bold text-xs shadow-md hover:bg-primary/90 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 animate-pulse" /> 5-Min Setup (AI) &rarr;
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* 5-Minute Setup Action Banner */}
+        {branches.length === 0 && (
+          <div className="p-5 rounded-2xl bg-gradient-to-r from-primary/15 via-primary/5 to-surface border border-primary/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-primary text-white flex items-center justify-center shadow-md flex-shrink-0">
+                <Sparkles className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm sm:text-base font-bold text-text">Launch Storefront in 5 Minutes (AI-Powered)</h3>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                    100 Free Credits Included
+                  </span>
+                </div>
+                <p className="text-xs text-muted mt-0.5">
+                  Upload your paper menu photo &mdash; Smart AI extracts dishes, auto-generates descriptions, and pairs appetizing food photos!
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsQuickSetupOpen(true)}
+              className="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-md hover:bg-primary/90 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> Start 5-Min Setup &rarr;
+            </button>
+          </div>
+        )}
 
         {/* Stats Row: 4 compact cards in a responsive grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -743,6 +816,16 @@ export const DashboardPage: React.FC = () => {
             : null
         }
       />
+      {/* 5-Minute Quick Setup Wizard */}
+      {isQuickSetupOpen && (
+        <QuickSetupWizard
+          onComplete={() => {
+            setIsQuickSetupOpen(false);
+            queryClient.invalidateQueries();
+          }}
+          onCancel={() => setIsQuickSetupOpen(false)}
+        />
+      )}
     </DashboardLayout>
   );
 };

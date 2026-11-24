@@ -26,6 +26,7 @@ export interface StorefrontCategory {
   name: string;
   description: string | null;
   sortOrder: number;
+  translations?: Record<string, { name: string; description?: string }> | null;
 }
 
 export interface StorefrontItem {
@@ -39,6 +40,8 @@ export interface StorefrontItem {
   imageUrl: string | null;
   categoryId: string;
   categoryName: string;
+  translations?: Record<string, { name: string; description?: string }> | null;
+  categoryTranslations?: Record<string, { name: string; description?: string }> | null;
   isAvailable: boolean; // false = Sold Out
   isEnabled: boolean;
   isVeg?: boolean;

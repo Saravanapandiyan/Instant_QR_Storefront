@@ -80,20 +80,65 @@ let AuthService = class AuthService {
         };
     }
     async login(dto) {
-        const user = await this.prisma.user.findUnique({
-            where: { email: dto.email.toLowerCase() },
-            include: {
-                staffProfiles: {
-                    include: {
-                        restaurant: {
-                            select: { id: true, name: true, slug: true },
+        const rawIdentifier = (dto.email || '').trim();
+        const cleanDigits = rawIdentifier.replace(/\D/g, '');
+        const isEmail = rawIdentifier.includes('@');
+        let user = null;
+        if (isEmail) {
+            user = await this.prisma.user.findUnique({
+                where: { email: rawIdentifier.toLowerCase() },
+                include: {
+                    staffProfiles: {
+                        include: {
+                            restaurant: {
+                                select: { id: true, name: true, slug: true },
+                            },
                         },
                     },
                 },
-            },
-        });
+            });
+        }
+        if (!user && cleanDigits.length >= 7) {
+            const candidates = await this.prisma.user.findMany({
+                where: {
+                    phone: { not: null },
+                },
+                include: {
+                    staffProfiles: {
+                        include: {
+                            restaurant: {
+                                select: { id: true, name: true, slug: true },
+                            },
+                        },
+                    },
+                },
+            });
+            user =
+                candidates.find((u) => {
+                    if (!u.phone)
+                        return false;
+                    const uDigits = u.phone.replace(/\D/g, '');
+                    return (uDigits === cleanDigits ||
+                        uDigits.endsWith(cleanDigits) ||
+                        cleanDigits.endsWith(uDigits));
+                }) || null;
+        }
+        if (!user && !isEmail) {
+            user = await this.prisma.user.findUnique({
+                where: { email: rawIdentifier.toLowerCase() },
+                include: {
+                    staffProfiles: {
+                        include: {
+                            restaurant: {
+                                select: { id: true, name: true, slug: true },
+                            },
+                        },
+                    },
+                },
+            });
+        }
         if (!user) {
-            throw new common_1.UnauthorizedException('Invalid email or password');
+            throw new common_1.UnauthorizedException('Invalid email, mobile number, or password / PIN');
         }
         if (user.role === 'STAFF' && user.staffProfiles.length > 0) {
             const hasActiveProfile = user.staffProfiles.some((sp) => sp.isActive);
@@ -101,9 +146,24 @@ let AuthService = class AuthService {
                 throw new common_1.ForbiddenException('Your staff account has been deactivated. Please contact your restaurant administrator.');
             }
         }
-        const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+        const trimmedInput = (dto.password || '').trim();
+        let isPasswordValid = false;
+        if (user.passwordHash) {
+            isPasswordValid = await bcrypt.compare(trimmedInput, user.passwordHash);
+        }
+        if (!isPasswordValid && user.staffProfiles?.length > 0) {
+            const matchingStaff = user.staffProfiles.find((sp) => sp.isActive && sp.pinCode && sp.pinCode.trim() === trimmedInput);
+            if (matchingStaff) {
+                isPasswordValid = true;
+                const syncedHash = await bcrypt.hash(trimmedInput, 10);
+                await this.prisma.user.update({
+                    where: { id: user.id },
+                    data: { passwordHash: syncedHash },
+                });
+            }
+        }
         if (!isPasswordValid) {
-            throw new common_1.UnauthorizedException('Invalid email or password');
+            throw new common_1.UnauthorizedException('Invalid email, mobile number, or password / PIN');
         }
         const accessToken = this.generateToken(user.id, user.email, user.role);
         const { passwordHash: _, ...sanitizedUser } = user;

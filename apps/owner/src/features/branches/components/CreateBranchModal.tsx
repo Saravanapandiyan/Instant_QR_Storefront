@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { X, Store, AlertCircle, MapPin, Phone, ArrowRight } from 'lucide-react';
 import { Button, Input } from '../../../components/ui';
 import { branchesApi } from '../api/branchesApi';
+import { useActiveStore } from '../../../store/useActiveStore';
 
 const COUNTRY_CODES = [
   { code: '+91', label: '🇮🇳 +91 (India)' },
@@ -37,6 +38,7 @@ export const CreateBranchModal: React.FC<CreateBranchModalProps> = ({
   onBranchCreated,
 }) => {
   const [serverError, setServerError] = useState<string | null>(null);
+  const { activeRestaurantId } = useActiveStore();
 
   const {
     register,
@@ -81,6 +83,7 @@ export const CreateBranchModal: React.FC<CreateBranchModalProps> = ({
     try {
       setServerError(null);
       await branchesApi.createBranch({
+        restaurantId: activeRestaurantId || '',
         name: data.name,
         slug: data.slug || undefined,
         address: data.address,

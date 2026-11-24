@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Button, Input } from '../../../components/ui';
 import { getMediaUrl, cn } from '../../../lib/utils';
+import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 import { useCurrencyStore } from '../../../store/useCurrencyStore';
 import { SUPPORTED_CURRENCIES } from '../../../config/currencies.config';
 import { branchProductsApi } from '../../branches/api/branchProductsApi';
@@ -72,6 +73,7 @@ export const DishModal: React.FC<DishModalProps> = ({
   onSubmit,
   onBranchUpdated,
 }) => {
+  useBodyScrollLock(isOpen);
   const { currentCurrency, formatPrice } = useCurrencyStore();
   const [serverError, setServerError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

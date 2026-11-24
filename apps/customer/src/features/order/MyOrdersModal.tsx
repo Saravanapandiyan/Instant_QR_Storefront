@@ -11,6 +11,7 @@ import {
   UtensilsCrossed,
 } from 'lucide-react';
 import type { StoredCustomerOrder } from './useCustomerOrders';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface MyOrdersModalProps {
   orders: StoredCustomerOrder[];
@@ -25,6 +26,7 @@ export const MyOrdersModal: React.FC<MyOrdersModalProps> = ({
   onClose,
   onSelectOrder,
 }) => {
+  useBodyScrollLock(true);
   const getStatusBadge = (status: StoredCustomerOrder['status']) => {
     switch (status) {
       case 'PENDING':
@@ -207,7 +209,7 @@ export const MyOrdersModal: React.FC<MyOrdersModalProps> = ({
                           : 'var(--sf-text)',
                       }}
                     >
-                      <span>{isActive ? 'Track Live' : 'View Bill'}</span>
+                      <span>{isActive ? 'Track & Receipt' : 'View Bill & Receipt'}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>

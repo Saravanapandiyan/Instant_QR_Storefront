@@ -33,6 +33,9 @@ export interface Order {
   subtotal: number;
   tax: number;
   totalAmount: number;
+  prepTimeMinutes?: number | null;
+  prepStartedAt?: string | null;
+  estimatedReadyAt?: string | null;
   cancelReason?: string | null;
   cancelledAt?: string | null;
   createdAt: string;
@@ -43,6 +46,28 @@ export interface Order {
     name: string;
     slug: string;
   };
+}
+
+export interface TvBoardOrder {
+  id: string;
+  orderNumber: number;
+  orderType: 'DINE_IN' | 'TAKEAWAY';
+  tableNumber?: string | null;
+  customerName?: string | null;
+  status: 'CONFIRMED' | 'PREPARING' | 'READY';
+  prepTimeMinutes?: number | null;
+  prepStartedAt?: string | null;
+  estimatedReadyAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TvBoardResponse {
+  restaurantName: string;
+  branchName: string;
+  restaurantId?: string;
+  branchId?: string;
+  orders: TvBoardOrder[];
 }
 
 export interface OrdersListResponse {
@@ -72,10 +97,12 @@ export const ordersApi = {
     orderId: string,
     status: string,
     cancelReason?: string,
+    prepTimeMinutes?: number,
   ) => {
     return apiClient.patch(API_ENDPOINTS.ORDERS.UPDATE_STATUS(orderId), {
       status,
       cancelReason,
+      prepTimeMinutes,
     });
   },
 
@@ -83,6 +110,10 @@ export const ordersApi = {
     return apiClient.patch(API_ENDPOINTS.ORDERS.UPDATE_PAYMENT(orderId), {
       paymentStatus,
     });
+  },
+
+  getTvBoardOrders: async (targetId: string): Promise<TvBoardResponse> => {
+    return apiClient.get<TvBoardResponse>(API_ENDPOINTS.ORDERS.TV_BOARD(targetId));
   },
 };
 

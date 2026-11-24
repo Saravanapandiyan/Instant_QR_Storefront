@@ -1,0 +1,97 @@
+import { PacksService } from './packs.service';
+import { CreatePackDto } from './dto/create-pack.dto';
+import { UpdatePackDto } from './dto/update-pack.dto';
+export declare class PacksController {
+    private readonly packsService;
+    constructor(packsService: PacksService);
+    getActivePacks(): Promise<{
+        name: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        sortOrder: number;
+        code: string;
+        ordersCount: number;
+        bonusCredits: number;
+        priceUsd: import("@prisma/client/runtime/library").Decimal;
+        priceInr: import("@prisma/client/runtime/library").Decimal;
+        regionalPricingJson: import("@prisma/client/runtime/library").JsonValue | null;
+        featuresJson: import("@prisma/client/runtime/library").JsonValue | null;
+    }[]>;
+    getAllPacks(): Promise<{
+        name: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        sortOrder: number;
+        code: string;
+        ordersCount: number;
+        bonusCredits: number;
+        priceUsd: import("@prisma/client/runtime/library").Decimal;
+        priceInr: import("@prisma/client/runtime/library").Decimal;
+        regionalPricingJson: import("@prisma/client/runtime/library").JsonValue | null;
+        featuresJson: import("@prisma/client/runtime/library").JsonValue | null;
+    }[]>;
+    getPackById(id: string): Promise<{
+        name: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        sortOrder: number;
+        code: string;
+        ordersCount: number;
+        bonusCredits: number;
+        priceUsd: import("@prisma/client/runtime/library").Decimal;
+        priceInr: import("@prisma/client/runtime/library").Decimal;
+        regionalPricingJson: import("@prisma/client/runtime/library").JsonValue | null;
+        featuresJson: import("@prisma/client/runtime/library").JsonValue | null;
+    }>;
+    createPack(dto: CreatePackDto): Promise<{
+        name: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        sortOrder: number;
+        code: string;
+        ordersCount: number;
+        bonusCredits: number;
+        priceUsd: import("@prisma/client/runtime/library").Decimal;
+        priceInr: import("@prisma/client/runtime/library").Decimal;
+        regionalPricingJson: import("@prisma/client/runtime/library").JsonValue | null;
+        featuresJson: import("@prisma/client/runtime/library").JsonValue | null;
+    }>;
+    updatePack(id: string, dto: UpdatePackDto): Promise<{
+        name: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        sortOrder: number;
+        code: string;
+        ordersCount: number;
+        bonusCredits: number;
+        priceUsd: import("@prisma/client/runtime/library").Decimal;
+        priceInr: import("@prisma/client/runtime/library").Decimal;
+        regionalPricingJson: import("@prisma/client/runtime/library").JsonValue | null;
+        featuresJson: import("@prisma/client/runtime/library").JsonValue | null;
+    }>;
+    deletePack(id: string): Promise<{
+        name: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        sortOrder: number;
+        code: string;
+        ordersCount: number;
+        bonusCredits: number;
+        priceUsd: import("@prisma/client/runtime/library").Decimal;
+        priceInr: import("@prisma/client/runtime/library").Decimal;
+        regionalPricingJson: import("@prisma/client/runtime/library").JsonValue | null;
+        featuresJson: import("@prisma/client/runtime/library").JsonValue | null;
+    }>;
+}

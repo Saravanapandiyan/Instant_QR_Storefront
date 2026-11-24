@@ -8,6 +8,8 @@ import {
   Trash2,
   MoreHorizontal,
   Store,
+  Sparkles,
+  Globe,
 } from 'lucide-react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Button, ConfirmModal, toast } from '../../components/ui';
@@ -21,6 +23,8 @@ import { useRestaurantMatrix } from '../branches/hooks/useRestaurantMatrix';
 import { CategoryModal } from './components/CategoryModal';
 import { DishModal } from './components/DishModal';
 import { BranchMatrixTable } from './components/BranchMatrixTable';
+import { AiMenuImportModal } from './components/AiMenuImportModal';
+import { TranslateMenuModal } from './components/TranslateMenuModal';
 import { getMediaUrl, cn } from '../../lib/utils';
 import { ROUTES } from '../../constants/routes';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -62,6 +66,8 @@ export const MenuPage: React.FC = () => {
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
 
   const [isDishModalOpen, setIsDishModalOpen] = useState(false);
+  const [isAiImportModalOpen, setIsAiImportModalOpen] = useState(false);
+  const [isTranslateModalOpen, setIsTranslateModalOpen] = useState(false);
   const [editingDish, setEditingDish] = useState<Product | null>(null);
   const [deletingDish, setDeletingDish] = useState<Product | null>(null);
 
@@ -372,14 +378,31 @@ export const MenuPage: React.FC = () => {
                 </button>
 
                 {can('menu', 'create') && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleOpenNewDish()}
-                    icon={<Plus size={14} />}
-                  >
-                    Add Dish
-                  </Button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setIsAiImportModalOpen(true)}
+                      className="px-3 py-1.5 rounded-[8px] bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Sparkles size={13} className="text-primary" /> AI Menu Import
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsTranslateModalOpen(true)}
+                      className="px-3 py-1.5 rounded-[8px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                      title="Translate Menu into Regional Languages"
+                    >
+                      <Globe size={13} /> Translate Menu
+                    </button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleOpenNewDish()}
+                      icon={<Plus size={14} />}
+                    >
+                      Add Dish
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
@@ -756,6 +779,24 @@ export const MenuPage: React.FC = () => {
         message="Are you sure you want to delete this category? Associated dishes will become uncategorized."
         confirmText="Delete Category"
         variant="danger"
+      />
+      {/* AI Menu Import Modal */}
+      <AiMenuImportModal
+        isOpen={isAiImportModalOpen}
+        onClose={() => setIsAiImportModalOpen(false)}
+        onSuccess={() => refetchProducts()}
+        restaurants={restaurants}
+        defaultRestaurantId={effectiveRestaurantId}
+      />
+
+      {/* Multilingual Menu Translation Modal */}
+      <TranslateMenuModal
+        isOpen={isTranslateModalOpen}
+        onClose={() => setIsTranslateModalOpen(false)}
+        restaurantId={effectiveRestaurantId}
+        categories={categories}
+        products={products}
+        onTranslationComplete={() => refetchProducts()}
       />
     </DashboardLayout>
   );

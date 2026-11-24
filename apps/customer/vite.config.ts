@@ -59,6 +59,42 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
         navigateFallback: '/index.html',
         navigateFallbackAllowlist: [/^(?!\/__).*/],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/images\.(unsplash|pexels)\.com\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'external-food-images',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+            },
+          },
+          {
+            urlPattern: /\/uploads\/.*\.(?:png|jpg|jpeg|svg|webp)$/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'local-dish-uploads',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+            },
+          },
+          {
+            urlPattern: /\/api\/v1\/(?:branch-products|branches)\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'storefront-api-cache',
+              networkTimeoutSeconds: 4,
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24, // 1 day
+              },
+            },
+          },
+        ],
       },
     }),
   ],

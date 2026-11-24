@@ -45,6 +45,10 @@ export class CreateOrderDto {
   @IsEnum(PaymentMethod)
   paymentMethod?: PaymentMethod;
 
+  @IsOptional()
+  @IsString()
+  turnstileToken?: string;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
@@ -58,6 +62,12 @@ export class UpdateOrderStatusDto {
   @IsOptional()
   @IsString()
   cancelReason?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(180)
+  prepTimeMinutes?: number;
 }
 
 export class UpdatePaymentStatusDto {

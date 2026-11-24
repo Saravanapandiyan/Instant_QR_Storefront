@@ -40,6 +40,7 @@ export declare class RestaurantsService {
         themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         ownerId: string;
+        creditBalance: number;
         paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
         isActive: boolean;
         createdAt: Date;
@@ -79,6 +80,7 @@ export declare class RestaurantsService {
         themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         ownerId: string;
+        creditBalance: number;
         paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
         isActive: boolean;
         createdAt: Date;
@@ -116,6 +118,7 @@ export declare class RestaurantsService {
             deletedBy: string | null;
             restaurantId: string;
             sortOrder: number;
+            translations: import("@prisma/client/runtime/library").JsonValue | null;
         }[];
         _count: {
             products: number;
@@ -131,6 +134,7 @@ export declare class RestaurantsService {
         themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         ownerId: string;
+        creditBalance: number;
         paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
         isActive: boolean;
         createdAt: Date;
@@ -170,6 +174,7 @@ export declare class RestaurantsService {
         themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         ownerId: string;
+        creditBalance: number;
         paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
         isActive: boolean;
         createdAt: Date;
@@ -187,6 +192,7 @@ export declare class RestaurantsService {
         themeConfig: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         ownerId: string;
+        creditBalance: number;
         paymentConfig: import("@prisma/client/runtime/library").JsonValue | null;
         isActive: boolean;
         createdAt: Date;

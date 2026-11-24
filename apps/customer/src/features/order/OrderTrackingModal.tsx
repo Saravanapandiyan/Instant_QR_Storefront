@@ -10,9 +10,20 @@ import {
   X,
   MapPin,
   Check,
+  Receipt,
+  Sparkles,
+  Flame,
+  Bell,
 } from 'lucide-react';
 import { fetchOrderDetails } from '../../api/ordersApi';
 import type { PlacedOrder } from '../../api/ordersApi';
+import { CustomerReceiptModal } from './CustomerReceiptModal';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import {
+  notifyCustomerOrderReady,
+  playOrderReadyChime,
+  requestNotificationPermission,
+} from '../../utils/customerAudio';
 
 interface OrderTrackingModalProps {
   orderId: string;
@@ -29,9 +40,18 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   onOrderAgain,
   onStatusUpdate,
 }) => {
+  useBodyScrollLock(Boolean(orderId));
   const [order, setOrder] = useState<PlacedOrder | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [showReceipt, setShowReceipt] = useState<boolean>(false);
+  const [now, setNow] = useState<number>(Date.now());
+
+  // Second tick for smooth countdown
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const loadStatus = async (showSpinner = false) => {
     if (showSpinner) setIsRefreshing(true);
@@ -39,6 +59,17 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       const data = await fetchOrderDetails(orderId);
       setOrder(data);
       onStatusUpdate?.(data);
+
+      // Play audio chime and trigger vibration if order is ready
+      if (data.status === 'READY') {
+        notifyCustomerOrderReady({
+          orderId: data.id,
+          orderNumber: data.orderNumber,
+          orderType: data.orderType,
+          tableNumber: data.tableNumber,
+          restaurantName: data.restaurant?.name,
+        });
+      }
     } catch (err) {
       console.error('Failed to load live order status', err);
     } finally {
@@ -74,6 +105,27 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
 
   const isCancelled = order.status === 'CANCELLED';
   const isPaid = order.paymentStatus === 'PAID';
+
+  // Preparation countdown calculation
+  const prepStartedMs = order.prepStartedAt
+    ? new Date(order.prepStartedAt).getTime()
+    : new Date(order.createdAt).getTime();
+  const prepTargetMs = order.estimatedReadyAt
+    ? new Date(order.estimatedReadyAt).getTime()
+    : prepStartedMs + (order.prepTimeMinutes || 15) * 60 * 1000;
+  const remainingSec = Math.max(0, Math.floor((prepTargetMs - now) / 1000));
+  const remainingMin = Math.floor(remainingSec / 60);
+  const remainingSecMod = remainingSec % 60;
+  const prepRemainingText =
+    remainingSec > 0
+      ? `~${remainingMin}:${String(remainingSecMod).padStart(2, '0')} mins left`
+      : 'Finishing touches...';
+  const totalPrepSec = Math.max(1, Math.floor((prepTargetMs - prepStartedMs) / 1000));
+  const elapsedSec = Math.max(0, Math.floor((now - prepStartedMs) / 1000));
+  const prepProgressPct = Math.min(
+    100,
+    Math.max(5, Math.round((elapsedSec / totalPrepSec) * 100)),
+  );
 
   // Step definitions
   const steps = [
@@ -125,12 +177,24 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             </p>
           </div>
 
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-zinc-200/80 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowReceipt(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shadow-2xs hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+              title="View & Print Digital Receipt"
+            >
+              <Receipt className="w-3.5 h-3.5 text-orange-600" />
+              <span className="hidden sm:inline">Digital</span> Receipt
+            </button>
+
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-zinc-200/80 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Modal Scrollable Body */}
@@ -194,6 +258,89 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Live Kitchen Preparation Countdown Banner */}
+          {order.status === 'PREPARING' && (
+            <div className="p-4 rounded-2xl bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-orange-600 animate-bounce" />
+                  <span className="text-xs font-bold text-orange-950 dark:text-orange-200">
+                    Chef is Cooking Fresh
+                  </span>
+                </div>
+                <span className="text-xs font-black text-orange-600 dark:text-orange-400 font-mono">
+                  {prepRemainingText}
+                </span>
+              </div>
+
+              {/* Running Progress Bar */}
+              <div className="w-full h-2 rounded-full bg-orange-100 dark:bg-orange-900/40 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transition-all duration-1000 ease-linear"
+                  style={{ width: `${prepProgressPct}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-orange-800/80 dark:text-orange-300/80">
+                <span>
+                  Prep started:{' '}
+                  {order.prepStartedAt
+                    ? new Date(order.prepStartedAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : 'Just now'}
+                </span>
+                {order.estimatedReadyAt && (
+                  <span>
+                    Target:{' '}
+                    {new Date(order.estimatedReadyAt).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                )}
+              </div>
+
+              {/* Sound Alert Status Bar */}
+              <div className="flex items-center justify-between pt-2 border-t border-orange-200/60 dark:border-orange-900/40 text-[10px] text-orange-800/90 dark:text-orange-300/90">
+                <span className="flex items-center gap-1 font-semibold">
+                  <Bell className="w-3 h-3 text-orange-600 animate-pulse" />
+                  Device will ring & vibrate when food is ready
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playOrderReadyChime();
+                    requestNotificationPermission().catch(() => {});
+                  }}
+                  className="font-bold underline hover:text-orange-950 dark:hover:text-orange-100 cursor-pointer"
+                >
+                  Test Sound
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Order Ready Alert with Melodic Sound & Vibration */}
+          {order.status === 'READY' && (
+            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 shadow-md flex items-center gap-3 animate-fade-in">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 animate-bounce">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-emerald-950 dark:text-emerald-100 uppercase tracking-tight">
+                  🎉 Your Order is Ready!
+                </h4>
+                <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
+                  {order.orderType === 'DINE_IN'
+                    ? `Hot food is being served to Table ${order.tableNumber || '-'}!`
+                    : 'Please collect your takeaway order from the pickup counter.'}
+                </p>
               </div>
             </div>
           )}
@@ -319,6 +466,14 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
+              onClick={() => setShowReceipt(true)}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+            >
+              <Receipt className="w-3.5 h-3.5 text-orange-600" />
+              <span>Print Receipt</span>
+            </button>
+            <button
               onClick={() => {
                 onClose();
                 onOrderAgain();
@@ -340,6 +495,14 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Customer Printable Digital Receipt Modal */}
+      <CustomerReceiptModal
+        isOpen={showReceipt}
+        onClose={() => setShowReceipt(false)}
+        order={order}
+        currencySymbol={currencySymbol}
+      />
     </div>
   );
 };

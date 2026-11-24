@@ -12,6 +12,10 @@ import { BranchProductsModule } from './branch-products/branch-products.module';
 import { AdminModule } from './admin/admin.module';
 import { OrdersModule } from './orders/orders.module';
 import { StaffModule } from './staff/staff.module';
+import { AiModule } from './ai/ai.module';
+import { PacksModule } from './packs/packs.module';
+import { CreditsModule } from './credits/credits.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -26,6 +30,10 @@ import { StaffModule } from './staff/staff.module';
     AdminModule,
     OrdersModule,
     StaffModule,
+    AiModule,
+    PacksModule,
+    CreditsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
