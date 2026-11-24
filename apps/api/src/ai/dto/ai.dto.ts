@@ -49,6 +49,14 @@ export class QuickSetupDto {
 
   @IsString()
   @IsOptional()
+  staffEmail?: string;
+
+  @IsString()
+  @IsOptional()
+  staffPassword?: string;
+
+  @IsString()
+  @IsOptional()
   staffRole?: string; // CASHIER, KITCHEN, MANAGER
 
   @IsString()

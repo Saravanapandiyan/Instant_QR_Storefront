@@ -7,6 +7,7 @@ export default defineConfig({
   base: process.env.VITE_BASE_PATH || '/admin/',
   plugins: [react(), tailwindcss()],
   server: {
+    host: '0.0.0.0',
     port: 5175,
     proxy: {
       '/api': {

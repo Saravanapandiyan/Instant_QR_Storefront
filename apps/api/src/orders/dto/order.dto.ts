@@ -60,6 +60,10 @@ export class UpdateOrderStatusDto {
   status: OrderStatus;
 
   @IsOptional()
+  @IsEnum(PaymentStatus)
+  paymentStatus?: PaymentStatus;
+
+  @IsOptional()
   @IsString()
   cancelReason?: string;
 
@@ -79,6 +83,18 @@ export class UpdatePaymentSettingsDto {
   @IsNotEmpty()
   @IsBoolean()
   enableCash: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  enableUpi?: boolean;
+
+  @IsOptional()
+  @IsString()
+  upiId?: string;
+
+  @IsOptional()
+  @IsString()
+  upiName?: string;
 
   @IsOptional()
   @IsBoolean()

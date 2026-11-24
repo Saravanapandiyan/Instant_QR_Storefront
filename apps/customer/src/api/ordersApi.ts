@@ -13,7 +13,7 @@ export interface CreateOrderInput {
   tableNumber?: string | null;
   orderType: 'DINE_IN' | 'TAKEAWAY';
   orderNotes?: string;
-  paymentMethod: 'CASH' | 'STRIPE';
+  paymentMethod: 'CASH' | 'UPI' | 'STRIPE';
   turnstileToken?: string;
   items: CreateOrderItemInput[];
 }
@@ -29,7 +29,7 @@ export interface PlacedOrder {
   orderNotes?: string | null;
   orderType: 'DINE_IN' | 'TAKEAWAY';
   status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
-  paymentMethod: 'CASH' | 'STRIPE';
+  paymentMethod: 'CASH' | 'UPI' | 'STRIPE';
   paymentStatus: 'PENDING' | 'PAID' | 'FAILED';
   subtotal: number;
   tax: number;

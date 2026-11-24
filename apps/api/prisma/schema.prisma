@@ -30,6 +30,7 @@ enum OrderStatus {
 // 3.2 Payment Types & States
 enum PaymentMethod {
   CASH
+  UPI
   STRIPE
 }
 

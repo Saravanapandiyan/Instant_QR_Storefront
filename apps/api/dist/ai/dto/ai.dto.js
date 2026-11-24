@@ -58,6 +58,8 @@ class QuickSetupDto {
     serviceType;
     tablesCount;
     staffName;
+    staffEmail;
+    staffPassword;
     staffRole;
     staffPin;
     categories;
@@ -87,6 +89,16 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], QuickSetupDto.prototype, "staffName", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], QuickSetupDto.prototype, "staffEmail", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], QuickSetupDto.prototype, "staffPassword", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),

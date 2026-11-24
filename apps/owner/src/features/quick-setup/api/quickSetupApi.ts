@@ -18,6 +18,8 @@ export interface QuickSetupPayload {
   serviceType: string;
   tablesCount: number;
   staffName?: string;
+  staffEmail?: string;
+  staffPassword?: string;
   staffRole?: string;
   staffPin?: string;
   categories: MenuCategory[];
@@ -46,6 +48,7 @@ export interface QuickSetupResponse {
   };
   staff?: {
     name: string;
+    email?: string;
     role: string;
     pinCode: string;
   } | null;

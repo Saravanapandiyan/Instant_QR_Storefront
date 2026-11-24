@@ -10,6 +10,8 @@ export declare class AiService {
     private slugify;
     private generateUniqueRestaurantSlug;
     private generateUniqueBranchSlug;
+    private callGemini;
+    private normalizeMenuCategories;
     generateDishDescription(dishName: string, categoryName?: string): Promise<string>;
     findDishImage(dishName: string): Promise<{
         imageUrl: string;
@@ -56,6 +58,7 @@ export declare class AiService {
         };
         staff: {
             name: string | undefined;
+            email: string | undefined;
             role: string;
             pinCode: string | null;
         } | null;

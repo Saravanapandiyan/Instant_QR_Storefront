@@ -24,7 +24,11 @@ import {
   Volume2,
   ShieldCheck,
   Check,
+  Smartphone,
+  Sparkles,
+  ExternalLink,
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { usePWAInstall } from '../../hooks/usePWAInstall.ts';
 import { fetchStorefrontBySlug, fetchPlatformBranding, type PlatformBranding } from '../../api/storefrontApi.ts';
 import { placeCashOrder } from '../../api/ordersApi.ts';
@@ -207,6 +211,7 @@ export function StorefrontPage() {
     () => localStorage.getItem('iqr_customer_phone') || '',
   );
   const [cookingInstructions, setCookingInstructions] = useState<string>('');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'CASH' | 'UPI'>('UPI');
   const [isPlacingOrder, setIsPlacingOrder] = useState<boolean>(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
@@ -224,6 +229,18 @@ export function StorefrontPage() {
       setOrderType('DINE_IN');
     }
   }, [isTableFromQr, rawTableParam]);
+
+  // Sync default payment method with restaurant configuration
+  useEffect(() => {
+    if (menuData?.restaurant) {
+      const cfg = (menuData.restaurant as any)?.paymentConfig || {};
+      if (cfg.enableUpi && cfg.upiId) {
+        setSelectedPaymentMethod('UPI');
+      } else {
+        setSelectedPaymentMethod('CASH');
+      }
+    }
+  }, [menuData]);
 
   // Initialize invisible Cloudflare Turnstile verification
   useEffect(() => {
@@ -380,6 +397,11 @@ export function StorefrontPage() {
 
   // Taxes are only applied if explicitly configured by the restaurant in payment settings
   const paymentConfig = (restaurant as any)?.paymentConfig || {};
+  const isCashEnabled = paymentConfig.enableCash !== false; // default true
+  const isUpiEnabled = Boolean(paymentConfig.enableUpi && paymentConfig.upiId);
+  const upiId = paymentConfig.upiId || '';
+  const upiName = paymentConfig.upiName || restaurant.name || 'Restaurant';
+
   const enableTax = Boolean(paymentConfig.enableTax);
   const taxRate =
     enableTax && typeof paymentConfig.taxRate === 'number' && paymentConfig.taxRate > 0
@@ -388,6 +410,15 @@ export function StorefrontPage() {
   const tax = taxRate > 0 ? Number(((subtotal * taxRate) / 100).toFixed(2)) : 0;
   const grandTotal = subtotal > 0 ? (subtotal + tax).toFixed(2) : '0.00';
   const totalItemCount = getTotalItemsCount();
+
+  const upiUrl = upiId
+    ? `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${grandTotal}&cu=INR&tn=${encodeURIComponent(`Order at ${upiName}`)}`
+    : '';
+
+  const isTableValid = orderType !== 'DINE_IN' || Boolean(tableNumber.trim());
+  const isNameValid = Boolean(customerName.trim());
+  const isPhoneValid = Boolean(customerPhone.trim() && customerPhone.trim().length >= 7);
+  const isFormValid = isTableValid && isNameValid && isPhoneValid && cartItems.length > 0;
 
   const activeCategoryName =
     selectedCategory === 'all'
@@ -1557,7 +1588,7 @@ export function StorefrontPage() {
                 <div className="sm:col-span-2">
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-[11px] font-bold block" style={{ color: 'var(--sf-text)' }}>
-                      Table Number
+                      Table Number <span className="text-red-500">*</span>
                     </label>
                     {isTableFromQr && (
                       <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-500/20">
@@ -1587,13 +1618,13 @@ export function StorefrontPage() {
 
               <div>
                 <label className="text-[11px] font-bold block mb-1" style={{ color: 'var(--sf-text)' }}>
-                  Your Name <span className="text-[10px] opacity-60 font-normal">(Optional)</span>
+                  Your Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <User className="w-3.5 h-3.5 absolute left-2.5 top-2.5 opacity-50" />
                   <input
                     type="text"
-                    placeholder="e.g. Diner"
+                    placeholder="e.g. Rahul"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     className="w-full text-xs p-2 pl-8 rounded-xl border focus:outline-none focus:ring-1 focus:ring-orange-500"
@@ -1608,7 +1639,7 @@ export function StorefrontPage() {
 
               <div>
                 <label className="text-[11px] font-bold block mb-1" style={{ color: 'var(--sf-text)' }}>
-                  Phone Number <span className="text-[10px] opacity-60 font-normal">(Optional)</span>
+                  Phone Number <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Phone className="w-3.5 h-3.5 absolute left-2.5 top-2.5 opacity-50" />
@@ -1647,31 +1678,192 @@ export function StorefrontPage() {
               />
             </div>
 
-            {/* 5. Payment Method (Cash on Counter only - Online completely hidden) */}
+            {/* 5. Payment Method Selector */}
             <div className="mb-3 shrink-0">
-              <label className="text-[11px] font-bold block mb-1" style={{ color: 'var(--sf-text)' }}>
+              <label className="text-[11px] font-bold block mb-1.5" style={{ color: 'var(--sf-text)' }}>
                 Payment Method
               </label>
-              <div
-                className="flex items-center justify-between px-3 py-2 rounded-xl border text-xs"
-                style={{
-                  backgroundColor: 'var(--sf-bg)',
-                  borderColor: 'var(--sf-primary)',
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <Banknote className="w-4 h-4 text-emerald-600" />
-                  <span className="font-bold" style={{ color: 'var(--sf-text)' }}>
-                    Cash on Counter
-                  </span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
-                    Default
-                  </span>
-                </div>
-                <span className="text-[10px]" style={{ color: 'var(--sf-muted)' }}>
-                  Pay at cashier counter
-                </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {/* UPI Option */}
+                {isUpiEnabled && (
+                  <div
+                    onClick={() => setSelectedPaymentMethod('UPI')}
+                    className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                      selectedPaymentMethod === 'UPI'
+                        ? 'ring-2 ring-orange-500 shadow-xs'
+                        : 'opacity-80 hover:opacity-100'
+                    }`}
+                    style={{
+                      backgroundColor: 'var(--sf-bg)',
+                      borderColor: selectedPaymentMethod === 'UPI' ? 'var(--sf-primary)' : 'var(--sf-border)',
+                    }}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                        <Smartphone className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold flex items-center gap-1" style={{ color: 'var(--sf-text)' }}>
+                          <span>Pay via UPI</span>
+                          <span className="text-[8px] px-1 py-0.2 rounded font-black bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
+                            Instant
+                          </span>
+                        </div>
+                        <p className="text-[10px] truncate" style={{ color: 'var(--sf-muted)' }}>
+                          GPay, PhonePe, Paytm
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                        selectedPaymentMethod === 'UPI'
+                          ? 'border-orange-500 bg-orange-500 text-white'
+                          : 'border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {selectedPaymentMethod === 'UPI' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                    </div>
+                  </div>
+                )}
+
+                {/* Cash Option */}
+                {isCashEnabled && (
+                  <div
+                    onClick={() => setSelectedPaymentMethod('CASH')}
+                    className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                      selectedPaymentMethod === 'CASH'
+                        ? 'ring-2 ring-orange-500 shadow-xs'
+                        : 'opacity-80 hover:opacity-100'
+                    }`}
+                    style={{
+                      backgroundColor: 'var(--sf-bg)',
+                      borderColor: selectedPaymentMethod === 'CASH' ? 'var(--sf-primary)' : 'var(--sf-border)',
+                    }}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                        <Banknote className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold" style={{ color: 'var(--sf-text)' }}>
+                          Cash on Counter
+                        </div>
+                        <p className="text-[10px] truncate" style={{ color: 'var(--sf-muted)' }}>
+                          Pay at cashier desk
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                        selectedPaymentMethod === 'CASH'
+                          ? 'border-orange-500 bg-orange-500 text-white'
+                          : 'border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {selectedPaymentMethod === 'CASH' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* UPI Execution Card when UPI is selected - Always visible QR Code */}
+              {selectedPaymentMethod === 'UPI' && isUpiEnabled && (
+                <div
+                  className="mt-2.5 p-3.5 rounded-2xl border text-xs flex flex-col items-center gap-3 animate-in fade-in duration-200"
+                  style={{
+                    backgroundColor: 'var(--sf-bg)',
+                    borderColor: 'var(--sf-border)',
+                  }}
+                >
+                  {/* Notice if mandatory fields are not yet filled */}
+                  {!isFormValid && (
+                    <div className="w-full p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] font-medium flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                      <span>
+                        {!isTableValid
+                          ? 'Enter your Table Number above to activate UPI payment'
+                          : !isNameValid
+                          ? 'Enter your Name above to activate UPI payment'
+                          : !isPhoneValid
+                          ? 'Enter a valid Phone Number (min 7 digits) to activate UPI payment'
+                          : 'Add dishes to cart to activate payment'}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Dynamic UPI QR Code */}
+                  <div
+                    className={`p-3 bg-white rounded-2xl border border-zinc-200 shadow-xs flex flex-col items-center transition-all ${
+                      !isFormValid ? 'opacity-30 grayscale pointer-events-none select-none' : ''
+                    }`}
+                  >
+                    <QRCodeSVG
+                      value={isFormValid ? upiUrl : ''}
+                      size={155}
+                      level="M"
+                      includeMargin={false}
+                    />
+                    <div className="mt-2 text-center">
+                      <p className="text-[11px] font-bold text-zinc-900 tracking-tight">
+                        Scan to Pay {currencySymbol}{grandTotal}
+                      </p>
+                      <p className="text-[10px] text-zinc-500 font-medium">
+                        Google Pay • PhonePe • Paytm • CRED • BHIM
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* UPI Payee & VPA Details */}
+                  {upiId && (
+                    <div
+                      className="px-2.5 py-1 rounded-full text-[10px] font-mono border flex items-center gap-1.5"
+                      style={{
+                        backgroundColor: 'var(--sf-surface)',
+                        borderColor: 'var(--sf-border)',
+                        color: 'var(--sf-muted)',
+                      }}
+                    >
+                      <span className="font-semibold" style={{ color: 'var(--sf-text)' }}>UPI ID:</span>
+                      <span>{upiId}</span>
+                    </div>
+                  )}
+
+                  {/* 1-Tap Mobile UPI Intent Trigger Button */}
+                  <div className="w-full space-y-1">
+                    {isFormValid ? (
+                      <a
+                        href={upiUrl}
+                        className="w-full py-2.5 px-3 rounded-xl font-bold text-xs transition-all text-center flex items-center justify-center gap-2 cursor-pointer border shadow-xs active:scale-[0.99]"
+                        style={{
+                          backgroundColor: 'var(--sf-surface)',
+                          borderColor: 'var(--sf-primary)',
+                          color: 'var(--sf-primary)',
+                        }}
+                        title="Tap to open Google Pay, PhonePe, Paytm, or CRED"
+                      >
+                        <Smartphone className="w-4 h-4" />
+                        <span>Open UPI App to Pay {currencySymbol}{grandTotal}</span>
+                        <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full py-2.5 px-3 rounded-xl font-bold text-xs text-center flex items-center justify-center gap-2 opacity-50 cursor-not-allowed border border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-400 bg-zinc-100/60 dark:bg-zinc-800/60"
+                      >
+                        <Smartphone className="w-4 h-4" />
+                        <span>Open UPI App to Pay {currencySymbol}{grandTotal}</span>
+                      </button>
+                    )}
+                    <p className="text-[10px] text-center" style={{ color: 'var(--sf-muted)' }}>
+                      {isFormValid
+                        ? 'On mobile: Tap above to open your UPI app, or scan the QR code above.'
+                        : 'Complete mandatory fields above to enable payment.'}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Bill Summary */}
@@ -1748,7 +1940,7 @@ export function StorefrontPage() {
                     tableNumber: orderType === 'DINE_IN' ? tableNumber.trim() : null,
                     orderType,
                     orderNotes: cookingInstructions.trim() || undefined,
-                    paymentMethod: 'CASH',
+                    paymentMethod: selectedPaymentMethod,
                     turnstileToken: turnstileToken || undefined,
                     items: cartItems.map((ci) => ({
                       productId: ci.item.id,
@@ -1775,17 +1967,49 @@ export function StorefrontPage() {
                   setIsPlacingOrder(false);
                 }
               }}
-              disabled={isPlacingOrder || cartItems.length === 0}
-              className="w-full py-3 rounded-2xl font-bold text-xs shadow-lg active:scale-[0.99] transition-transform text-center cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-              style={{
-                backgroundColor: 'var(--sf-primary)',
-                color: 'var(--sf-primary-contrast)',
-              }}
+              disabled={isPlacingOrder || !isFormValid}
+              className={`w-full py-3 rounded-2xl font-bold text-xs shadow-lg transition-all text-center flex items-center justify-center gap-2 ${
+                isFormValid && !isPlacingOrder
+                  ? 'active:scale-[0.99] cursor-pointer'
+                  : 'opacity-50 cursor-not-allowed'
+              }`}
+              style={
+                isFormValid
+                  ? {
+                      backgroundColor: 'var(--sf-primary)',
+                      color: 'var(--sf-primary-contrast)',
+                    }
+                  : {
+                      backgroundColor: 'var(--sf-surface-2, rgba(0,0,0,0.12))',
+                      color: 'var(--sf-muted)',
+                    }
+              }
             >
               {isPlacingOrder ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Placing order...</span>
+                </>
+              ) : !isFormValid ? (
+                <>
+                  <AlertCircle className="w-4 h-4" />
+                  <span>
+                    {!isTableValid
+                      ? 'Enter Table Number to Continue'
+                      : !isNameValid
+                      ? 'Enter Your Name to Continue'
+                      : !isPhoneValid
+                      ? 'Enter Phone Number to Continue'
+                      : 'Add dishes to cart'}
+                  </span>
+                </>
+              ) : selectedPaymentMethod === 'UPI' ? (
+                <>
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  <span>
+                    Confirm UPI Order • {currencySymbol}
+                    {grandTotal}
+                  </span>
                 </>
               ) : (
                 <>

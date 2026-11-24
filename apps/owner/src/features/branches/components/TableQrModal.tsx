@@ -29,6 +29,7 @@ import {
 import { branchesApi } from '../api/branchesApi';
 import type { Branch, RestaurantTable } from '@instant-qr/shared-types';
 import { toast } from '../../../components/ui';
+import { getCustomerStorefrontUrl } from '../../../lib/urls';
 import {
   StylizedQRCode,
   type QRDotPattern,
@@ -204,11 +205,7 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
   };
 
   const getTableUrl = (tableNumber: string) => {
-    const origin =
-      typeof window !== 'undefined'
-        ? window.location.origin.replace(':5173', ':5174')
-        : 'http://localhost:5174';
-    return `${origin}/r/${branch.slug}?table=${encodeURIComponent(tableNumber)}`;
+    return getCustomerStorefrontUrl(branch.slug, tableNumber);
   };
 
   const selectedTables = tables.filter((t) => selectedIds.includes(t.id));

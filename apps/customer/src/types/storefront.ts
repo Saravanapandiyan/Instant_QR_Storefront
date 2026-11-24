@@ -19,6 +19,15 @@ export interface StorefrontRestaurant {
   logoUrl: string | null;
   defaultCurrency: string;
   themeConfig?: StorefrontThemeConfig | null;
+  paymentConfig?: {
+    enableCash?: boolean;
+    enableUpi?: boolean;
+    upiId?: string;
+    upiName?: string;
+    enableTax?: boolean;
+    taxRate?: number;
+    gstNumber?: string;
+  } | null;
 }
 
 export interface StorefrontCategory {

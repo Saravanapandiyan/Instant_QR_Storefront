@@ -91,27 +91,91 @@ let AiService = AiService_1 = class AiService {
         }
         return slug;
     }
-    async generateDishDescription(dishName, categoryName = 'Food') {
+    async callGemini(payload, models = [
+        'gemini-3.5-flash',
+        'gemini-3.1-flash-lite',
+        'gemini-3.5-flash-lite',
+        'gemini-flash-latest',
+    ]) {
         const apiKey = this.getGeminiKey();
+        let lastError = null;
+        for (const model of models) {
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const data = await response.json();
+                if (response.ok && data?.candidates?.[0]?.content?.parts?.length) {
+                    return data;
+                }
+                this.logger.warn(`Gemini model ${model} returned ${response.status}: ${JSON.stringify(data?.error || data)}`);
+                lastError = data?.error?.message || `Model ${model} returned ${response.status}`;
+            }
+            catch (err) {
+                this.logger.warn(`Gemini model ${model} network error: ${err.message}`);
+                lastError = err.message;
+            }
+        }
+        throw new Error(lastError || 'All Gemini models unavailable');
+    }
+    normalizeMenuCategories(parsed) {
+        let list = [];
+        if (Array.isArray(parsed)) {
+            list = parsed;
+        }
+        else if (parsed && typeof parsed === 'object') {
+            if (Array.isArray(parsed.categories)) {
+                list = parsed.categories;
+            }
+            else if (Array.isArray(parsed.menu)) {
+                list = parsed.menu;
+            }
+            else if (Array.isArray(parsed.items)) {
+                list = [{ name: parsed.name || 'Menu', items: parsed.items }];
+            }
+            else {
+                const keys = Object.keys(parsed);
+                const arrayKey = keys.find((k) => Array.isArray(parsed[k]));
+                if (arrayKey) {
+                    list = parsed[arrayKey];
+                }
+            }
+        }
+        return list
+            .map((cat, idx) => {
+            const catName = cat.name || cat.category || cat.title || cat.categoryName || `Category ${idx + 1}`;
+            const rawItems = cat.items || cat.dishes || cat.products || [];
+            const items = Array.isArray(rawItems)
+                ? rawItems
+                    .map((item) => ({
+                    name: String(item.name || item.dish || item.title || '').trim(),
+                    price: Number(item.price || item.cost || item.rate) || 0,
+                    description: String(item.description || item.desc || '').trim(),
+                    imageUrl: String(item.imageUrl || item.image || '').trim(),
+                }))
+                    .filter((item) => item.name.length > 0)
+                : [];
+            return {
+                name: String(catName).trim(),
+                items,
+            };
+        })
+            .filter((c) => c.items.length > 0);
+    }
+    async generateDishDescription(dishName, categoryName = 'Food') {
         const prompt = `You are a culinary copywriter. Write an appetizing, mouth-watering 1-sentence food description (strictly under 15 words) for "${dishName}" in the category "${categoryName}". Return ONLY the 1-sentence description text, without quotes, introductory text, or markdown.`;
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 60,
-                    },
-                }),
+            const data = await this.callGemini({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 60,
+                },
             });
-            const data = await response.json();
-            if (!response.ok) {
-                this.logger.warn(`Gemini description error: ${JSON.stringify(data?.error || data)}`);
-                return `Delicious freshly prepared ${dishName} made with authentic ingredients.`;
-            }
-            const generated = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+            const parts = data?.candidates?.[0]?.content?.parts || [];
+            const generated = parts.map((p) => p.text || '').join('\n').trim();
             return generated || `Fresh and flavorful ${dishName} prepared to order.`;
         }
         catch (err) {
@@ -240,8 +304,44 @@ let AiService = AiService_1 = class AiService {
         return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80';
     }
     async parseMenuImage(fileBuffer, mimeType) {
+        try {
+            const textContent = fileBuffer.toString('utf-8').trim();
+            if (mimeType?.includes('json') ||
+                (textContent.startsWith('{') && textContent.endsWith('}')) ||
+                (textContent.startsWith('[') && textContent.endsWith(']'))) {
+                const parsed = JSON.parse(textContent);
+                let extractedCats = [];
+                if (Array.isArray(parsed)) {
+                    if (parsed.length > 0) {
+                        if (parsed[0].items) {
+                            extractedCats = parsed;
+                        }
+                        else {
+                            extractedCats = [{ name: 'Menu', items: parsed }];
+                        }
+                    }
+                }
+                else if (parsed.categories && Array.isArray(parsed.categories)) {
+                    extractedCats = parsed.categories;
+                }
+                else if (parsed.items && Array.isArray(parsed.items)) {
+                    extractedCats = [{ name: parsed.name || 'Menu', items: parsed.items }];
+                }
+                if (extractedCats.length > 0) {
+                    const enrichedCategories = await this.enrichMenu(extractedCats);
+                    return {
+                        success: true,
+                        categories: enrichedCategories,
+                    };
+                }
+            }
+        }
+        catch (e) {
+        }
         const apiKey = this.getGeminiKey();
-        const base64Data = fileBuffer.toString('base64');
+        const isTextOrCsv = mimeType?.includes('csv') ||
+            mimeType?.includes('text') ||
+            mimeType?.includes('plain');
         const prompt = `You are an expert restaurant menu digitizer.
 Analyze this menu image or document. Extract all categories and individual dish items with their prices.
 Rules:
@@ -267,45 +367,81 @@ Rules:
 }
 Do NOT include markdown backticks (\`\`\`json), comments, or introductory text. Return only valid JSON.`;
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
-                                { text: prompt },
-                                {
-                                    inlineData: {
-                                        mimeType: mimeType || 'image/jpeg',
-                                        data: base64Data,
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                    generationConfig: {
-                        temperature: 0.2,
-                        maxOutputTokens: 4096,
-                    },
-                }),
-            });
-            const data = await response.json();
-            if (!response.ok) {
-                this.logger.error(`Gemini Vision Error: ${JSON.stringify(data)}`);
-                throw new common_1.InternalServerErrorException(data?.error?.message || 'Failed to extract menu via Gemini Vision');
+            const parts = [];
+            if (isTextOrCsv) {
+                const textContent = fileBuffer.toString('utf-8');
+                parts.push({ text: `${prompt}\n\nDocument contents:\n${textContent}` });
             }
-            let rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-            rawText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```$/s, '').trim();
-            let parsed;
+            else {
+                const base64Data = fileBuffer.toString('base64');
+                let uploadMime = mimeType || 'image/jpeg';
+                if (uploadMime.includes('avif') || !uploadMime.startsWith('image/')) {
+                    uploadMime = 'image/jpeg';
+                }
+                parts.push({ text: prompt });
+                parts.push({
+                    inlineData: {
+                        mimeType: uploadMime,
+                        data: base64Data,
+                    },
+                });
+            }
+            const data = await this.callGemini({
+                contents: [
+                    {
+                        parts,
+                    },
+                ],
+                generationConfig: {
+                    temperature: 0.1,
+                    responseMimeType: 'application/json',
+                    maxOutputTokens: 8192,
+                },
+            });
+            const responseParts = data?.candidates?.[0]?.content?.parts || [];
+            let rawText = responseParts.map((p) => p.text || '').join('\n').trim();
+            let parsed = null;
             try {
                 parsed = JSON.parse(rawText);
             }
-            catch (e) {
+            catch (_) {
+                const codeBlock = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+                if (codeBlock) {
+                    try {
+                        parsed = JSON.parse(codeBlock[1]);
+                    }
+                    catch (__) { }
+                }
+                if (!parsed) {
+                    const firstBrace = rawText.indexOf('{');
+                    const lastBrace = rawText.lastIndexOf('}');
+                    if (firstBrace !== -1 && lastBrace > firstBrace) {
+                        try {
+                            parsed = JSON.parse(rawText.slice(firstBrace, lastBrace + 1));
+                        }
+                        catch (__) { }
+                    }
+                }
+                if (!parsed) {
+                    const firstBracket = rawText.indexOf('[');
+                    const lastBracket = rawText.lastIndexOf(']');
+                    if (firstBracket !== -1 && lastBracket > firstBracket) {
+                        try {
+                            parsed = JSON.parse(rawText.slice(firstBracket, lastBracket + 1));
+                        }
+                        catch (__) { }
+                    }
+                }
+            }
+            if (!parsed) {
                 this.logger.error(`Failed to parse Gemini output JSON: ${rawText}`);
                 throw new common_1.BadRequestException('AI could not format the menu clearly. Please verify the image quality.');
             }
-            const enrichedCategories = await this.enrichMenu(parsed.categories || []);
+            const normalizedCats = this.normalizeMenuCategories(parsed);
+            if (normalizedCats.length === 0) {
+                throw new common_1.BadRequestException('Could not detect any menu items in the image. Please upload a clear photo showing dish names and prices.');
+            }
+            const enrichedCategories = await this.enrichMenu(normalizedCats);
             return {
                 success: true,
                 categories: enrichedCategories,
@@ -494,14 +630,16 @@ Do NOT include markdown backticks (\`\`\`json), comments, or introductory text. 
                 }
             }
             let staffCreated = null;
-            if (dto.staffName && dto.staffPin) {
-                const staffEmail = `staff_${restaurant.id.slice(0, 8)}_${Date.now()}@instantqr.internal`;
-                const dummyPasswordHash = await bcrypt.hash(dto.staffPin, 10);
+            if (dto.staffName && (dto.staffPin || dto.staffEmail)) {
+                const staffEmail = dto.staffEmail?.trim() ||
+                    `staff_${restaurant.id.slice(0, 8)}_${Date.now()}@instantqr.internal`;
+                const staffPasswordToHash = dto.staffPassword?.trim() || dto.staffPin || '1234';
+                const passwordHash = await bcrypt.hash(staffPasswordToHash, 10);
                 const staffUser = await tx.user.create({
                     data: {
                         email: staffEmail,
                         name: dto.staffName,
-                        passwordHash: dummyPasswordHash,
+                        passwordHash,
                         role: 'STAFF',
                     },
                 });
@@ -510,7 +648,7 @@ Do NOT include markdown backticks (\`\`\`json), comments, or introductory text. 
                         restaurantId: restaurant.id,
                         userId: staffUser.id,
                         role: dto.staffRole || 'CASHIER',
-                        pinCode: dto.staffPin,
+                        pinCode: dto.staffPin || '1234',
                         assignedBranches: ['ALL'],
                         permissions: {
                             canConfirmOrders: true,
@@ -543,6 +681,7 @@ Do NOT include markdown backticks (\`\`\`json), comments, or introductory text. 
                 staff: staffCreated
                     ? {
                         name: dto.staffName,
+                        email: dto.staffEmail || undefined,
                         role: staffCreated.role,
                         pinCode: staffCreated.pinCode,
                     }
@@ -625,33 +764,15 @@ Return strictly a JSON object with:
     { "id": "product_id_string", "name": "translated_name", "description": "translated_description" }
   ]
 }`;
-            let response = null;
-            for (let attempt = 1; attempt <= 3; attempt++) {
-                response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            temperature: 0.3,
-                            responseMimeType: 'application/json',
-                        },
-                    }),
-                });
-                if (response.ok)
-                    break;
-                if ((response.status === 503 || response.status === 429) && attempt < 3) {
-                    await new Promise((r) => setTimeout(r, 1200 * attempt));
-                    continue;
-                }
-                break;
-            }
-            if (!response || !response.ok) {
-                const errData = await response?.json().catch(() => ({}));
-                throw new Error(`Gemini Translation Error for ${lang.code}: ${JSON.stringify(errData)}`);
-            }
-            const data = await response.json();
-            const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '{}';
+            const data = await this.callGemini({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.3,
+                    responseMimeType: 'application/json',
+                },
+            });
+            const respParts = data?.candidates?.[0]?.content?.parts || [];
+            const rawText = respParts.map((p) => p.text || '').join('\n').trim() || '{}';
             const parsed = JSON.parse(rawText);
             return { langCode: lang.code, parsed };
         }));

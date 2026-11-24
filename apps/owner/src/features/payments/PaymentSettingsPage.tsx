@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Banknote,
-  CreditCard,
+  QrCode,
+  Smartphone,
   CheckCircle2,
   Clock,
   ShieldCheck,
@@ -10,7 +11,9 @@ import {
   Lock,
   Receipt,
   Info,
+  Sparkles,
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Button } from '../../components/ui';
 import { useRestaurants } from '../restaurants/hooks/useRestaurants';
@@ -27,6 +30,9 @@ export const PaymentSettingsPage: React.FC = () => {
 
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>('');
   const [enableCash, setEnableCash] = useState<boolean>(true);
+  const [enableUpi, setEnableUpi] = useState<boolean>(false);
+  const [upiId, setUpiId] = useState<string>('');
+  const [upiName, setUpiName] = useState<string>('');
   const [enableTax, setEnableTax] = useState<boolean>(false);
   const [taxRate, setTaxRate] = useState<number>(0);
   const [gstNumber, setGstNumber] = useState<string>('');
@@ -52,6 +58,9 @@ export const PaymentSettingsPage: React.FC = () => {
       .then((data) => {
         if (active) {
           setEnableCash(data.enableCash);
+          setEnableUpi(Boolean(data.enableUpi));
+          setUpiId(data.upiId || '');
+          setUpiName(data.upiName || '');
           setEnableTax(Boolean(data.enableTax));
           setTaxRate(typeof data.taxRate === 'number' ? data.taxRate : 0);
           setGstNumber(data.gstNumber || '');
@@ -61,6 +70,9 @@ export const PaymentSettingsPage: React.FC = () => {
         console.error('Failed to load payment settings', err);
         if (active) {
           setEnableCash(true);
+          setEnableUpi(false);
+          setUpiId('');
+          setUpiName('');
           setEnableTax(false);
           setTaxRate(0);
           setGstNumber('');
@@ -77,10 +89,17 @@ export const PaymentSettingsPage: React.FC = () => {
 
   const handleSave = async () => {
     if (!selectedRestaurantId) return;
+    if (enableUpi && !upiId.trim()) {
+      toast.error('Please enter a valid UPI ID (e.g. merchant@upi).', 'Validation');
+      return;
+    }
     setIsSaving(true);
     try {
       await paymentsApi.updatePaymentSettings(selectedRestaurantId, {
         enableCash,
+        enableUpi,
+        upiId: upiId.trim(),
+        upiName: upiName.trim() || selectedRestaurant?.name || '',
         enableTax,
         taxRate: Number(taxRate || 0),
         gstNumber: gstNumber.trim(),
@@ -211,47 +230,119 @@ export const PaymentSettingsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. Stripe Online Payments (Disabled / Will be enabled soon) */}
-          <div className="p-6 bg-surface/60 border border-dashed border-border rounded-2xl relative overflow-hidden">
+          {/* 2. Direct UPI Online Payments */}
+          <div className="p-6 bg-surface border border-border rounded-2xl shadow-sm space-y-5 transition-all">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-surface-2 text-muted flex items-center justify-center flex-shrink-0">
-                  <CreditCard className="w-6 h-6" />
+                <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center flex-shrink-0">
+                  <Smartphone className="w-6 h-6" />
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <h3 className="font-semibold text-base text-text">Stripe Online Payments</h3>
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-warning/10 text-warning border border-warning/20 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      Will be enabled soon
+                    <h3 className="font-semibold text-base text-text">Direct UPI Payments</h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      Google Pay, PhonePe, Paytm, CRED
                     </span>
                   </div>
                   <p className="text-sm text-muted mt-1 leading-relaxed">
-                    Accept Credit/Debit cards, UPI, Google Pay, Apple Pay directly on the QR
-                    storefront with instant automated settlements.
+                    Allow diners to pay instantly via UPI. On mobile, diners tap to open their installed UPI app directly. On desktop, a dynamic QR code is displayed for scanning.
                   </p>
                 </div>
               </div>
 
-              {/* Disabled toggle */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted hidden sm:inline-block">Disabled</span>
-                <div className="w-11 h-6 bg-border/60 rounded-full cursor-not-allowed opacity-50 relative">
-                  <div className="absolute top-[2px] left-[2px] bg-surface rounded-full h-5 w-5 shadow-sm" />
-                </div>
-              </div>
+              {/* Toggle Switch */}
+              <label className={`relative inline-flex items-center flex-shrink-0 ${canManagePayments ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={enableUpi}
+                  onChange={(e) => canManagePayments && setEnableUpi(e.target.checked)}
+                  disabled={!canManagePayments || isLoadingSettings || isSaving}
+                />
+                <div className="w-11 h-6 bg-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
             </div>
 
-            {/* Note box */}
-            <div className="mt-4 p-3.5 bg-warning/5 border border-warning/20 rounded-xl flex items-start gap-3 text-xs text-warning">
-              <Lock className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold">Stripe Payment Gateway Integration Pending</p>
-                <p className="opacity-90 mt-0.5">
-                  Direct online payments will be activated in an upcoming update. Your storefront
-                  currently processes all orders smoothly via Cash on Counter.
-                </p>
+            {/* UPI Configuration Fields when Enabled */}
+            {enableUpi && (
+              <div className="p-4 bg-surface-2/60 border border-border rounded-xl space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* UPI VPA ID */}
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1.5">
+                      Merchant UPI ID (VPA) <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. restaurant@icici or 9876543210@paytm"
+                      value={upiId}
+                      onChange={(e) => setUpiId(e.target.value)}
+                      disabled={!canManagePayments || isSaving}
+                      className="w-full px-3 py-2 text-sm bg-surface border border-border rounded-xl text-text placeholder:text-muted/60 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                    />
+                    <p className="text-[11px] text-muted mt-1">
+                      Money will be transferred directly to the bank account linked with this UPI ID.
+                    </p>
+                  </div>
+
+                  {/* Beneficiary Name */}
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1.5">
+                      Payee / Merchant Display Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={selectedRestaurant?.name || 'e.g. Bucket Briyano'}
+                      value={upiName}
+                      onChange={(e) => setUpiName(e.target.value)}
+                      disabled={!canManagePayments || isSaving}
+                      className="w-full px-3 py-2 text-sm bg-surface border border-border rounded-xl text-text placeholder:text-muted/60 focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <p className="text-[11px] text-muted mt-1">
+                      Shown to customers in GPay/PhonePe when reviewing payment details.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Live Test QR Preview */}
+                {upiId.trim() && (
+                  <div className="pt-3 border-t border-border flex flex-col sm:flex-row items-center gap-4 bg-surface p-3 rounded-xl border">
+                    <div className="p-2 bg-white rounded-lg border border-neutral-200 shrink-0">
+                      <QRCodeSVG
+                        value={`upi://pay?pa=${upiId.trim()}&pn=${encodeURIComponent(upiName.trim() || selectedRestaurant?.name || 'Restaurant')}&cu=INR`}
+                        size={96}
+                        level="M"
+                      />
+                    </div>
+                    <div className="text-xs space-y-1 text-center sm:text-left">
+                      <div className="font-bold text-text flex items-center justify-center sm:justify-start gap-1.5">
+                        <QrCode className="w-3.5 h-3.5 text-indigo-500" />
+                        <span>Live Test UPI QR Preview</span>
+                      </div>
+                      <p className="text-muted">
+                        Test scan this QR code with Google Pay, PhonePe, or Paytm to verify your UPI ID receives payments before saving.
+                      </p>
+                      <p className="font-mono text-[11px] text-indigo-500 font-semibold truncate max-w-md">
+                        {upiId.trim()} • {upiName.trim() || selectedRestaurant?.name}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
+            )}
+
+            <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted">
+              <span className="flex items-center gap-1.5 text-indigo-500 font-medium">
+                <CheckCircle2 className="w-4 h-4" />
+                Zero gateway fees • Instant settlement to your UPI bank account
+              </span>
+              <span>
+                Status:{' '}
+                <strong className={enableUpi ? 'text-success' : 'text-danger'}>
+                  {enableUpi ? (upiId ? 'Active & Ready' : 'UPI ID Required') : 'Disabled'}
+                </strong>
+              </span>
             </div>
           </div>
         </div>

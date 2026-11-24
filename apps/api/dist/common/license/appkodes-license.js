@@ -104,8 +104,12 @@ function postJson(url, body) {
 }
 function createLicenseGuard(options = {}) {
     const { licenseKey = process.env.LICENSE_KEY || '', domain = process.env.APP_DOMAIN || '', productId = 'instant-qr-storefront', version = '1.0.0', storeApiUrl = process.env.STORE_API_URL || 'https://store.appkodes.com', recheckInterval = 24 * 60 * 60 * 1000, gracePeriod = 3 * 24 * 60 * 60 * 1000, onInvalid, } = options;
-    const isDemoOrDev = process.env.DEMO_MODE === 'true' || process.env.NODE_ENV !== 'production';
-    const isDevBypass = !licenseKey && isDemoOrDev;
+    const isDemoOrDev = process.env.DEMO_MODE === 'true' ||
+        process.env.NODE_ENV !== 'production' ||
+        !licenseKey ||
+        domain === 'localhost' ||
+        domain.startsWith('127.0.0.1');
+    const isDevBypass = isDemoOrDev;
     const hmacKey = licenseKey ? deriveHmacKey(licenseKey) : Buffer.from('');
     const verifyUrl = `${storeApiUrl.replace(/\/$/, '')}/api/store/licence/verify`;
     let cache = null;

@@ -14,6 +14,8 @@ export declare class QuickSetupDto {
     serviceType?: string;
     tablesCount?: number;
     staffName?: string;
+    staffEmail?: string;
+    staffPassword?: string;
     staffRole?: string;
     staffPin?: string;
     categories?: MenuCategoryDto[];

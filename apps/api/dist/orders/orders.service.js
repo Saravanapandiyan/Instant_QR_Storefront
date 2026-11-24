@@ -44,6 +44,7 @@ let OrdersService = OrdersService_1 = class OrdersService {
                         slug: true,
                         isActive: true,
                         defaultCurrency: true,
+                        creditBalance: true,
                         paymentConfig: true,
                     },
                 },
@@ -51,6 +52,9 @@ let OrdersService = OrdersService_1 = class OrdersService {
         });
         if (!branch || !branch.restaurant || !branch.restaurant.isActive) {
             throw new common_1.NotFoundException('Restaurant or branch storefront is currently not accepting orders.');
+        }
+        if ((branch.restaurant.creditBalance ?? 0) <= -20) {
+            throw new common_1.BadRequestException('This restaurant is currently unable to accept new digital orders due to credit limit. Please place your order directly at the counter.');
         }
         const productIds = dto.items.map((i) => i.productId);
         const products = await this.prisma.product.findMany({
@@ -88,6 +92,13 @@ let OrdersService = OrdersService_1 = class OrdersService {
             };
         });
         const paymentConfig = branch.restaurant.paymentConfig || {};
+        const selectedMethod = dto.paymentMethod || client_1.PaymentMethod.CASH;
+        if (selectedMethod === client_1.PaymentMethod.UPI && !paymentConfig.enableUpi) {
+            throw new common_1.BadRequestException('UPI payment is not enabled for this restaurant.');
+        }
+        if (selectedMethod === client_1.PaymentMethod.CASH && paymentConfig.enableCash === false) {
+            throw new common_1.BadRequestException('Cash on counter payment is not enabled for this restaurant.');
+        }
         const enableTax = Boolean(paymentConfig.enableTax);
         const taxRate = enableTax && typeof paymentConfig.taxRate === 'number' && paymentConfig.taxRate > 0
             ? paymentConfig.taxRate
@@ -149,12 +160,15 @@ let OrdersService = OrdersService_1 = class OrdersService {
                         slug: true,
                         defaultCurrency: true,
                         themeConfig: true,
+                        paymentConfig: true,
                     },
                 },
             },
         });
         return {
-            message: 'Order placed successfully. Please proceed with payment at the counter.',
+            message: order.paymentMethod === client_1.PaymentMethod.UPI
+                ? 'Order placed with UPI. Please complete payment using your UPI app or scan the QR code.'
+                : 'Order placed successfully. Please proceed with payment at the counter.',
             order,
         };
     }
@@ -191,6 +205,7 @@ let OrdersService = OrdersService_1 = class OrdersService {
                         logoUrl: true,
                         defaultCurrency: true,
                         themeConfig: true,
+                        paymentConfig: true,
                     },
                 },
             },
@@ -407,7 +422,10 @@ let OrdersService = OrdersService_1 = class OrdersService {
                 updateData.prepStartedAt = now;
             }
             updateData.estimatedReadyAt = new Date(now.getTime() + prepMinutes * 60 * 1000);
-            if (order.status === client_1.OrderStatus.PENDING || order.paymentStatus === client_1.PaymentStatus.PENDING) {
+            if (dto.paymentStatus) {
+                updateData.paymentStatus = dto.paymentStatus;
+            }
+            else if (order.status === client_1.OrderStatus.PENDING || order.paymentStatus === client_1.PaymentStatus.PENDING) {
                 updateData.paymentStatus = client_1.PaymentStatus.PAID;
             }
         }
@@ -562,8 +580,9 @@ let OrdersService = OrdersService_1 = class OrdersService {
             restaurantId: restaurant.id,
             restaurantName: restaurant.name,
             enableCash: config.enableCash !== false,
-            enableStripe: false,
-            stripeStatus: 'COMING_SOON',
+            enableUpi: Boolean(config.enableUpi),
+            upiId: config.upiId || '',
+            upiName: config.upiName || restaurant.name || '',
             enableTax: Boolean(config.enableTax),
             taxRate: typeof config.taxRate === 'number' ? config.taxRate : 0,
             gstNumber: config.gstNumber || '',
@@ -589,10 +608,12 @@ let OrdersService = OrdersService_1 = class OrdersService {
         const newConfig = {
             ...currentConfig,
             enableCash: dto.enableCash,
+            enableUpi: Boolean(dto.enableUpi),
+            upiId: dto.upiId?.trim() || '',
+            upiName: dto.upiName?.trim() || restaurant.name || '',
             enableTax: Boolean(dto.enableTax),
             taxRate: Number(dto.taxRate || 0),
             gstNumber: dto.gstNumber?.trim() || '',
-            enableStripe: false,
         };
         await this.prisma.restaurant.update({
             where: { id: restaurantId },
@@ -601,11 +622,12 @@ let OrdersService = OrdersService_1 = class OrdersService {
         return {
             message: 'Payment and tax settings saved successfully.',
             enableCash: newConfig.enableCash,
+            enableUpi: newConfig.enableUpi,
+            upiId: newConfig.upiId,
+            upiName: newConfig.upiName,
             enableTax: newConfig.enableTax,
             taxRate: newConfig.taxRate,
             gstNumber: newConfig.gstNumber,
-            enableStripe: false,
-            stripeStatus: 'COMING_SOON',
         };
     }
     async verifyTurnstile(token) {

@@ -42,6 +42,7 @@ export declare class AiController {
         };
         staff: {
             name: string | undefined;
+            email: string | undefined;
             role: string;
             pinCode: string | null;
         } | null;

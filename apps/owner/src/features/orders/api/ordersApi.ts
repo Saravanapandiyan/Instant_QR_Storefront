@@ -98,11 +98,13 @@ export const ordersApi = {
     status: string,
     cancelReason?: string,
     prepTimeMinutes?: number,
+    paymentStatus?: string,
   ) => {
     return apiClient.patch(API_ENDPOINTS.ORDERS.UPDATE_STATUS(orderId), {
       status,
       cancelReason,
       prepTimeMinutes,
+      paymentStatus,
     });
   },
 

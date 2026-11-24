@@ -13,6 +13,7 @@ export declare class OrdersService {
                 defaultCurrency: string;
                 themeConfig: import("@prisma/client/runtime/library").JsonValue;
                 id: string;
+                paymentConfig: import("@prisma/client/runtime/library").JsonValue;
             };
             branch: {
                 name: string;
@@ -71,6 +72,7 @@ export declare class OrdersService {
             defaultCurrency: string;
             themeConfig: import("@prisma/client/runtime/library").JsonValue;
             id: string;
+            paymentConfig: import("@prisma/client/runtime/library").JsonValue;
         };
         branch: {
             name: string;
@@ -312,8 +314,9 @@ export declare class OrdersService {
         restaurantId: string;
         restaurantName: string;
         enableCash: boolean;
-        enableStripe: boolean;
-        stripeStatus: string;
+        enableUpi: boolean;
+        upiId: any;
+        upiName: any;
         enableTax: boolean;
         taxRate: any;
         gstNumber: any;
@@ -321,11 +324,12 @@ export declare class OrdersService {
     updatePaymentSettings(restaurantId: string, ownerUserId: string, dto: UpdatePaymentSettingsDto): Promise<{
         message: string;
         enableCash: any;
+        enableUpi: any;
+        upiId: any;
+        upiName: any;
         enableTax: any;
         taxRate: any;
         gstNumber: any;
-        enableStripe: boolean;
-        stripeStatus: string;
     }>;
     private verifyTurnstile;
 }

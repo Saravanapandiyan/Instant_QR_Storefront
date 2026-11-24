@@ -26,7 +26,20 @@ import {
   Pencil,
   X,
 } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import {
+  StylizedQRCode,
+  type QRDotPattern,
+  type QREyePattern,
+  type QRShape,
+} from '../branches/components/StylizedQRCode';
+import {
+  THEME_CONFIGS,
+  type StandTemplate,
+  type ColorTheme,
+  type CenterIconType,
+  getCenterIconEmoji,
+  saveStandeeDesign,
+} from '../branches/components/standeeRenderer';
 import { quickSetupApi, type MenuCategory, type MenuItem } from './api/quickSetupApi';
 import { toast } from '../../components/ui';
 import { getCustomerStorefrontUrl, CUSTOMER_APP_URL } from '../../lib/urls';
@@ -35,43 +48,6 @@ interface QuickSetupWizardProps {
   onComplete: () => void;
   onCancel?: () => void;
 }
-
-const DEFAULT_SAMPLE_CATEGORIES: MenuCategory[] = [
-  {
-    name: 'Beverages',
-    items: [
-      {
-        name: 'Masala Chai',
-        price: 30,
-        description: 'Traditional aromatic spiced Indian milk tea brewed with fresh cardamom and ginger.',
-        imageUrl: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=500&auto=format&fit=crop&q=80',
-      },
-      {
-        name: 'Cold Coffee Frappé',
-        price: 90,
-        description: 'Chilled rich espresso blended with creamy milk and vanilla ice cream.',
-        imageUrl: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=500&auto=format&fit=crop&q=80',
-      },
-    ],
-  },
-  {
-    name: 'Quick Bites',
-    items: [
-      {
-        name: 'Crispy Veg Burger',
-        price: 120,
-        description: 'Golden spiced potato-herb patty topped with lettuce, fresh tomatoes, and house sauce.',
-        imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80',
-      },
-      {
-        name: 'Paneer Tikka Roll',
-        price: 150,
-        description: 'Char-grilled cottage cheese cubes wrapped in warm paratha with mint chutney and pickled onions.',
-        imageUrl: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=500&auto=format&fit=crop&q=80',
-      },
-    ],
-  },
-];
 
 const DEFAULT_FALLBACK_IMG =
   'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80';
@@ -99,14 +75,18 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
   const [serviceType, setServiceType] = useState('BOTH');
   const [tablesCount, setTablesCount] = useState<number | string>(10);
 
-  // QR Design Studio State
-  const [qrStyle, setQrStyle] = useState<'STAND' | 'MINIMAL' | 'DARK' | 'VIBRANT'>('STAND');
-  const [qrColor, setQrColor] = useState<string>('#E05822');
+  // QR Design Studio State (standardized matching TableQrModal and standeeRenderer)
+  const [template, setTemplate] = useState<StandTemplate>('brand');
+  const [selectedTheme, setSelectedTheme] = useState<ColorTheme>('terracotta');
+  const [dotPattern, setDotPattern] = useState<QRDotPattern>('dots');
+  const [eyePattern, setEyePattern] = useState<QREyePattern>('squircle');
+  const [shape, setShape] = useState<QRShape>('square');
+  const [centerIcon, setCenterIcon] = useState<CenterIconType>('cutlery');
   const [showTableNumber, setShowTableNumber] = useState<boolean>(true);
   const [previewTableNum, setPreviewTableNum] = useState<number>(1);
 
-  // Menu State
-  const [categories, setCategories] = useState<MenuCategory[]>(DEFAULT_SAMPLE_CATEGORIES);
+  // Menu State (empty by default as requested)
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [isUploadingMenu, setIsUploadingMenu] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadProgressText, setUploadProgressText] = useState('');
@@ -122,8 +102,10 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
   const [isRegeneratingEditDesc, setIsRegeneratingEditDesc] = useState(false);
   const [isChangingEditPhoto, setIsChangingEditPhoto] = useState(false);
 
-  // Staff State
+  // Staff State (Terminal PIN & Email/Password login)
   const [staffName, setStaffName] = useState('Counter Team');
+  const [staffEmail, setStaffEmail] = useState('');
+  const [staffPassword, setStaffPassword] = useState('');
   const [staffRole, setStaffRole] = useState('CASHIER');
   const [staffPin, setStaffPin] = useState('1234');
 
@@ -207,7 +189,11 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
     } catch (err: any) {
       setIsUploadingMenu(false);
       setUploadProgress(0);
-      toast.error(err.message || 'AI menu import failed. You can use standard templates.');
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'AI menu import failed. Please ensure the menu photo is clear.';
+      toast.error(errorMsg);
     }
   };
 
@@ -304,10 +290,23 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
         serviceType,
         tablesCount: numericTablesCount,
         staffName: staffName.trim() || undefined,
+        staffEmail: staffEmail.trim() || undefined,
+        staffPassword: staffPassword.trim() || undefined,
         staffRole,
         staffPin: staffPin.trim() || undefined,
         categories,
       });
+
+      if (res?.branch?.id) {
+        saveStandeeDesign(res.branch.id, {
+          template,
+          selectedTheme,
+          dotPattern,
+          eyePattern,
+          shape,
+          centerIcon,
+        });
+      }
 
       setSetupResult(res);
       setCurrentStep(5); // Move to test order step
@@ -575,7 +574,7 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
                     <input
                       type="file"
                       id="camera-capture-input"
-                      accept="image/*"
+                      accept="image/*,application/pdf,application/json,text/plain,text/csv,.jpg,.jpeg,.png,.webp,.avif,.pdf,.json,.csv,.txt"
                       capture="environment"
                       onChange={handleMenuUpload}
                       className="hidden"
@@ -588,11 +587,11 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
                       <span>Take Menu Photo</span>
                     </label>
 
-                    {/* 2. File / PDF Upload */}
+                    {/* 2. File / PDF / JSON Upload */}
                     <input
                       type="file"
                       id="menu-file-upload"
-                      accept="image/*,application/pdf"
+                      accept="image/*,application/pdf,application/json,text/plain,text/csv,.jpg,.jpeg,.png,.webp,.avif,.pdf,.json,.csv,.txt"
                       onChange={handleMenuUpload}
                       className="hidden"
                     />
@@ -601,12 +600,12 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
                       className="w-full sm:w-auto flex-1 cursor-pointer flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-border bg-surface text-text hover:bg-surface-2 font-semibold text-xs shadow-sm transition-all active:scale-95"
                     >
                       <Upload className="w-4 h-4" />
-                      <span>Upload File / PDF</span>
+                      <span>Upload File / PDF / JSON</span>
                     </label>
                   </div>
 
                   <p className="text-[11px] text-muted">
-                    Supported formats: JPG, PNG, WEBP, PDF • Clear, well-lit photos work best
+                    Supported formats: JPG, PNG, AVIF, WEBP, PDF, JSON, CSV, TXT • Clear, well-lit photos work best
                   </p>
                 </div>
               )}
@@ -642,136 +641,171 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
                   </button>
                 </div>
 
-                <div className="space-y-4">
-                  {categories.map((cat, cIdx) => (
-                    <div key={cIdx} className="p-4 rounded-xl border border-border bg-surface-2 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <input
-                          type="text"
-                          value={cat.name}
-                          onChange={(e) => {
-                            const updated = [...categories];
-                            updated[cIdx].name = e.target.value;
-                            setCategories(updated);
-                          }}
-                          className="font-bold text-sm text-text bg-transparent border-b border-border/50 focus:border-primary focus:outline-none px-1"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setCategories(categories.filter((_, i) => i !== cIdx))}
-                          className="text-muted hover:text-danger text-xs p-1"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {cat.items.map((dish, dIdx) => (
-                          <div
-                            key={dIdx}
-                            className="p-3 rounded-lg border border-border bg-surface flex gap-3 items-start shadow-sm"
+                {categories.length === 0 ? (
+                  <div className="p-8 rounded-xl border border-dashed border-border text-center space-y-3 bg-surface-2/40">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 text-primary mx-auto flex items-center justify-center">
+                      <ChefHat className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-text">No Menu Categories Added Yet</p>
+                      <p className="text-xs text-muted max-w-sm mx-auto mt-1">
+                        Snap a photo or upload your menu file above to auto-populate dishes, or click below to start manually.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCategories([
+                          {
+                            name: 'Starters',
+                            items: [
+                              {
+                                name: 'Special Item',
+                                price: 100,
+                                description: 'Freshly prepared specialty dish.',
+                                imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=80',
+                              },
+                            ],
+                          },
+                        ])
+                      }
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-primary/30 bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" /> Add Category Manually
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {categories.map((cat, cIdx) => (
+                      <div key={cIdx} className="p-4 rounded-xl border border-border bg-surface-2 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <input
+                            type="text"
+                            value={cat.name}
+                            onChange={(e) => {
+                              const updated = [...categories];
+                              updated[cIdx].name = e.target.value;
+                              setCategories(updated);
+                            }}
+                            className="font-bold text-sm text-text bg-transparent border-b border-border/50 focus:border-primary focus:outline-none px-1"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setCategories(categories.filter((_, i) => i !== cIdx))}
+                            className="text-muted hover:text-danger text-xs p-1"
                           >
-                            <div className="relative group/img flex-shrink-0">
-                              <img
-                                src={dish.imageUrl || DEFAULT_FALLBACK_IMG}
-                                alt={dish.name}
-                                onError={(e) => {
-                                  const target = e.currentTarget;
-                                  if (!target.src.includes('photo-1504674900247-0877df9cc836')) {
-                                    target.src = DEFAULT_FALLBACK_IMG;
-                                  }
-                                }}
-                                className="w-16 h-16 rounded-lg object-cover bg-surface-2 flex-shrink-0 cursor-pointer shadow-sm hover:opacity-90 transition-opacity"
-                                onClick={() => handleRegenerateImage(cIdx, dIdx, dish.name)}
-                                title="Click to change photo"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleRegenerateImage(cIdx, dIdx, dish.name)}
-                                className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover/img:opacity-100 flex items-center justify-center rounded-lg text-[9px] font-semibold transition-opacity"
-                              >
-                                Change
-                              </button>
-                            </div>
-                            <div className="flex-1 min-w-0 space-y-1">
-                              <div className="flex items-center justify-between gap-1">
-                                <input
-                                  type="text"
-                                  value={dish.name}
-                                  onChange={(e) => {
-                                    const updated = [...categories];
-                                    updated[cIdx].items[dIdx].name = e.target.value;
-                                    setCategories(updated);
-                                  }}
-                                  className="font-semibold text-xs text-text bg-transparent border-b border-transparent hover:border-border focus:border-primary focus:outline-none w-full"
-                                />
-                                <div className="flex items-center gap-0.5 text-xs font-bold text-primary">
-                                  <span>{currency === 'INR' ? '₹' : '$'}</span>
-                                  <input
-                                    type="number"
-                                    value={dish.price}
-                                    onChange={(e) => {
-                                      const updated = [...categories];
-                                      updated[cIdx].items[dIdx].price = Number(e.target.value) || 0;
-                                      setCategories(updated);
-                                    }}
-                                    className="w-14 bg-transparent border-b border-transparent hover:border-border focus:border-primary focus:outline-none text-right"
-                                  />
-                                </div>
-                              </div>
-                              <p className="text-[11px] text-muted line-clamp-2 leading-relaxed">
-                                {dish.description}
-                              </p>
-                              <div className="flex items-center justify-between pt-1">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setEditingDish({
-                                        catIndex: cIdx,
-                                        itemIndex: dIdx,
-                                        item: { ...dish },
-                                        targetCategory: cat.name,
-                                      })
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {cat.items.map((dish, dIdx) => (
+                            <div
+                              key={dIdx}
+                              className="p-3 rounded-lg border border-border bg-surface flex gap-3 items-start shadow-sm"
+                            >
+                              <div className="relative group/img flex-shrink-0">
+                                <img
+                                  src={dish.imageUrl || DEFAULT_FALLBACK_IMG}
+                                  alt={dish.name}
+                                  onError={(e) => {
+                                    const target = e.currentTarget;
+                                    if (!target.src.includes('photo-1504674900247-0877df9cc836')) {
+                                      target.src = DEFAULT_FALLBACK_IMG;
                                     }
-                                    className="px-2 py-0.5 rounded-md border border-primary/30 bg-primary/10 text-primary text-[10px] font-bold hover:bg-primary/20 flex items-center gap-1 transition-colors"
-                                  >
-                                    <Pencil className="w-2.5 h-2.5" /> Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRegenerateDescription(cIdx, dIdx, dish.name)}
-                                    className="text-[10px] text-muted hover:text-text flex items-center gap-1 font-medium"
-                                  >
-                                    <RefreshCw className="w-2.5 h-2.5" /> Desc
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRegenerateImage(cIdx, dIdx, dish.name)}
-                                    className="text-[10px] text-muted hover:text-text flex items-center gap-1 font-medium"
-                                  >
-                                    <ImageIcon className="w-2.5 h-2.5" /> Photo
-                                  </button>
-                                </div>
+                                  }}
+                                  className="w-16 h-16 rounded-lg object-cover bg-surface-2 flex-shrink-0 cursor-pointer shadow-sm hover:opacity-90 transition-opacity"
+                                  onClick={() => handleRegenerateImage(cIdx, dIdx, dish.name)}
+                                  title="Click to change photo"
+                                />
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    const updated = [...categories];
-                                    updated[cIdx].items = updated[cIdx].items.filter((_, i) => i !== dIdx);
-                                    setCategories(updated);
-                                  }}
-                                  className="text-muted hover:text-danger text-[10px]"
+                                  onClick={() => handleRegenerateImage(cIdx, dIdx, dish.name)}
+                                  className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover/img:opacity-100 flex items-center justify-center rounded-lg text-[9px] font-semibold transition-opacity"
                                 >
-                                  Delete
+                                  Change
                                 </button>
                               </div>
+                              <div className="flex-1 min-w-0 space-y-1">
+                                <div className="flex items-center justify-between gap-1">
+                                  <input
+                                    type="text"
+                                    value={dish.name}
+                                    onChange={(e) => {
+                                      const updated = [...categories];
+                                      updated[cIdx].items[dIdx].name = e.target.value;
+                                      setCategories(updated);
+                                    }}
+                                    className="font-semibold text-xs text-text bg-transparent border-b border-transparent hover:border-border focus:border-primary focus:outline-none w-full"
+                                  />
+                                  <div className="flex items-center gap-0.5 text-xs font-bold text-primary">
+                                    <span>{currency === 'INR' ? '₹' : '$'}</span>
+                                    <input
+                                      type="number"
+                                      value={dish.price}
+                                      onChange={(e) => {
+                                        const updated = [...categories];
+                                        updated[cIdx].items[dIdx].price = Number(e.target.value) || 0;
+                                        setCategories(updated);
+                                      }}
+                                      className="w-14 bg-transparent border-b border-transparent hover:border-border focus:border-primary focus:outline-none text-right"
+                                    />
+                                  </div>
+                                </div>
+                                <p className="text-[11px] text-muted line-clamp-2 leading-relaxed">
+                                  {dish.description}
+                                </p>
+                                <div className="flex items-center justify-between pt-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setEditingDish({
+                                          catIndex: cIdx,
+                                          itemIndex: dIdx,
+                                          item: { ...dish },
+                                          targetCategory: cat.name,
+                                        })
+                                      }
+                                      className="px-2 py-0.5 rounded-md border border-primary/30 bg-primary/10 text-primary text-[10px] font-bold hover:bg-primary/20 flex items-center gap-1 transition-colors"
+                                    >
+                                      <Pencil className="w-2.5 h-2.5" /> Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRegenerateDescription(cIdx, dIdx, dish.name)}
+                                      className="text-[10px] text-muted hover:text-text flex items-center gap-1 font-medium"
+                                    >
+                                      <RefreshCw className="w-2.5 h-2.5" /> Desc
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRegenerateImage(cIdx, dIdx, dish.name)}
+                                      className="text-[10px] text-muted hover:text-text flex items-center gap-1 font-medium"
+                                    >
+                                      <ImageIcon className="w-2.5 h-2.5" /> Photo
+                                    </button>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...categories];
+                                      updated[cIdx].items = updated[cIdx].items.filter((_, i) => i !== dIdx);
+                                      setCategories(updated);
+                                    }}
+                                    className="text-muted hover:text-danger text-[10px]"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -783,16 +817,16 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
                 <div className="w-12 h-12 rounded-full bg-primary/10 text-primary mx-auto flex items-center justify-center">
                   <Users className="w-6 h-6" />
                 </div>
-                <h3 className="text-base font-bold text-text">Assign Staff & 4-Digit Terminal PIN</h3>
+                <h3 className="text-base font-bold text-text">Assign Staff & Credentials</h3>
                 <p className="text-xs text-muted">
-                  Staff can log into counter & kitchen displays using this quick PIN without creating separate email accounts.
+                  Staff can log into the owner portal via email & password, or switch quickly on counter & kitchen screens using a 4-digit PIN.
                 </p>
               </div>
 
               <div className="space-y-4 p-5 rounded-xl border border-border bg-surface-2">
                 <div>
                   <label className="block text-xs font-semibold text-text uppercase tracking-wider mb-1.5">
-                    Staff Name / Shift Label
+                    Staff Name / Shift Label *
                   </label>
                   <input
                     type="text"
@@ -801,6 +835,35 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
                     placeholder="e.g. Cashier Counter 1, Kitchen Master"
                     className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm font-medium"
                   />
+                </div>
+
+                {/* Email and Password Options */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-text uppercase tracking-wider mb-1.5">
+                      Staff Email (Optional)
+                    </label>
+                    <input
+                      type="email"
+                      value={staffEmail}
+                      onChange={(e) => setStaffEmail(e.target.value)}
+                      placeholder="e.g. staff@restaurant.com"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-text uppercase tracking-wider mb-1.5">
+                      Staff Password (Optional)
+                    </label>
+                    <input
+                      type="password"
+                      value={staffPassword}
+                      onChange={(e) => setStaffPassword(e.target.value)}
+                      placeholder="e.g. 6+ characters"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm font-medium"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -858,39 +921,50 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
               showTableNumber ? activeTableNum : undefined,
             );
 
-            const QR_STYLES = [
+            const currentTheme = THEME_CONFIGS[selectedTheme] || THEME_CONFIGS.terracotta;
+
+            const TEMPLATE_OPTIONS: { id: StandTemplate; name: string; desc: string; icon: string }[] = [
               {
-                id: 'STAND' as const,
-                name: 'Table Standee',
-                desc: 'Classic table tent with table badge',
+                id: 'brand',
+                name: 'Signature Standee',
+                desc: 'Classic branded table tent with table badge',
                 icon: '🏕️',
               },
               {
-                id: 'DARK' as const,
-                name: 'Luxe Midnight',
-                desc: 'Dark theme for cafés & lounges',
-                icon: '🖤',
-              },
-              {
-                id: 'MINIMAL' as const,
-                name: 'Acrylic Minimal',
+                id: 'acrylic',
+                name: 'Minimal Acrylic',
                 desc: 'Crisp clean border for modern tables',
                 icon: '🤍',
               },
               {
-                id: 'VIBRANT' as const,
-                name: 'Foodie Bistro',
-                desc: 'Warm gradient with dining icons',
-                icon: '🎨',
+                id: 'luxury',
+                name: 'Gold Luxe',
+                desc: 'Dark theme for fine dining & lounges',
+                icon: '🖤',
+              },
+              {
+                id: 'badge',
+                name: 'Circular Disc',
+                desc: 'Round table badge for bistro discs',
+                icon: '🔘',
               },
             ];
 
-            const ACCENT_COLORS = [
-              { name: 'Flame Orange', hex: '#E05822' },
-              { name: 'Emerald Green', hex: '#059669' },
-              { name: 'Royal Indigo', hex: '#4F46E5' },
-              { name: 'Crimson Red', hex: '#DC2626' },
-              { name: 'Midnight Dark', hex: '#18181B' },
+            const THEME_OPTIONS: ColorTheme[] = [
+              'terracotta',
+              'crimson',
+              'emerald',
+              'slate',
+              'navy',
+              'mono',
+            ];
+
+            const CENTER_ICONS: { id: CenterIconType; label: string; icon: string }[] = [
+              { id: 'cutlery', label: 'Cutlery', icon: '🍴' },
+              { id: 'coffee', label: 'Coffee', icon: '☕' },
+              { id: 'pizza', label: 'Pizza', icon: '🍕' },
+              { id: 'bar', label: 'Bar', icon: '🍷' },
+              { id: 'none', label: 'None', icon: '🚫' },
             ];
 
             return (
@@ -1004,59 +1078,118 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
                       </label>
                     </div>
 
-                    {/* Section 2: QR Standee Design Selection */}
+                    {/* Section 2: Standee Template Selection */}
                     <div className="p-4 rounded-xl border border-border bg-surface-2 space-y-3">
                       <label className="text-xs font-bold text-text uppercase tracking-wider flex items-center gap-1.5">
                         <Palette className="w-3.5 h-3.5 text-primary" /> Select Standee Design Template
                       </label>
 
                       <div className="grid grid-cols-2 gap-2.5">
-                        {QR_STYLES.map((style) => (
+                        {TEMPLATE_OPTIONS.map((tpl) => (
                           <button
-                            key={style.id}
+                            key={tpl.id}
                             type="button"
-                            onClick={() => setQrStyle(style.id)}
+                            onClick={() => setTemplate(tpl.id)}
                             className={`p-3 rounded-xl border text-left transition-all ${
-                              qrStyle === style.id
+                              template === tpl.id
                                 ? 'border-primary bg-primary/5 ring-2 ring-primary/30 shadow-sm'
                                 : 'border-border bg-surface hover:border-border/80'
                             }`}
                           >
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-base">{style.icon}</span>
-                              {qrStyle === style.id && (
+                              <span className="text-base">{tpl.icon}</span>
+                              {template === tpl.id && (
                                 <Check className="w-3.5 h-3.5 text-primary font-bold" />
                               )}
                             </div>
-                            <span className="block text-xs font-bold text-text">{style.name}</span>
+                            <span className="block text-xs font-bold text-text">{tpl.name}</span>
                             <span className="block text-[10px] text-muted line-clamp-1">
-                              {style.desc}
+                              {tpl.desc}
                             </span>
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    {/* Section 3: Accent Color Selection */}
+                    {/* Section 3: Color Theme Selection */}
                     <div className="p-4 rounded-xl border border-border bg-surface-2 space-y-2.5">
                       <label className="text-xs font-bold text-text uppercase tracking-wider flex items-center gap-1.5">
-                        Brand Accent Color
+                        Culinary Color Theme
                       </label>
-                      <div className="flex items-center gap-3">
-                        {ACCENT_COLORS.map((c) => (
-                          <button
-                            key={c.hex}
-                            type="button"
-                            onClick={() => setQrColor(c.hex)}
-                            title={c.name}
-                            className={`w-8 h-8 rounded-full border-2 transition-transform ${
-                              qrColor === c.hex
-                                ? 'scale-110 border-text shadow-md ring-2 ring-offset-2 ring-primary'
-                                : 'border-transparent hover:scale-105'
-                            }`}
-                            style={{ backgroundColor: c.hex }}
-                          />
-                        ))}
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        {THEME_OPTIONS.map((thm) => {
+                          const conf = THEME_CONFIGS[thm];
+                          return (
+                            <button
+                              key={thm}
+                              type="button"
+                              onClick={() => setSelectedTheme(thm)}
+                              className={`p-2 rounded-xl border flex flex-col items-center gap-1.5 text-center transition-all ${
+                                selectedTheme === thm
+                                  ? 'border-primary bg-primary/5 ring-2 ring-primary/30 shadow-sm'
+                                  : 'border-border bg-surface hover:border-border/80'
+                              }`}
+                            >
+                              <div
+                                className="w-6 h-6 rounded-full shadow-sm"
+                                style={{ backgroundColor: conf.primaryColor }}
+                              />
+                              <span className="text-[10px] font-bold text-text leading-tight truncate w-full">
+                                {conf.name}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Section 4: QR Pattern & Center Icon */}
+                    <div className="p-4 rounded-xl border border-border bg-surface-2 space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-bold text-text uppercase tracking-wider block mb-1.5">
+                            Center Emblem
+                          </label>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {CENTER_ICONS.map((ic) => (
+                              <button
+                                key={ic.id}
+                                type="button"
+                                onClick={() => setCenterIcon(ic.id)}
+                                className={`px-2 py-1 rounded-lg text-xs font-semibold border flex items-center gap-1 transition-all ${
+                                  centerIcon === ic.id
+                                    ? 'bg-primary text-white border-primary shadow-sm'
+                                    : 'bg-surface border-border text-text hover:border-primary/50'
+                                }`}
+                              >
+                                <span>{ic.icon}</span>
+                                <span className="text-[10px]">{ic.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-bold text-text uppercase tracking-wider block mb-1.5">
+                            QR Dot Style
+                          </label>
+                          <div className="flex items-center gap-1.5">
+                            {(['dots', 'squares', 'rounded'] as QRDotPattern[]).map((pat) => (
+                              <button
+                                key={pat}
+                                type="button"
+                                onClick={() => setDotPattern(pat)}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize border transition-all ${
+                                  dotPattern === pat
+                                    ? 'bg-primary text-white border-primary shadow-sm'
+                                    : 'bg-surface border-border text-text hover:border-primary/50'
+                                }`}
+                              >
+                                {pat}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -1087,134 +1220,235 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
                       </span>
                     </div>
 
-                    {/* Dynamic Standee Card Frame */}
-                    <div className="w-full max-w-[270px] transition-all duration-300">
-                      {/* Style 1: Table Standee (Tent) */}
-                      {qrStyle === 'STAND' && (
-                        <div className="bg-white text-zinc-900 rounded-2xl shadow-xl border border-zinc-200 overflow-hidden text-center p-5 space-y-3.5">
-                          {showTableNumber && (
-                            <div className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                              style={{ backgroundColor: `${qrColor}15`, color: qrColor }}
-                            >
-                              TABLE {activeTableNum < 10 ? `0${activeTableNum}` : activeTableNum}
+                    {/* Dynamic Standee Card Frame matching TableQrModal */}
+                    <div className="w-full flex justify-center transition-all duration-300">
+                      {/* Template 1: Signature Standee (brand) */}
+                      {template === 'brand' && (
+                        <div
+                          className={`w-[270px] sm:w-[290px] rounded-3xl p-5 ${currentTheme.cardBg} ${currentTheme.borderGlow} text-white flex flex-col items-center justify-between text-center transition-all duration-300 relative overflow-hidden shadow-2xl`}
+                        >
+                          <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-white/10 blur-lg pointer-events-none" />
+                          <div className="absolute -bottom-10 -left-10 w-28 h-28 rounded-full bg-black/20 blur-lg pointer-events-none" />
+
+                          <div className="space-y-1 w-full relative z-10">
+                            {showTableNumber && (
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/20 text-white font-black text-xs tracking-wider uppercase border border-white/30 shadow-xs mb-0.5">
+                                {centerIcon !== 'none' && <span>{getCenterIconEmoji(centerIcon)}</span>}
+                                <span>Table {activeTableNum < 10 ? `0${activeTableNum}` : activeTableNum}</span>
+                              </div>
+                            )}
+
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-white/90">
+                              WELCOME & DINE-IN
                             </div>
-                          )}
-                          <div>
-                            <h4 className="font-black text-sm uppercase tracking-wide text-zinc-900 truncate">
+
+                            <h3 className="text-base sm:text-lg font-black tracking-tight leading-tight drop-shadow-xs line-clamp-1">
                               {restaurantName || 'Restaurant Name'}
-                            </h4>
-                            <p className="text-[10px] text-zinc-500 font-medium">Digital Ordering</p>
+                            </h3>
+                            <p className="text-[10px] text-white/80 font-medium leading-none line-clamp-1">
+                              Scan to Order & Pay
+                            </p>
                           </div>
-                          <div className="p-3 bg-white rounded-xl shadow-sm border border-zinc-100 inline-block">
-                            <QRCodeSVG
+
+                          <div className="my-3.5 p-3 bg-white shadow-2xl relative flex items-center justify-center rounded-2xl">
+                            <StylizedQRCode
                               value={qrPreviewUrl}
-                              size={145}
-                              level="H"
-                              fgColor={qrColor === '#18181B' ? '#18181B' : qrColor}
+                              dotPattern={dotPattern}
+                              eyePattern={eyePattern}
+                              shape={shape}
+                              color1={currentTheme.qrGradient.color1}
+                              color2={currentTheme.qrGradient.color2}
+                              excavateCenter={centerIcon !== 'none'}
+                              className="w-[155px] h-[155px]"
                             />
+                            {centerIcon !== 'none' && (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div
+                                  className="w-10 h-10 rounded-full bg-white border-2 shadow-sm flex items-center justify-center text-base"
+                                  style={{ borderColor: currentTheme.primaryColor }}
+                                >
+                                  {getCenterIconEmoji(centerIcon)}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div className="space-y-0.5">
-                            <p className="font-bold text-xs text-zinc-900">SCAN TO ORDER & PAY</p>
-                            <p className="text-[10px] text-zinc-500">No App Download Required</p>
-                          </div>
-                          <div className="pt-2 border-t border-zinc-100 flex items-center justify-between text-[9px] text-zinc-400">
-                            <span>⚡ InstaDine</span>
-                            <span>Table #{activeTableNum}</span>
+
+                          <div className="space-y-0.5 relative z-10">
+                            <div className="text-[11px] font-extrabold uppercase tracking-widest text-white drop-shadow-xs">
+                              SCAN FOR DIGITAL MENU
+                            </div>
+                            <p className="text-[9px] text-white/80 font-medium">
+                              Point phone camera • Instant live ordering
+                            </p>
+                            <div className="pt-1">
+                              <span className="font-mono text-[8px] text-white/70 bg-black/20 px-2 py-0.5 rounded-md truncate inline-block max-w-[220px]">
+                                /r/{cleanSlug}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       )}
 
-                      {/* Style 2: Luxe Midnight */}
-                      {qrStyle === 'DARK' && (
-                        <div className="bg-zinc-950 text-white rounded-2xl shadow-2xl border border-zinc-800 overflow-hidden text-center p-5 space-y-3.5 relative">
-                          <div
-                            className="absolute top-0 left-0 right-0 h-1"
-                            style={{ backgroundColor: qrColor }}
-                          />
-                          {showTableNumber && (
-                            <div
-                              className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                              style={{ backgroundColor: `${qrColor}25`, color: qrColor }}
-                            >
-                              TABLE {activeTableNum < 10 ? `0${activeTableNum}` : activeTableNum}
-                            </div>
-                          )}
-                          <div>
-                            <h4 className="font-bold text-sm text-white truncate">
-                              {restaurantName || 'Restaurant Name'}
-                            </h4>
-                            <p className="text-[10px] text-zinc-400">Scan for Digital Menu</p>
-                          </div>
-                          <div className="p-3 bg-white rounded-xl shadow-md inline-block">
-                            <QRCodeSVG
-                              value={qrPreviewUrl}
-                              size={145}
-                              level="H"
-                              fgColor="#09090b"
-                            />
-                          </div>
-                          <div className="space-y-0.5">
-                            <p className="font-semibold text-xs text-zinc-200">POINT CAMERA TO ORDER</p>
-                            <p className="text-[10px] text-zinc-400">Instant digital service</p>
-                          </div>
-                          <div className="pt-2 border-t border-zinc-800 text-[9px] text-zinc-500">
-                            Powered by InstaDine
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Style 3: Acrylic Minimal */}
-                      {qrStyle === 'MINIMAL' && (
-                        <div className="bg-white text-zinc-800 rounded-xl shadow-md border-2 border-zinc-300 text-center p-5 space-y-3">
-                          {showTableNumber && (
-                            <span className="font-mono text-xs font-bold text-zinc-600 block">
-                              • TABLE {activeTableNum} •
+                      {/* Template 2: Minimal Acrylic (acrylic) */}
+                      {template === 'acrylic' && (
+                        <div className="w-[270px] sm:w-[290px] rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-200 flex flex-col overflow-hidden">
+                          <div className={`p-3.5 ${currentTheme.cardBg} text-white text-center space-y-0.5`}>
+                            <span className="text-[9px] uppercase font-bold tracking-wider opacity-90">
+                              Dine-In Storefront
                             </span>
-                          )}
-                          <h4 className="font-semibold text-sm text-zinc-900 truncate">
-                            {restaurantName || 'Restaurant Name'}
-                          </h4>
-                          <div className="p-2 inline-block">
-                            <QRCodeSVG
-                              value={qrPreviewUrl}
-                              size={145}
-                              level="H"
-                              fgColor="#18181B"
-                            />
+                            <h3 className="text-base font-black tracking-tight leading-tight line-clamp-1">
+                              {restaurantName || 'Restaurant Name'}
+                            </h3>
+                            {showTableNumber && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 text-white font-black text-[10px] tracking-wider uppercase">
+                                {centerIcon !== 'none' && <span>{getCenterIconEmoji(centerIcon)}</span>}
+                                <span>Table {activeTableNum < 10 ? `0${activeTableNum}` : activeTableNum}</span>
+                              </span>
+                            )}
                           </div>
-                          <p className="text-xs font-medium text-zinc-600">Scan & Order</p>
-                          <p className="text-[9px] font-mono text-zinc-400 truncate">
-                            /r/{cleanSlug}
-                          </p>
+
+                          <div className="p-3 my-1 flex items-center justify-center relative">
+                            <StylizedQRCode
+                              value={qrPreviewUrl}
+                              dotPattern={dotPattern}
+                              eyePattern={eyePattern}
+                              shape={shape}
+                              color1={currentTheme.qrGradient.color1}
+                              color2={currentTheme.qrGradient.color2}
+                              excavateCenter={centerIcon !== 'none'}
+                              className="w-[155px] h-[155px]"
+                            />
+                            {centerIcon !== 'none' && (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div
+                                  className="w-10 h-10 rounded-full bg-white border-2 shadow-sm flex items-center justify-center text-base"
+                                  style={{ borderColor: currentTheme.primaryColor }}
+                                >
+                                  {getCenterIconEmoji(centerIcon)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="px-3 pb-3 pt-1 space-y-1 text-left text-[10px] font-medium text-zinc-600 bg-zinc-50 border-t border-zinc-100">
+                            <div className="flex items-center gap-1.5 font-bold text-zinc-800">
+                              <span className="w-3.5 h-3.5 rounded-full bg-primary/20 text-primary text-[9px] flex items-center justify-center">1</span>
+                              <span>Scan QR with phone camera</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-3.5 h-3.5 rounded-full bg-primary/20 text-primary text-[9px] flex items-center justify-center">2</span>
+                              <span>Browse dishes & select</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-3.5 h-3.5 rounded-full bg-primary/20 text-primary text-[9px] flex items-center justify-center">3</span>
+                              <span>Direct kitchen dispatch</span>
+                            </div>
+                          </div>
                         </div>
                       )}
 
-                      {/* Style 4: Vibrant Foodie */}
-                      {qrStyle === 'VIBRANT' && (
-                        <div className="bg-surface rounded-2xl shadow-xl border border-border overflow-hidden text-center">
-                          <div
-                            className="p-3 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5"
-                            style={{ backgroundColor: qrColor }}
-                          >
-                            <UtensilsCrossed className="w-3.5 h-3.5" />
-                            {showTableNumber ? `Table ${activeTableNum}` : 'Scan to Dine'}
-                          </div>
-                          <div className="p-4 space-y-3">
-                            <h4 className="font-bold text-sm text-text truncate">
+                      {/* Template 3: Gold Luxe (luxury) */}
+                      {template === 'luxury' && (
+                        <div className="w-[270px] sm:w-[290px] rounded-3xl p-5 bg-zinc-950 text-white flex flex-col items-center justify-between text-center border-2 border-amber-600/70 shadow-2xl relative overflow-hidden">
+                          <div className="space-y-1 w-full relative z-10 pt-1">
+                            <span className="text-[9px] tracking-widest uppercase text-amber-300/80 font-serif">
+                              Carte du Jour • Fine Dining
+                            </span>
+                            <h3 className="text-lg font-serif font-bold text-amber-100 tracking-wide line-clamp-1">
                               {restaurantName || 'Restaurant Name'}
-                            </h4>
-                            <div className="p-2 bg-white rounded-xl shadow-sm border border-border inline-block">
-                              <QRCodeSVG
-                                value={qrPreviewUrl}
-                                size={140}
-                                level="H"
-                                fgColor={qrColor === '#18181B' ? '#18181B' : qrColor}
-                              />
+                            </h3>
+                            {showTableNumber && (
+                              <div className="inline-block px-3 py-0.5 border-y border-amber-400/50 text-amber-200 font-serif font-bold text-xs tracking-widest uppercase my-0.5">
+                                {centerIcon !== 'none' && <span className="mr-1">{getCenterIconEmoji(centerIcon)}</span>}
+                                <span>Table {activeTableNum < 10 ? `0${activeTableNum}` : activeTableNum}</span>
+                              </div>
+                            )}
+                            <p className="text-[10px] text-amber-200/70 font-serif truncate">
+                              Digital Storefront & Table Service
+                            </p>
+                          </div>
+
+                          <div className="my-3.5 p-3 bg-white shadow-xl relative flex items-center justify-center border-2 border-amber-500/60 rounded-2xl">
+                            <StylizedQRCode
+                              value={qrPreviewUrl}
+                              dotPattern={dotPattern}
+                              eyePattern={eyePattern}
+                              shape={shape}
+                              color1={currentTheme.qrGradient.color1}
+                              color2={currentTheme.qrGradient.color2}
+                              excavateCenter={centerIcon !== 'none'}
+                              className="w-[155px] h-[155px]"
+                            />
+                            {centerIcon !== 'none' && (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="w-10 h-10 rounded-full bg-white border-2 border-amber-600 shadow-sm flex items-center justify-center text-base">
+                                  {getCenterIconEmoji(centerIcon)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="space-y-0.5 relative z-10 pb-1">
+                            <div className="text-[11px] font-serif font-bold text-amber-200 uppercase tracking-widest">
+                              Scan for Digital Menu
                             </div>
-                            <div className="space-y-0.5">
-                              <p className="font-bold text-xs text-text">Delicious Food Awaits</p>
-                              <p className="text-[10px] text-muted">Scan to place order</p>
-                            </div>
+                            <p className="text-[9px] text-amber-100/70">Point phone camera to order</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Template 4: Circular Disc (badge) */}
+                      {template === 'badge' && (
+                        <div
+                          className="w-[260px] h-[260px] rounded-full p-5 bg-white text-zinc-900 shadow-2xl border-6 flex flex-col items-center justify-between text-center relative overflow-hidden"
+                          style={{ borderColor: currentTheme.primaryColor }}
+                        >
+                          <div className="space-y-0.5 pt-1">
+                            <span
+                              className="text-[10px] font-black uppercase tracking-wider truncate max-w-[190px] block"
+                              style={{ color: currentTheme.primaryColor }}
+                            >
+                              {restaurantName || 'Restaurant Name'}
+                            </span>
+                            {showTableNumber && (
+                              <span
+                                className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full inline-flex items-center gap-1"
+                                style={{
+                                  backgroundColor: `${currentTheme.primaryColor}15`,
+                                  color: currentTheme.primaryColor,
+                                }}
+                              >
+                                {centerIcon !== 'none' && <span>{getCenterIconEmoji(centerIcon)}</span>}
+                                <span>Table {activeTableNum < 10 ? `0${activeTableNum}` : activeTableNum}</span>
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-center relative my-1">
+                            <StylizedQRCode
+                              value={qrPreviewUrl}
+                              dotPattern={dotPattern}
+                              eyePattern={eyePattern}
+                              shape={shape}
+                              color1={currentTheme.qrGradient.color1}
+                              color2={currentTheme.qrGradient.color2}
+                              excavateCenter={centerIcon !== 'none'}
+                              className="w-[135px] h-[135px]"
+                            />
+                            {centerIcon !== 'none' && (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div
+                                  className="w-8 h-8 rounded-full bg-white border-2 shadow-sm flex items-center justify-center text-sm"
+                                  style={{ borderColor: currentTheme.primaryColor }}
+                                >
+                                  {getCenterIconEmoji(centerIcon)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="pb-1 text-[8px] font-extrabold uppercase tracking-widest text-zinc-600">
+                            Touchless Ordering
                           </div>
                         </div>
                       )}

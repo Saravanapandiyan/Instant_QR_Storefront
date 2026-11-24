@@ -34,13 +34,12 @@ export const LoginForm: React.FC = () => {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: 'owner@ordzo.com',
-      password: '123456',
+      email: '',
+      password: '',
     },
   });
 
@@ -147,38 +146,6 @@ export const LoginForm: React.FC = () => {
               <span>{serverError}</span>
             </div>
           )}
-
-          {/* Demo Quick Fill */}
-          <div className="mb-5 p-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-orange-600">Demo Login Details</span>
-              <span className="text-[10px] text-muted font-mono">Password: 123456</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setValue('email', 'owner@ordzo.com');
-                  setValue('password', '123456');
-                }}
-                className="p-2 text-left rounded-lg bg-surface hover:bg-orange-500/10 border border-border text-xs transition-colors cursor-pointer"
-              >
-                <div className="font-semibold text-text">Owner Demo</div>
-                <div className="text-[10px] text-muted truncate">owner@ordzo.com</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setValue('email', 'staff@ordzo.com');
-                  setValue('password', '123456');
-                }}
-                className="p-2 text-left rounded-lg bg-surface hover:bg-orange-500/10 border border-border text-xs transition-colors cursor-pointer"
-              >
-                <div className="font-semibold text-text">Branch Staff</div>
-                <div className="text-[10px] text-muted truncate">staff@ordzo.com</div>
-              </button>
-            </div>
-          </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <Input

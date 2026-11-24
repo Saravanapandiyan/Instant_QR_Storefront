@@ -14,6 +14,7 @@ import {
   Sparkles,
   Flame,
   Bell,
+  Smartphone,
 } from 'lucide-react';
 import { fetchOrderDetails } from '../../api/ordersApi';
 import type { PlacedOrder } from '../../api/ordersApi';
@@ -105,6 +106,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
 
   const isCancelled = order.status === 'CANCELLED';
   const isPaid = order.paymentStatus === 'PAID';
+  const isUpi = order.paymentMethod === 'UPI';
 
   // Preparation countdown calculation
   const prepStartedMs = order.prepStartedAt
@@ -345,7 +347,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             </div>
           )}
 
-          {/* Cash Payment Callout */}
+          {/* Payment Status Callout */}
           <div
             className={`p-4 rounded-2xl border flex items-start justify-between gap-3 ${
               isPaid
@@ -361,7 +363,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                     : 'bg-amber-500 text-white'
                 }`}
               >
-                <Banknote className="w-5 h-5" />
+                {isUpi ? <Smartphone className="w-5 h-5" /> : <Banknote className="w-5 h-5" />}
               </div>
               <div>
                 <h4
@@ -371,7 +373,9 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                       : 'text-amber-900 dark:text-amber-200'
                   }`}
                 >
-                  {isPaid ? 'Payment Confirmed' : 'Pay Cash at Counter'}
+                  {isPaid
+                    ? (isUpi ? 'UPI Payment Confirmed' : 'Payment Confirmed')
+                    : (isUpi ? 'Pay via UPI' : 'Pay Cash at Counter')}
                 </h4>
                 <p
                   className={`text-xs mt-0.5 ${
@@ -381,8 +385,12 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                   }`}
                 >
                   {isPaid
-                    ? 'Cash received by cashier. Thank you!'
-                    : `Please pay ${currencySymbol}${order.totalAmount} in cash at the cashier desk.`}
+                    ? (isUpi
+                        ? 'Payment received & verified by restaurant. Thank you!'
+                        : 'Cash received by cashier. Thank you!')
+                    : (isUpi
+                        ? `Please complete payment of ${currencySymbol}${order.totalAmount} via UPI. Restaurant will verify once received.`
+                        : `Please pay ${currencySymbol}${order.totalAmount} in cash at the cashier desk.`)}
                 </p>
               </div>
             </div>
@@ -393,7 +401,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                   : 'bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-100'
               }`}
             >
-              {isPaid ? 'Paid' : 'Pending Cash'}
+              {isPaid ? 'Paid' : (isUpi ? 'Pending Payment' : 'Pending Cash')}
             </span>
           </div>
 

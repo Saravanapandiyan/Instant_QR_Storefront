@@ -16,6 +16,7 @@ import {
   User,
   Check,
   Banknote,
+  Smartphone,
   Utensils,
   Bell,
   MessageSquare,
@@ -243,12 +244,12 @@ export const OrdersPage: React.FC = () => {
     setPreppingOrder(order);
   };
 
-  // Confirm prep time & deduct 1 credit
-  const handleConfirmPrep = async (orderId: string, prepTimeMinutes: number) => {
+  // Confirm prep time, payment status & deduct 1 credit
+  const handleConfirmPrep = async (orderId: string, prepTimeMinutes: number, paymentStatus?: string) => {
     setIsSubmittingAction(true);
     try {
-      await ordersApi.updateOrderStatus(orderId, 'PREPARING', undefined, prepTimeMinutes);
-      toast.success(`Order #${preppingOrder?.orderNumber || ''} marked Paid & in prep! 1 Credit deducted.`);
+      await ordersApi.updateOrderStatus(orderId, 'PREPARING', undefined, prepTimeMinutes, paymentStatus);
+      toast.success(`Order #${preppingOrder?.orderNumber || ''} accepted! 1 credit deducted.`);
       setPreppingOrder(null);
       await fetchOrders(false);
       window.dispatchEvent(new CustomEvent('instadine:orders_updated'));
@@ -949,18 +950,24 @@ export const OrdersPage: React.FC = () => {
                           } ${
                             isPaid
                               ? 'bg-success/10 text-success border-success/20 hover:bg-success/15'
+                              : order.paymentMethod === 'UPI'
+                              ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20 hover:bg-indigo-500/15'
                               : 'bg-warning/10 text-warning border-warning/20 hover:bg-warning/15'
                           }`}
                         >
                           {isPaid ? (
                             <>
                               <CheckCircle2 className="w-3.5 h-3.5 text-success" />
-                              <span>Cash Paid</span>
+                              <span>{order.paymentMethod === 'UPI' ? 'UPI Verified' : 'Cash Paid'}</span>
                             </>
                           ) : (
                             <>
-                              <Clock className="w-3.5 h-3.5 text-warning" />
-                              <span>Cash Pending</span>
+                              {order.paymentMethod === 'UPI' ? (
+                                <Smartphone className="w-3.5 h-3.5 text-indigo-500" />
+                              ) : (
+                                <Clock className="w-3.5 h-3.5 text-warning" />
+                              )}
+                              <span>{order.paymentMethod === 'UPI' ? 'UPI Pending' : 'Cash Pending'}</span>
                             </>
                           )}
                         </button>
@@ -1115,10 +1122,12 @@ export const OrdersPage: React.FC = () => {
                               className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
                                 isPaid
                                   ? 'bg-success/10 text-success border-success/20'
+                                  : order.paymentMethod === 'UPI'
+                                  ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20'
                                   : 'bg-warning/10 text-warning border-warning/20'
                               }`}
                             >
-                              {isPaid ? 'Paid' : 'Unpaid'}
+                              {order.paymentMethod === 'UPI' ? 'UPI' : 'Cash'} • {isPaid ? 'Paid' : 'Unpaid'}
                             </span>
                             {order.status !== 'CANCELLED' && can('orders', 'collectCash') && (
                               <button

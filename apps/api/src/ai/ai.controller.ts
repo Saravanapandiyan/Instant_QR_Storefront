@@ -29,7 +29,11 @@ export class AiController {
   constructor(private readonly aiService: AiService) {}
 
   @Post('menu-import')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 30 * 1024 * 1024 }, // Up to 30MB for high-res camera photos
+    }),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Extract categories, dishes, prices, descriptions, and images from menu photo/PDF' })
   @ApiResponse({ status: 200, description: 'Menu parsed and enriched successfully' })

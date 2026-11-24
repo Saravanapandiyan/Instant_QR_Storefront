@@ -8,8 +8,14 @@
     // Immediately unregister all Service Workers and clear legacy CacheStorage
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(regs) {
-        for (var i = 0; i < regs.length; i++) regs.unregister();
-      });
+        if (Array.isArray(regs)) {
+          for (var i = 0; i < regs.length; i++) {
+            if (regs[i] && typeof regs[i].unregister === 'function') {
+              regs[i].unregister();
+            }
+          }
+        }
+      }).catch(function() {});
     }
     if ('caches' in window) {
       caches.keys().then(function(names) {
@@ -49,8 +55,8 @@
     rel="stylesheet" />
   <!-- Cloudflare Turnstile Smart Invisible CAPTCHA -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-  <script type="module" crossorigin src="/assets/index-eOOtCdst.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-xgRHOrmt.css">
+  <script type="module" crossorigin src="/assets/index-r46YmtU5.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CoVKGZyR.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 
 <body class="bg-zinc-50 text-zinc-900 antialiased selection:bg-orange-500 selection:text-white">

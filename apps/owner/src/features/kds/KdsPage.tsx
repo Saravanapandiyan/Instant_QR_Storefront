@@ -581,6 +581,9 @@ const KitchenOrderTicket: React.FC<KitchenOrderTicketProps> = ({
                 </>
               )}
             </span>
+            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${order.paymentMethod === 'UPI' ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' : 'bg-surface border-border text-muted'}`}>
+              {order.paymentMethod === 'UPI' ? 'UPI' : 'Cash'}
+            </span>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
@@ -835,6 +838,9 @@ const ReadyOrderTicket: React.FC<ReadyOrderTicketProps> = ({
                   <span>Takeaway</span>
                 </>
               )}
+            </span>
+            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${order.paymentMethod === 'UPI' ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' : 'bg-surface border-border text-muted'}`}>
+              {order.paymentMethod === 'UPI' ? 'UPI' : 'Cash'}
             </span>
           </div>
 

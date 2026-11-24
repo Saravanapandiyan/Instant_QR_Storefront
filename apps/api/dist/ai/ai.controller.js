@@ -71,7 +71,9 @@ let AiController = class AiController {
 exports.AiController = AiController;
 __decorate([
     (0, common_1.Post)('menu-import'),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
+        limits: { fileSize: 30 * 1024 * 1024 },
+    })),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
     (0, swagger_1.ApiOperation)({ summary: 'Extract categories, dishes, prices, descriptions, and images from menu photo/PDF' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Menu parsed and enriched successfully' }),

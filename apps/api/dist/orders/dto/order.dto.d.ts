@@ -17,6 +17,7 @@ export declare class CreateOrderDto {
 }
 export declare class UpdateOrderStatusDto {
     status: OrderStatus;
+    paymentStatus?: PaymentStatus;
     cancelReason?: string;
     prepTimeMinutes?: number;
 }
@@ -25,6 +26,9 @@ export declare class UpdatePaymentStatusDto {
 }
 export declare class UpdatePaymentSettingsDto {
     enableCash: boolean;
+    enableUpi?: boolean;
+    upiId?: string;
+    upiName?: string;
     enableTax?: boolean;
     taxRate?: number;
     gstNumber?: string;

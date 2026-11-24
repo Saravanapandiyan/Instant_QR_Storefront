@@ -108,9 +108,14 @@ export function createLicenseGuard(options: LicenseGuardOptions = {}) {
     onInvalid,
   } = options;
 
-  // In development or demo mode, if no license is configured, allow pass-through
-  const isDemoOrDev = process.env.DEMO_MODE === 'true' || process.env.NODE_ENV !== 'production';
-  const isDevBypass = !licenseKey && isDemoOrDev;
+  // In development, demo mode, localhost, or if no license key is configured, allow pass-through
+  const isDemoOrDev =
+    process.env.DEMO_MODE === 'true' ||
+    process.env.NODE_ENV !== 'production' ||
+    !licenseKey ||
+    domain === 'localhost' ||
+    domain.startsWith('127.0.0.1');
+  const isDevBypass = isDemoOrDev;
 
   const hmacKey = licenseKey ? deriveHmacKey(licenseKey) : Buffer.from('');
   const verifyUrl = `${storeApiUrl.replace(/\/$/, '')}/api/store/licence/verify`;

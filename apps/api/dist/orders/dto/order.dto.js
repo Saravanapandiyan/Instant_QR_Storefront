@@ -94,6 +94,7 @@ __decorate([
 ], CreateOrderDto.prototype, "items", void 0);
 class UpdateOrderStatusDto {
     status;
+    paymentStatus;
     cancelReason;
     prepTimeMinutes;
 }
@@ -102,6 +103,11 @@ __decorate([
     (0, class_validator_1.IsEnum)(client_1.OrderStatus),
     __metadata("design:type", String)
 ], UpdateOrderStatusDto.prototype, "status", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.PaymentStatus),
+    __metadata("design:type", String)
+], UpdateOrderStatusDto.prototype, "paymentStatus", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
@@ -124,6 +130,9 @@ __decorate([
 ], UpdatePaymentStatusDto.prototype, "paymentStatus", void 0);
 class UpdatePaymentSettingsDto {
     enableCash;
+    enableUpi;
+    upiId;
+    upiName;
     enableTax;
     taxRate;
     gstNumber;
@@ -134,6 +143,21 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], UpdatePaymentSettingsDto.prototype, "enableCash", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], UpdatePaymentSettingsDto.prototype, "enableUpi", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdatePaymentSettingsDto.prototype, "upiId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdatePaymentSettingsDto.prototype, "upiName", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)(),

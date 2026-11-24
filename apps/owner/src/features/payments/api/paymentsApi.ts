@@ -5,8 +5,9 @@ export interface PaymentSettingsResponse {
   restaurantId: string;
   restaurantName: string;
   enableCash: boolean;
-  enableStripe: boolean;
-  stripeStatus: string;
+  enableUpi: boolean;
+  upiId: string;
+  upiName: string;
   enableTax: boolean;
   taxRate: number;
   gstNumber?: string;
@@ -14,6 +15,9 @@ export interface PaymentSettingsResponse {
 
 export interface UpdatePaymentSettingsPayload {
   enableCash: boolean;
+  enableUpi?: boolean;
+  upiId?: string;
+  upiName?: string;
   enableTax?: boolean;
   taxRate?: number;
   gstNumber?: string;

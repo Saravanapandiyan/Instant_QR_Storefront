@@ -8,8 +8,14 @@
     // Immediately unregister all Service Workers and clear legacy CacheStorage
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(regs) {
-        for (var i = 0; i < regs.length; i++) regs.unregister();
-      });
+        if (Array.isArray(regs)) {
+          for (var i = 0; i < regs.length; i++) {
+            if (regs[i] && typeof regs[i].unregister === 'function') {
+              regs[i].unregister();
+            }
+          }
+        }
+      }).catch(function() {});
     }
     if ('caches' in window) {
       caches.keys().then(function(names) {
