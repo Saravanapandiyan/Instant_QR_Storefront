@@ -49,6 +49,10 @@ export class CreateOrderDto {
   @IsString()
   turnstileToken?: string;
 
+  @IsOptional()
+  @IsString()
+  language?: string;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)

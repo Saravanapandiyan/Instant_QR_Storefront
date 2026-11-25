@@ -75,8 +75,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         return 'Staff & Roles';
       case ROUTES.PAYMENTS:
         return 'Payment Settings';
-      case ROUTES.SETTINGS:
-        return 'Settings';
       case ROUTES.DASHBOARD:
       default:
         return 'Dashboard';

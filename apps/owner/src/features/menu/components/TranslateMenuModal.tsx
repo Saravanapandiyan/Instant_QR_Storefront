@@ -11,12 +11,16 @@ import {
   CheckCircle2,
   AlertCircle,
   HelpCircle,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import {
   getSupportedLanguages,
   translateMenu,
   updateProductTranslation,
   updateCategoryTranslation,
+  addCustomLanguage,
+  deleteCustomLanguage,
   type SupportedLanguage,
   type Category,
   type Product,
@@ -55,6 +59,89 @@ export const TranslateMenuModal: React.FC<TranslateMenuModalProps> = ({
   } | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState<boolean>(false);
 
+  // Add Custom Language state
+  const [isAddLanguageOpen, setIsAddLanguageOpen] = useState(false);
+  const [selectedLanguageCodeToAdd, setSelectedLanguageCodeToAdd] = useState('');
+  const [isAddingLang, setIsAddingLang] = useState(false);
+
+  const AVAILABLE_PRESET_LANGUAGES = [
+    // Indian Regional Languages
+    { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇮🇳' },
+    { code: 'mr', name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳' },
+    { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', flag: '🇮🇳' },
+    { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
+    { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳' },
+    { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳' },
+    { code: 'or', name: 'Odia', nativeName: 'ଓଡ଼ିଆ', flag: '🇮🇳' },
+    { code: 'as', name: 'Assamese', nativeName: 'অসমীয়া', flag: '🇮🇳' },
+    { code: 'ur', name: 'Urdu', nativeName: 'اردو', flag: '🇵🇰' },
+    // International / Global Languages
+    { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
+    { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
+    { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
+    { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹' },
+    { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹' },
+    { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
+    { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
+    { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷' },
+    { code: 'zh', name: 'Chinese (Simplified)', nativeName: '简体中文', flag: '🇨🇳' },
+    { code: 'zh-tw', name: 'Chinese (Traditional)', nativeName: '繁體中文', flag: '🇹🇼' },
+    { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇦🇪' },
+    { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', flag: '🇹🇷' },
+    { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', flag: '🇮🇩' },
+    { code: 'ms', name: 'Malay', nativeName: 'Bahasa Melayu', flag: '🇲🇾' },
+    { code: 'th', name: 'Thai', nativeName: 'ไทย', flag: '🇹🇭' },
+    { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', flag: '🇻🇳' },
+    { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱' },
+    { code: 'pl', name: 'Polish', nativeName: 'Polski', flag: '🇵🇱' },
+    { code: 'sv', name: 'Swedish', nativeName: 'Svenska', flag: '🇸🇪' },
+    { code: 'el', name: 'Greek', nativeName: 'Ελληνικά', flag: '🇬🇷' },
+    { code: 'he', name: 'Hebrew', nativeName: 'עברית', flag: '🇮🇱' },
+    { code: 'tl', name: 'Filipino / Tagalog', nativeName: 'Tagalog', flag: '🇵🇭' },
+    { code: 'fa', name: 'Persian / Farsi', nativeName: 'فارسی', flag: '🇮🇷' },
+    { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', flag: '🇺🇦' },
+  ];
+
+  const handleAddLanguage = async () => {
+    const selected = AVAILABLE_PRESET_LANGUAGES.find((l) => l.code === selectedLanguageCodeToAdd);
+    if (!selected) {
+      toast.error('Please select a language from the dropdown.');
+      return;
+    }
+    setIsAddingLang(true);
+    try {
+      await addCustomLanguage({
+        code: selected.code,
+        name: selected.name,
+        nativeName: selected.nativeName,
+        flag: selected.flag,
+      });
+      toast.success(`${selected.name} (${selected.nativeName}) added successfully!`);
+      const updated = await getSupportedLanguages();
+      setLanguages(updated);
+      setSelectedLangs((prev) => [...prev, selected.code]);
+      setIsAddLanguageOpen(false);
+      setSelectedLanguageCodeToAdd('');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add language');
+    } finally {
+      setIsAddingLang(false);
+    }
+  };
+
+  const handleDeleteCustomLanguage = async (code: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await deleteCustomLanguage(code);
+      toast.success('Custom language removed');
+      const updated = await getSupportedLanguages();
+      setLanguages(updated);
+      setSelectedLangs((prev) => prev.filter((c) => c !== code));
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to remove language');
+    }
+  };
+
   // Helper to count how many dishes have translations for a given language
   const getLanguageStats = (langCode: string) => {
     const translatedCount = products.filter(
@@ -72,8 +159,17 @@ export const TranslateMenuModal: React.FC<TranslateMenuModalProps> = ({
       getSupportedLanguages()
         .then((res) => {
           setLanguages(res);
-          // Default: select all languages so 1 click translates whole menu
-          setSelectedLangs(res.map((l) => l.code));
+          // Only select languages that are not already fully translated!
+          const uncompleted = res
+            .filter((l) => {
+              if (products.length === 0) return true;
+              const translatedCount = products.filter(
+                (p) => Boolean((p.translations as any)?.[l.code]?.name),
+              ).length;
+              return translatedCount < products.length;
+            })
+            .map((l) => l.code);
+          setSelectedLangs(uncompleted);
 
           // For review tab, default to first language that already has translations
           const firstWithTrans = res.find((l) =>
@@ -85,7 +181,7 @@ export const TranslateMenuModal: React.FC<TranslateMenuModalProps> = ({
           console.error('Failed to load supported languages', err);
         });
     }
-  }, [isOpen]);
+  }, [isOpen, products]);
 
   if (!isOpen) return null;
 
@@ -238,14 +334,114 @@ export const TranslateMenuModal: React.FC<TranslateMenuModalProps> = ({
                   <label className="text-xs font-bold uppercase tracking-wider text-muted">
                     Target Languages ({selectedLangs.length} selected)
                   </label>
-                  <button
-                    type="button"
-                    onClick={handleSelectAll}
-                    className="text-xs font-bold text-primary hover:underline cursor-pointer"
-                  >
-                    {selectedLangs.length === languages.length ? 'Deselect All' : 'Select All'}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddLanguageOpen(true)}
+                      className="text-xs font-bold text-primary flex items-center gap-1 hover:underline cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Language</span>
+                    </button>
+                    <span className="text-muted text-xs">•</span>
+                    <button
+                      type="button"
+                      onClick={handleSelectAll}
+                      className="text-xs font-bold text-primary hover:underline cursor-pointer"
+                    >
+                      {selectedLangs.length === languages.length ? 'Deselect All' : 'Select All'}
+                    </button>
+                  </div>
                 </div>
+
+                {/* Inline Add Language Drawer */}
+                {isAddLanguageOpen && (
+                  <div className="p-4 rounded-2xl bg-surface-2 border border-primary/30 space-y-3 animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold text-xs text-text flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-primary" />
+                        <span>Add New Language for Menu Translation</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddLanguageOpen(false)}
+                        className="p-1 rounded-md text-muted hover:text-text cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Predefined Language Dropdown Selector (No Manual Typing) */}
+                    <div className="space-y-3 pt-1">
+                      <div>
+                        <label className="block text-xs font-bold text-text mb-1.5">
+                          Choose Language to Add:
+                        </label>
+                        <select
+                          value={selectedLanguageCodeToAdd}
+                          onChange={(e) => setSelectedLanguageCodeToAdd(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-border text-text font-medium text-xs sm:text-sm focus:outline-none focus:border-primary cursor-pointer shadow-2xs"
+                        >
+                          <option value="">-- Select from 30+ World & Regional Languages --</option>
+                          {AVAILABLE_PRESET_LANGUAGES.filter(
+                            (p) => !languages.some((l) => l.code === p.code),
+                          ).map((lang) => (
+                            <option key={lang.code} value={lang.code}>
+                              {lang.flag} {lang.name} ({lang.nativeName}) — [{lang.code.toUpperCase()}]
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Selected Language Details & Confirmation */}
+                      {(() => {
+                        const selectedLangObj = AVAILABLE_PRESET_LANGUAGES.find(
+                          (l) => l.code === selectedLanguageCodeToAdd,
+                        );
+                        if (!selectedLangObj) return null;
+
+                        return (
+                          <div className="p-3.5 rounded-xl bg-surface border border-primary/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl">{selectedLangObj.flag}</span>
+                              <div>
+                                <div className="font-bold text-sm text-text">
+                                  {selectedLangObj.name}
+                                </div>
+                                <div className="text-xs text-muted mt-0.5">
+                                  Native Script: <strong className="text-text">{selectedLangObj.nativeName}</strong> • ISO Code: <code className="font-mono text-primary font-bold">{selectedLangObj.code}</code>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 self-end sm:self-auto">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedLanguageCodeToAdd('')}
+                                className="px-3 py-1.5 rounded-lg border border-border bg-surface text-xs font-semibold text-muted hover:text-text cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isAddingLang}
+                                onClick={handleAddLanguage}
+                                className="px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary-hover transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shadow-xs"
+                              >
+                                {isAddingLang ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Plus className="w-4 h-4" />
+                                )}
+                                <span>Add {selectedLangObj.name}</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {languages.map((lang) => {
@@ -267,6 +463,16 @@ export const TranslateMenuModal: React.FC<TranslateMenuModalProps> = ({
                               <p className="text-xs font-bold text-text">
                                 {lang.name}
                               </p>
+                              {lang.isCustom && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteCustomLanguage(lang.code, e)}
+                                  className="p-1 rounded text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+                                  title="Remove custom language"
+                                >
+                                  <Trash2 className="w-2.5 h-2.5" />
+                                </button>
+                              )}
                               {(() => {
                                 const stats = getLanguageStats(lang.code);
                                 if (stats.translatedCount > 0) {

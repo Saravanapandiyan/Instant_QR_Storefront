@@ -248,7 +248,13 @@ export const OrdersPage: React.FC = () => {
   const handleConfirmPrep = async (orderId: string, prepTimeMinutes: number, paymentStatus?: string) => {
     setIsSubmittingAction(true);
     try {
-      await ordersApi.updateOrderStatus(orderId, 'PREPARING', undefined, prepTimeMinutes, paymentStatus);
+      const targetPaymentStatus = (paymentStatus === 'PENDING' ? 'PENDING' : 'PAID') as 'PAID' | 'PENDING';
+      await ordersApi.updateOrderStatus(orderId, 'PREPARING', undefined, prepTimeMinutes, targetPaymentStatus);
+      try {
+        await ordersApi.updatePaymentStatus(orderId, targetPaymentStatus);
+      } catch {
+        // Ignore
+      }
       toast.success(`Order #${preppingOrder?.orderNumber || ''} accepted! 1 credit deducted.`);
       setPreppingOrder(null);
       await fetchOrders(false);
@@ -871,7 +877,7 @@ export const OrdersPage: React.FC = () => {
                                   {imageSrc ? (
                                     <img
                                       src={imageSrc}
-                                      alt={item.productName}
+                                      alt={item.product?.name || item.productName}
                                       className="w-full h-full object-cover"
                                     />
                                   ) : (
@@ -880,7 +886,7 @@ export const OrdersPage: React.FC = () => {
                                 </div>
                                 <div className="min-w-0">
                                   <div className="font-bold text-text text-xs leading-tight truncate">
-                                    {item.productName}
+                                    {item.product?.name || item.productName}
                                   </div>
                                   <div className="text-[11px] text-muted font-bold mt-0.5">
                                     x{item.quantity}

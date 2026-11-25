@@ -63,12 +63,30 @@ export declare class AiService {
             pinCode: string | null;
         } | null;
     }>;
-    getSupportedLanguages(): {
+    private readonly DEFAULT_LANGUAGES;
+    getSupportedLanguages(): Promise<{
         code: string;
         name: string;
         nativeName: string;
         flag: string;
-    }[];
+    }[]>;
+    addCustomLanguage(dto: {
+        code: string;
+        name: string;
+        nativeName: string;
+        flag?: string;
+        direction?: string;
+    }): Promise<{
+        name: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        code: string;
+        nativeName: string;
+        flag: string;
+        direction: string;
+    }>;
+    deleteCustomLanguage(code: string): Promise<import("@prisma/client").Prisma.BatchPayload>;
     translateMenu(restaurantId: string, targetLanguages: string[]): Promise<{
         success: boolean;
         message: string;

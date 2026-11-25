@@ -27,6 +27,7 @@ export declare class OrdersService {
                 product: {
                     name: string;
                     id: string;
+                    translations: import("@prisma/client/runtime/library").JsonValue;
                     imageUrl: string | null;
                 };
             } & {
@@ -86,6 +87,7 @@ export declare class OrdersService {
             product: {
                 name: string;
                 id: string;
+                translations: import("@prisma/client/runtime/library").JsonValue;
                 imageUrl: string | null;
             };
         } & {
@@ -273,6 +275,7 @@ export declare class OrdersService {
                 product: {
                     name: string;
                     id: string;
+                    translations: import("@prisma/client/runtime/library").JsonValue;
                     imageUrl: string | null;
                 };
             } & {

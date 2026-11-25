@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Param,
   Body,
   UseGuards,
@@ -100,6 +101,22 @@ export class AiController {
   @ApiOperation({ summary: 'Get list of supported languages with regional metadata' })
   getSupportedLanguages() {
     return this.aiService.getSupportedLanguages();
+  }
+
+  @Post('languages')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add a custom language to the platform' })
+  async addLanguage(@Body() dto: { code: string; name: string; nativeName: string; flag?: string; direction?: string }) {
+    return this.aiService.addCustomLanguage(dto);
+  }
+
+  @Delete('languages/:code')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a custom language' })
+  async deleteLanguage(@Param('code') code: string) {
+    return this.aiService.deleteCustomLanguage(code);
   }
 
   @Post('translate-menu')

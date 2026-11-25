@@ -63,7 +63,7 @@ export const KitchenTicketPrintModal: React.FC<KitchenTicketPrintModalProps> = (
     ];
 
     (order.items || []).forEach((item: OrderItem) => {
-      lines.push(`[${item.quantity}x] ${item.productName}`);
+      lines.push(`[${item.quantity}x] ${item.product?.name || item.productName}`);
       if (item.notes) {
         lines.push(`     >> NOTE: ${item.notes}`);
       }
@@ -233,7 +233,7 @@ export const KitchenTicketPrintModal: React.FC<KitchenTicketPrintModalProps> = (
                           {item.quantity}x
                         </span>
                         <span className="font-bold text-sm leading-tight">
-                          {item.productName}
+                          {item.product?.name || item.productName}
                         </span>
                       </div>
                       {item.notes && (

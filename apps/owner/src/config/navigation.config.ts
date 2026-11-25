@@ -8,10 +8,10 @@ import {
   UtensilsCrossed,
   Users,
   CreditCard,
-  Settings,
   Coins,
   Tv,
   BarChart3,
+  HelpCircle,
 } from 'lucide-react';
 import { ROUTES } from '../constants/routes';
 
@@ -103,10 +103,14 @@ export const SIDEBAR_NAV_GROUPS: NavGroupConfig[] = [
       },
     ],
   },
+  {
+    groupTitle: 'SUPPORT',
+    items: [
+      {
+        label: 'Help & Guides',
+        path: ROUTES.HELP,
+        icon: HelpCircle,
+      },
+    ],
+  },
 ];
-
-export const SETTINGS_NAV_ITEM: NavItemConfig = {
-  label: 'Settings',
-  path: ROUTES.SETTINGS,
-  icon: Settings,
-};

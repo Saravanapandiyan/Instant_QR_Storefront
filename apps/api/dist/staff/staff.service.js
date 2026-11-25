@@ -186,12 +186,12 @@ let StaffService = class StaffService {
                 throw new common_1.ForbiddenException('You do not have permission to update staff members.');
             }
         }
+        const hasPasswordUpdate = typeof dto.password === 'string' && dto.password.trim().length >= 6;
         if (dto.name ||
             dto.phone !== undefined ||
             dto.countryCode !== undefined ||
             dto.email ||
-            dto.password ||
-            dto.pinCode) {
+            hasPasswordUpdate) {
             const userUpdateData = {};
             if (dto.name)
                 userUpdateData.name = dto.name.trim();
@@ -207,11 +207,8 @@ let StaffService = class StaffService {
                 }
                 userUpdateData.email = emailLower;
             }
-            if (dto.password) {
-                userUpdateData.passwordHash = await bcrypt.hash(dto.password, 10);
-            }
-            else if (dto.pinCode) {
-                userUpdateData.passwordHash = await bcrypt.hash(dto.pinCode.trim(), 10);
+            if (hasPasswordUpdate) {
+                userUpdateData.passwordHash = await bcrypt.hash(dto.password.trim(), 10);
             }
             await this.prisma.user.update({
                 where: { id: staff.userId },

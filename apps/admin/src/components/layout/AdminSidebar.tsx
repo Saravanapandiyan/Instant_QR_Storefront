@@ -13,6 +13,7 @@ import {
   QrCode,
   Sun,
   Moon,
+  HelpCircle,
 } from 'lucide-react';
 import { useAdminAuthStore } from '../../store/useAdminAuthStore.ts';
 import { useAdminThemeStore } from '../../store/useAdminThemeStore.ts';
@@ -43,6 +44,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'PLATFORM CONFIGURATION',
     items: [
       { label: 'Subscription & Plans', path: '/plans', icon: CreditCard },
+      { label: 'Help & Knowledge Base', path: '/help', icon: HelpCircle },
       { label: 'Site Branding & Footer', path: '/settings/site', icon: Palette },
       { label: 'Stripe & Gateway', path: '/settings/pay', icon: Sliders },
     ],

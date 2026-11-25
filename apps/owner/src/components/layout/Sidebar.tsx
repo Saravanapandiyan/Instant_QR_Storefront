@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { AppLogo } from '../ui/AppLogo';
 import { cn } from '../../lib/utils';
-import { SIDEBAR_NAV_GROUPS, SETTINGS_NAV_ITEM } from '../../config/navigation.config';
+import { SIDEBAR_NAV_GROUPS } from '../../config/navigation.config';
 import { usePermissions } from '../../hooks/usePermissions';
 
 export const Sidebar: React.FC<{
@@ -129,25 +129,6 @@ export const Sidebar: React.FC<{
               </div>
             );
           })}
-
-          {/* Settings Section */}
-          {hasPageAccess(SETTINGS_NAV_ITEM.path) && (
-            <div className="pt-2 border-t border-border/60">
-              <button
-                type="button"
-                onClick={() => handleNavigate(SETTINGS_NAV_ITEM.path)}
-                className={cn(
-                  'w-full flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-xs font-medium transition-colors cursor-pointer text-left',
-                  location.pathname === SETTINGS_NAV_ITEM.path
-                    ? 'bg-primary-soft text-primary-soft-text font-semibold'
-                    : 'text-muted hover:text-text hover:bg-surface-2'
-                )}
-              >
-                <SETTINGS_NAV_ITEM.icon size={17} className="shrink-0 text-muted" />
-                <span>{SETTINGS_NAV_ITEM.label}</span>
-              </button>
-            </div>
-          )}
         </div>
       </aside>
     </>

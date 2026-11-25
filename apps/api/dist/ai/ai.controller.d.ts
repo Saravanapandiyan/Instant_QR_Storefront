@@ -53,12 +53,29 @@ export declare class AiController {
         categoriesCreated: number;
         productsCreated: number;
     }>;
-    getSupportedLanguages(): {
+    getSupportedLanguages(): Promise<{
         code: string;
         name: string;
         nativeName: string;
         flag: string;
-    }[];
+    }[]>;
+    addLanguage(dto: {
+        code: string;
+        name: string;
+        nativeName: string;
+        flag?: string;
+        direction?: string;
+    }): Promise<{
+        name: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        code: string;
+        nativeName: string;
+        flag: string;
+        direction: string;
+    }>;
+    deleteLanguage(code: string): Promise<import("@prisma/client").Prisma.BatchPayload>;
     translateMenu(dto: TranslateMenuDto): Promise<{
         success: boolean;
         message: string;

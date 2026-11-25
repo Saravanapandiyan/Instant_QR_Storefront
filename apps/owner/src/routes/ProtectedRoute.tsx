@@ -3,12 +3,13 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { authApi } from '../features/auth/api/authApi';
 import { GlobalOrderAlertManager } from '../features/orders/components/GlobalOrderAlertManager';
+import { ROUTES } from '../constants/routes';
 
 export const ProtectedRoute: React.FC = () => {
-  const { isAuthenticated, setUser, logout } = useAuthStore();
+  const { isAuthenticated, token, user, setUser, logout } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !token) return;
 
     let active = true;
     authApi
@@ -27,10 +28,10 @@ export const ProtectedRoute: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [isAuthenticated, setUser, logout]);
+  }, [isAuthenticated, token, setUser, logout]);
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+  if (!isAuthenticated || !token || !user) {
+    return <Navigate to={ROUTES.AUTH.LOGIN} replace />;
   }
 
   return (

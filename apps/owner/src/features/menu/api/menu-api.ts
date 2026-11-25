@@ -88,10 +88,24 @@ export interface SupportedLanguage {
   name: string;
   nativeName: string;
   flag: string;
+  isCustom?: boolean;
 }
 
 export const getSupportedLanguages = async (): Promise<SupportedLanguage[]> => {
   return apiClient.get<SupportedLanguage[]>('/ai/supported-languages');
+};
+
+export const addCustomLanguage = async (data: {
+  code: string;
+  name: string;
+  nativeName: string;
+  flag?: string;
+}): Promise<SupportedLanguage> => {
+  return apiClient.post<SupportedLanguage>('/ai/languages', data);
+};
+
+export const deleteCustomLanguage = async (code: string): Promise<void> => {
+  await apiClient.delete(`/ai/languages/${code}`);
 };
 
 export const translateMenu = async (restaurantId: string, targetLanguages: string[]) => {

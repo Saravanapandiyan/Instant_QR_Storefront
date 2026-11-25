@@ -27,6 +27,7 @@ import {
   Smartphone,
   Sparkles,
   ExternalLink,
+  HelpCircle,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { usePWAInstall } from '../../hooks/usePWAInstall.ts';
@@ -38,6 +39,7 @@ import { DishDetailModal } from './DishDetailModal.tsx';
 import { OrderTrackingModal } from '../order/OrderTrackingModal.tsx';
 import { MyOrdersModal } from '../order/MyOrdersModal.tsx';
 import { QRScannerModal } from '../landing/QRScannerModal.tsx';
+import { CustomerHelpDrawer } from '../help/CustomerHelpDrawer.tsx';
 import { useCustomerOrders } from '../order/useCustomerOrders.ts';
 import {
   requestNotificationPermission,
@@ -78,9 +80,23 @@ export function StorefrontPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [branding, setBranding] = useState<PlatformBranding | null>(null);
+  const [storefrontLanguages, setStorefrontLanguages] = useState(STOREFRONT_LANGUAGES);
 
   useEffect(() => {
     fetchPlatformBranding().then(setBranding).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/v1/ai/supported-languages')
+      .then((res) => res.json())
+      .then((data: any[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const defaultEn = { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧' };
+          const merged = [defaultEn, ...data.filter((d) => d.code !== 'en')];
+          setStorefrontLanguages(merged);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Online / Offline State Tracking for PWA resilience
@@ -109,6 +125,8 @@ export function StorefrontPage() {
   const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
     return localStorage.getItem('instadine_customer_lang') || 'en';
   });
+
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const getTranslatedItem = useCallback(
     (item: StorefrontItem | null) => {
@@ -579,7 +597,7 @@ export function StorefrontPage() {
                 color: 'var(--sf-text)',
               }}
             >
-              {STOREFRONT_LANGUAGES.map((l) => (
+              {storefrontLanguages.map((l) => (
                 <option key={l.code} value={l.code}>
                   {l.flag} {l.nativeName}
                 </option>
@@ -590,6 +608,15 @@ export function StorefrontPage() {
               style={{ color: 'var(--sf-text)' }}
             />
           </div>
+
+          <button
+            onClick={() => setIsHelpOpen(true)}
+            className="p-1.5 rounded-lg opacity-70 hover:opacity-100 transition-opacity cursor-pointer flex items-center gap-1 text-xs font-semibold"
+            title="Help & FAQs"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline text-[11px]">Help</span>
+          </button>
 
           <button
             onClick={toggleDarkMode}
@@ -700,7 +727,7 @@ export function StorefrontPage() {
                   color: 'var(--sf-text)',
                 }}
               >
-                {STOREFRONT_LANGUAGES.map((l) => (
+                {storefrontLanguages.map((l) => (
                   <option key={l.code} value={l.code}>
                     {l.flag} {l.nativeName}
                   </option>
@@ -711,6 +738,14 @@ export function StorefrontPage() {
                 style={{ color: 'var(--sf-text)' }}
               />
             </div>
+
+            <button
+              onClick={() => setIsHelpOpen(true)}
+              className="p-1.5 rounded-lg opacity-70"
+              title="Help & FAQs"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
 
             <button
               onClick={toggleDarkMode}
@@ -1203,6 +1238,7 @@ export function StorefrontPage() {
                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                   {cartItems.map(({ item, quantity, notes }) => {
                     const price = Number(item.finalPrice || item.basePrice || 0);
+                    const translated = getTranslatedItem(item);
                     return (
                       <div key={item.id} className="flex items-start justify-between gap-1.5 text-xs">
                         <div
@@ -1210,8 +1246,13 @@ export function StorefrontPage() {
                           onClick={() => setSelectedDishForModal(item)}
                         >
                           <p className="font-bold text-xs truncate group-hover:underline" style={{ color: 'var(--sf-text)' }}>
-                            {item.name}
+                            {translated.name}
                           </p>
+                          {translated.name !== item.name && (
+                            <p className="text-[10px] opacity-75 italic truncate" style={{ color: 'var(--sf-muted)' }}>
+                              {item.name}
+                            </p>
+                          )}
                           <p className="text-[10px]" style={{ color: 'var(--sf-muted)' }}>
                             {currencySymbol}
                             {price} each
@@ -1479,9 +1520,21 @@ export function StorefrontPage() {
                           />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-bold text-xs leading-snug truncate" style={{ color: 'var(--sf-text)' }}>
-                            {item.name}
-                          </p>
+                          {(() => {
+                            const translated = getTranslatedItem(item);
+                            return (
+                              <>
+                                <p className="font-bold text-xs leading-snug truncate" style={{ color: 'var(--sf-text)' }}>
+                                  {translated.name}
+                                </p>
+                                {translated.name !== item.name && (
+                                  <p className="text-[10px] opacity-75 italic truncate" style={{ color: 'var(--sf-muted)' }}>
+                                    {item.name}
+                                  </p>
+                                )}
+                              </>
+                            );
+                          })()}
                           <p className="text-[10px]" style={{ color: 'var(--sf-muted)' }}>
                             {currencySymbol}{price} each
                           </p>
@@ -1942,6 +1995,7 @@ export function StorefrontPage() {
                     orderNotes: cookingInstructions.trim() || undefined,
                     paymentMethod: selectedPaymentMethod,
                     turnstileToken: turnstileToken || undefined,
+                    language: selectedLanguage,
                     items: cartItems.map((ci) => ({
                       productId: ci.item.id,
                       quantity: ci.quantity,
@@ -2146,6 +2200,14 @@ export function StorefrontPage() {
       <QRScannerModal
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
+      />
+
+      {/* Customer Help & FAQs Right Drawer */}
+      <CustomerHelpDrawer
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        branchSlug={branchSlug || ''}
+        brandName={menuData?.branch?.restaurant?.name || 'InstaDine'}
       />
     </div>
   );

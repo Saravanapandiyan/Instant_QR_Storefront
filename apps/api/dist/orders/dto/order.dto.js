@@ -43,6 +43,7 @@ class CreateOrderDto {
     orderNotes;
     paymentMethod;
     turnstileToken;
+    language;
     items;
 }
 exports.CreateOrderDto = CreateOrderDto;
@@ -86,6 +87,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateOrderDto.prototype, "turnstileToken", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateOrderDto.prototype, "language", void 0);
 __decorate([
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ValidateNested)({ each: true }),

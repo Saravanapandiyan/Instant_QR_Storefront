@@ -303,7 +303,7 @@ const ThermalReceiptBody: React.FC<ThermalReceiptBodyProps> = ({
             ORDER #{order.orderNumber}
           </span>
           <span className="font-bold text-[11px] uppercase">
-            {isDineIn ? `TABLE ${order.tableNumber || '-'}` : 'TAKEAWAY'}
+            {isDineIn ? `TABLE ${order.tableNumber || '-'}` : 'TAKEAWAY / PICKUP'}
           </span>
         </div>
 
@@ -317,6 +317,13 @@ const ThermalReceiptBody: React.FC<ThermalReceiptBodyProps> = ({
           {order.customerPhone && (
             <span className="text-neutral-800">{order.customerPhone}</span>
           )}
+        </div>
+
+        <div className="flex justify-between text-[10px] pt-0.5">
+          <span className="text-neutral-700">Payment:</span>
+          <span className="font-bold uppercase">
+            {order.paymentMethod === 'UPI' ? 'UPI / Online' : 'Cash on Counter'} ({isPaid ? 'PAID' : 'PENDING'})
+          </span>
         </div>
       </div>
 
@@ -351,37 +358,42 @@ const ThermalReceiptBody: React.FC<ThermalReceiptBodyProps> = ({
 
           return (
             <div key={item.id} className="space-y-0.5">
-              {is58 ? (
-                <div className="grid grid-cols-12 gap-0.5 items-baseline text-[10px]">
-                  <span className="col-span-4 font-bold break-words leading-tight">
-                    {item.productName}
-                  </span>
-                  <span className="col-span-2 text-center font-bold">
-                    {item.quantity}
-                  </span>
-                  <span className="col-span-3 text-right text-neutral-700">
-                    {formatPrice(unitPrice)}
-                  </span>
-                  <span className="col-span-3 text-right font-black">
-                    {formatPrice(item.totalPrice)}
-                  </span>
-                </div>
-              ) : (
-                <div className="grid grid-cols-12 gap-1 items-baseline text-[11px]">
-                  <span className="col-span-5 font-bold break-words leading-tight">
-                    {item.productName}
-                  </span>
-                  <span className="col-span-2 text-center font-bold">
-                    {item.quantity}
-                  </span>
-                  <span className="col-span-2 text-right text-neutral-700">
-                    {formatPrice(unitPrice)}
-                  </span>
-                  <span className="col-span-3 text-right font-black">
-                    {formatPrice(item.totalPrice)}
-                  </span>
-                </div>
-              )}
+              {(() => {
+                const currentLang = typeof localStorage !== 'undefined' ? localStorage.getItem('instadine_customer_lang') || 'en' : 'en';
+                const localizedName = (currentLang !== 'en' && (item as any)?.product?.translations?.[currentLang]?.name) || item.productName;
+
+                return is58 ? (
+                  <div className="grid grid-cols-12 gap-0.5 items-baseline text-[10px]">
+                    <span className="col-span-4 font-bold break-words leading-tight">
+                      {localizedName}
+                    </span>
+                    <span className="col-span-2 text-center font-bold">
+                      {item.quantity}
+                    </span>
+                    <span className="col-span-3 text-right text-neutral-700">
+                      {formatPrice(unitPrice)}
+                    </span>
+                    <span className="col-span-3 text-right font-black">
+                      {formatPrice(item.totalPrice)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-12 gap-1 items-baseline text-[11px]">
+                    <span className="col-span-5 font-bold break-words leading-tight">
+                      {localizedName}
+                    </span>
+                    <span className="col-span-2 text-center font-bold">
+                      {item.quantity}
+                    </span>
+                    <span className="col-span-2 text-right text-neutral-700">
+                      {formatPrice(unitPrice)}
+                    </span>
+                    <span className="col-span-3 text-right font-black">
+                      {formatPrice(item.totalPrice)}
+                    </span>
+                  </div>
+                );
+              })()}
 
               {/* Item Specific Notes */}
               {item.notes && (
@@ -437,7 +449,7 @@ const ThermalReceiptBody: React.FC<ThermalReceiptBodyProps> = ({
         <div className="flex justify-between text-[11px] pt-1">
           <span>Payment Method:</span>
           <span className="font-bold uppercase">
-            {order.paymentMethod || 'CASH'}
+            {order.paymentMethod === 'UPI' ? 'UPI / Online' : 'Cash on Counter'}
           </span>
         </div>
 
@@ -458,7 +470,9 @@ const ThermalReceiptBody: React.FC<ThermalReceiptBodyProps> = ({
         <div className="font-bold">Thank you for dining with us!</div>
         <div>Please visit again</div>
         <div className="text-[9px] text-neutral-600 pt-1">
-          Instant QR Storefront &bull; Table #{order.tableNumber || '-'}
+          {isDineIn
+            ? `Instant QR Storefront • Table #${order.tableNumber || '-'}`
+            : 'Instant QR Storefront • Takeaway / Pickup'}
         </div>
       </div>
     </div>

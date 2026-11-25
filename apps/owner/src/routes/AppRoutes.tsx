@@ -4,6 +4,9 @@ import { LoginForm } from '../features/auth/components/LoginForm';
 import { RegisterForm } from '../features/auth/components/RegisterForm';
 import { ImpersonatePage } from '../features/auth/ImpersonatePage';
 import { ProtectedRoute } from './ProtectedRoute';
+import { PublicRoute } from './PublicRoute';
+import { NotFoundPage } from '../components/common/NotFoundPage';
+import { useAuthStore } from '../store/useAuthStore';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { RestaurantsPage } from '../features/restaurants/RestaurantsPage';
 import { StorefrontThemePage } from '../features/theme/StorefrontThemePage';
@@ -17,23 +20,45 @@ import { StaffPage } from '../features/staff/StaffPage';
 import { QuickSetupPage } from '../features/quick-setup/QuickSetupPage';
 import { TvDisplayPage } from '../features/tv/TvDisplayPage';
 import { AnalyticsPage } from '../features/analytics/AnalyticsPage';
+import { OwnerHelpPage } from '../features/help/OwnerHelpPage';
+import { usePermissions } from '../hooks/usePermissions';
 import { ROUTES } from '../constants/routes';
 
 const ownerBasename = (import.meta.env.BASE_URL || '/owner').replace(/\/+$/, '') || '/owner';
+
+const DashboardRoute: React.FC = () => {
+  const { hasPageAccess, getDefaultAccessibleRoute } = usePermissions();
+  if (!hasPageAccess(ROUTES.DASHBOARD)) {
+    return <Navigate to={getDefaultAccessibleRoute()} replace />;
+  }
+  return <DashboardPage />;
+};
+
+const FallbackRoute: React.FC = () => {
+  const { isAuthenticated, token, user } = useAuthStore();
+  if (!isAuthenticated || !token || !user) {
+    return <Navigate to={ROUTES.AUTH.LOGIN} replace />;
+  }
+  return <NotFoundPage />;
+};
 
 export const AppRoutes: React.FC = () => {
   return (
     <BrowserRouter basename={ownerBasename}>
       <Routes>
-        {/* Public Auth & Display Routes */}
-        <Route path={ROUTES.AUTH.LOGIN} element={<LoginForm />} />
-        <Route path={ROUTES.AUTH.REGISTER} element={<RegisterForm />} />
-        <Route path="/auth/impersonate" element={<ImpersonatePage />} />
+        {/* Guest / Public Auth Routes (Redirects to dashboard if already logged in) */}
+        <Route element={<PublicRoute />}>
+          <Route path={ROUTES.AUTH.LOGIN} element={<LoginForm />} />
+          <Route path={ROUTES.AUTH.REGISTER} element={<RegisterForm />} />
+          <Route path="/auth/impersonate" element={<ImpersonatePage />} />
+        </Route>
+
+        {/* Public Kitchen / TV Display Route */}
         <Route path="/tv/:branchId" element={<TvDisplayPage />} />
 
         {/* Protected Owner Routes */}
         <Route element={<ProtectedRoute />}>
-          <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
+          <Route path={ROUTES.DASHBOARD} element={<DashboardRoute />} />
           <Route path={ROUTES.QUICK_SETUP} element={<QuickSetupPage />} />
           <Route path={ROUTES.ORDERS} element={<OrdersPage />} />
           <Route path={ROUTES.KDS} element={<KdsPage />} />
@@ -47,10 +72,14 @@ export const AppRoutes: React.FC = () => {
           <Route path={ROUTES.PAYMENTS} element={<PaymentSettingsPage />} />
           <Route path={ROUTES.BILLING} element={<BillingPage />} />
           <Route path="/billing/:tab" element={<BillingPage />} />
+          <Route path={ROUTES.HELP} element={<OwnerHelpPage />} />
+          {/* Settings removed - redirect to dashboard if visited */}
+          <Route path="/settings" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
+          <Route path="/settings/*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
         </Route>
 
-        {/* Fallback to login */}
-        <Route path="*" element={<Navigate to={ROUTES.AUTH.LOGIN} replace />} />
+        {/* Fallback: If logged in -> 404 Oops Page; If not logged in -> redirect to /login */}
+        <Route path="*" element={<FallbackRoute />} />
       </Routes>
     </BrowserRouter>
   );

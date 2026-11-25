@@ -689,18 +689,73 @@ Do NOT include markdown backticks (\`\`\`json), comments, or introductory text. 
             };
         });
     }
-    getSupportedLanguages() {
-        return [
-            { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
-            { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳' },
-            { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳' },
-            { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳' },
-            { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳' },
-            { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
-            { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
-            { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇦🇪' },
-            { code: 'ms', name: 'Malay', nativeName: 'Bahasa Melayu', flag: '🇲🇾' },
-        ];
+    DEFAULT_LANGUAGES = [
+        { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
+        { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳' },
+        { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳' },
+        { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳' },
+        { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳' },
+        { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
+        { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
+        { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇦🇪' },
+        { code: 'ms', name: 'Malay', nativeName: 'Bahasa Melayu', flag: '🇲🇾' },
+    ];
+    async getSupportedLanguages() {
+        try {
+            const custom = await this.prisma.customLanguage.findMany({
+                where: { isActive: true },
+                orderBy: { name: 'asc' },
+            });
+            const defaultCodes = new Set(this.DEFAULT_LANGUAGES.map((l) => l.code));
+            const customFiltered = custom.filter((c) => !defaultCodes.has(c.code));
+            return [
+                ...this.DEFAULT_LANGUAGES,
+                ...customFiltered.map((c) => ({
+                    code: c.code,
+                    name: c.name,
+                    nativeName: c.nativeName,
+                    flag: c.flag || '🌐',
+                    direction: c.direction || 'ltr',
+                    isCustom: true,
+                })),
+            ];
+        }
+        catch {
+            return this.DEFAULT_LANGUAGES;
+        }
+    }
+    async addCustomLanguage(dto) {
+        const cleanCode = dto.code.trim().toLowerCase();
+        if (!cleanCode || cleanCode.length < 2) {
+            throw new common_1.BadRequestException('Valid language code (e.g. "de", "bn", "mr", "gu") is required.');
+        }
+        if (!dto.name?.trim() || !dto.nativeName?.trim()) {
+            throw new common_1.BadRequestException('Language name and native name are required.');
+        }
+        return this.prisma.customLanguage.upsert({
+            where: { code: cleanCode },
+            create: {
+                code: cleanCode,
+                name: dto.name.trim(),
+                nativeName: dto.nativeName.trim(),
+                flag: dto.flag?.trim() || '🌐',
+                direction: dto.direction?.trim() || 'ltr',
+                isActive: true,
+            },
+            update: {
+                name: dto.name.trim(),
+                nativeName: dto.nativeName.trim(),
+                flag: dto.flag?.trim() || '🌐',
+                direction: dto.direction?.trim() || 'ltr',
+                isActive: true,
+            },
+        });
+    }
+    async deleteCustomLanguage(code) {
+        const cleanCode = code.trim().toLowerCase();
+        return this.prisma.customLanguage.deleteMany({
+            where: { code: cleanCode },
+        });
     }
     async translateMenu(restaurantId, targetLanguages) {
         const apiKey = this.getGeminiKey();
@@ -722,7 +777,7 @@ Do NOT include markdown backticks (\`\`\`json), comments, or introductory text. 
         if (restaurant.categories.length === 0 && restaurant.products.length === 0) {
             return { success: true, message: 'Menu is empty, nothing to translate.', totalUpdated: 0 };
         }
-        const supported = this.getSupportedLanguages();
+        const supported = await this.getSupportedLanguages();
         const validLanguages = supported.filter((l) => targetLanguages.includes(l.code));
         if (validLanguages.length === 0) {
             throw new common_1.BadRequestException('No valid target languages selected.');

@@ -121,6 +121,8 @@ export const adminApiClient = {
     request<T>(endpoint, { method: 'GET', params }),
   post: <T>(endpoint: string, data?: unknown) =>
     request<T>(endpoint, { method: 'POST', data }),
+  put: <T>(endpoint: string, data?: unknown) =>
+    request<T>(endpoint, { method: 'PUT', data }),
   patch: <T>(endpoint: string, data?: unknown) =>
     request<T>(endpoint, { method: 'PATCH', data }),
   delete: <T>(endpoint: string) =>

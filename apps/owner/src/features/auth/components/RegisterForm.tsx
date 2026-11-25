@@ -69,6 +69,9 @@ export const RegisterForm: React.FC = () => {
         countryCode: data.countryCode || undefined,
         phone: data.phone || undefined,
       });
+      try {
+        sessionStorage.removeItem('instadine_quick_setup_dismissed');
+      } catch {}
       setAuth(response);
       navigate(ROUTES.QUICK_SETUP);
     } catch (err: any) {

@@ -350,7 +350,7 @@ const ThermalReceiptBody: React.FC<ThermalReceiptBodyProps> = ({
             ORDER #{order.orderNumber}
           </span>
           <span className="font-bold text-[11px] uppercase">
-            {isDineIn ? `TABLE ${order.tableNumber || '-'}` : 'TAKEAWAY'}
+            {isDineIn ? `TABLE ${order.tableNumber || '-'}` : 'TAKEAWAY / PICKUP'}
           </span>
         </div>
 
@@ -364,6 +364,13 @@ const ThermalReceiptBody: React.FC<ThermalReceiptBodyProps> = ({
           {order.customerPhone && (
             <span className="text-neutral-800">{order.customerPhone}</span>
           )}
+        </div>
+
+        <div className="flex justify-between text-[10px] pt-0.5">
+          <span className="text-neutral-700">Payment:</span>
+          <span className="font-bold uppercase">
+            {order.paymentMethod === 'UPI' ? 'UPI / Online' : 'Cash on Counter'} ({isPaid ? 'PAID' : 'PENDING'})
+          </span>
         </div>
       </div>
 
@@ -396,7 +403,7 @@ const ThermalReceiptBody: React.FC<ThermalReceiptBodyProps> = ({
             {is58 ? (
               <div className="grid grid-cols-12 gap-0.5 items-baseline text-[10px]">
                 <span className="col-span-4 font-bold break-words leading-tight">
-                  {item.productName}
+                  {item.product?.name || item.productName}
                 </span>
                 <span className="col-span-2 text-center font-bold">
                   {item.quantity}
@@ -411,7 +418,7 @@ const ThermalReceiptBody: React.FC<ThermalReceiptBodyProps> = ({
             ) : (
               <div className="grid grid-cols-12 gap-1 items-baseline text-[11px]">
                 <span className="col-span-5 font-bold break-words leading-tight">
-                  {item.productName}
+                  {item.product?.name || item.productName}
                 </span>
                 <span className="col-span-2 text-center font-bold">
                   {item.quantity}
@@ -477,7 +484,9 @@ const ThermalReceiptBody: React.FC<ThermalReceiptBodyProps> = ({
 
         <div className="flex justify-between text-[11px] pt-1">
           <span>Payment Method:</span>
-          <span className="font-bold uppercase">{order.paymentMethod || 'CASH'}</span>
+          <span className="font-bold uppercase">
+            {order.paymentMethod === 'UPI' ? 'UPI / Online' : 'Cash on Counter'}
+          </span>
         </div>
 
         <div className="flex justify-between text-[11px]">
@@ -497,7 +506,9 @@ const ThermalReceiptBody: React.FC<ThermalReceiptBodyProps> = ({
         <div className="font-bold">Thank you for dining with us!</div>
         <div>Please visit again</div>
         <div className="text-[9px] text-neutral-600 pt-1">
-          OrdZo Storefront &bull; Table #{order.tableNumber || '1'}
+          {isDineIn
+            ? `OrdZo Storefront • Table #${order.tableNumber || '-'}`
+            : 'OrdZo Storefront • Takeaway / Pickup'}
         </div>
       </div>
     </div>

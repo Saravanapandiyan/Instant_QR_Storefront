@@ -103,6 +103,7 @@ export class OrdersService {
       const totalPrice = unitPrice * cartItem.quantity;
       subtotal += totalPrice;
 
+      // Always store the restaurant's canonical/normal dish name so the kitchen, KDS, POS, and alert popups display as normal
       return {
         productId: product.id,
         productName: product.name,
@@ -168,6 +169,7 @@ export class OrdersService {
                 id: true,
                 name: true,
                 imageUrl: true,
+                translations: true,
               },
             },
           },
@@ -216,6 +218,7 @@ export class OrdersService {
                 id: true,
                 name: true,
                 imageUrl: true,
+                translations: true,
               },
             },
           },
@@ -641,6 +644,7 @@ export class OrdersService {
                 id: true,
                 name: true,
                 imageUrl: true,
+                translations: true,
               },
             },
           },

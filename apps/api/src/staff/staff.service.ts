@@ -179,13 +179,13 @@ export class StaffService {
     }
 
     // Update user fields if provided
+    const hasPasswordUpdate = typeof dto.password === 'string' && dto.password.trim().length >= 6;
     if (
       dto.name ||
       dto.phone !== undefined ||
       dto.countryCode !== undefined ||
       dto.email ||
-      dto.password ||
-      dto.pinCode
+      hasPasswordUpdate
     ) {
       const userUpdateData: any = {};
       if (dto.name) userUpdateData.name = dto.name.trim();
@@ -199,11 +199,8 @@ export class StaffService {
         }
         userUpdateData.email = emailLower;
       }
-      if (dto.password) {
-        userUpdateData.passwordHash = await bcrypt.hash(dto.password, 10);
-      } else if (dto.pinCode) {
-        // Sync passwordHash with new pinCode
-        userUpdateData.passwordHash = await bcrypt.hash(dto.pinCode.trim(), 10);
+      if (hasPasswordUpdate) {
+        userUpdateData.passwordHash = await bcrypt.hash(dto.password!.trim(), 10);
       }
 
       await this.prisma.user.update({

@@ -25,6 +25,7 @@ const ai_module_1 = require("./ai/ai.module");
 const packs_module_1 = require("./packs/packs.module");
 const credits_module_1 = require("./credits/credits.module");
 const analytics_module_1 = require("./analytics/analytics.module");
+const help_module_1 = require("./help/help.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -46,6 +47,7 @@ exports.AppModule = AppModule = __decorate([
             packs_module_1.PacksModule,
             credits_module_1.CreditsModule,
             analytics_module_1.AnalyticsModule,
+            help_module_1.HelpModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

@@ -53,9 +53,9 @@ const DEFAULT_FALLBACK_IMG =
   'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80';
 
 const cleanCategories = (cats: MenuCategory[]): MenuCategory[] => {
-  return cats.map((cat) => ({
+  return (cats || []).map((cat) => ({
     ...cat,
-    items: cat.items.map((item) => {
+    items: (cat.items || []).map((item) => {
       let img = item.imageUrl;
       if (!img || img.includes('pollinations.ai')) {
         img = DEFAULT_FALLBACK_IMG;
@@ -112,27 +112,6 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
   // Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [setupResult, setSetupResult] = useState<any>(null);
-  const [testOrderPlaced, setTestOrderPlaced] = useState(false);
-
-  // Play audio chime
-  const playAlertSound = () => {
-    try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-      osc.frequency.setValueAtTime(880.0, audioCtx.currentTime + 0.15); // A5
-      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.4);
-    } catch (e) {
-      // AudioContext fallback
-    }
-  };
 
   // Auto-clean any broken or pollinations URLs
   useEffect(() => {
@@ -309,20 +288,13 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
       }
 
       setSetupResult(res);
-      setCurrentStep(5); // Move to test order step
       toast.success('Your storefront is live!');
+      onComplete();
     } catch (err: any) {
       toast.error(err.message || 'Failed to complete quick setup');
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Trigger Mock Test Order
-  const handleMockOrder = () => {
-    playAlertSound();
-    setTestOrderPlaced(true);
-    toast.success('Mock Order Placed! Audio alert triggered.');
   };
 
   return (
@@ -342,7 +314,7 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
                 </span>
               </div>
               <p className="text-xs text-muted">
-                Step {currentStep} of 5 — Fast-track setup for cafés, food stalls & restaurants
+                Step {currentStep} of 4 — Fast-track setup for cafés, food stalls & restaurants
               </p>
             </div>
           </div>
@@ -365,13 +337,12 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
         </div>
 
         {/* Step Progress Bar */}
-        <div className="grid grid-cols-5 border-b border-border text-xs font-medium bg-surface">
+        <div className="grid grid-cols-4 border-b border-border text-xs font-medium bg-surface">
           {[
             { step: 1, label: 'Profile' },
             { step: 2, label: 'Menu & AI' },
             { step: 3, label: 'Staff PIN' },
             { step: 4, label: 'Tables & QR' },
-            { step: 5, label: 'Test Order' },
           ].map((item) => (
             <button
               key={item.step}
@@ -1492,69 +1463,15 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
               </div>
             );
           })()}
-
-          {/* STEP 5: Test Order & Go Live */}
-          {currentStep === 5 && (
-            <div className="space-y-6 max-w-2xl mx-auto text-center py-4">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 mx-auto flex items-center justify-center shadow-lg border border-emerald-500/20">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold text-text">Your Storefront is Live!</h3>
-                <p className="text-sm text-muted">
-                  Test your customer ordering and audio alert experience before welcoming guests.
-                </p>
-              </div>
-
-              {/* Test Action Card */}
-              <div className="p-6 rounded-2xl border border-border bg-surface shadow-md space-y-4">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-surface-2">
-                  <div className="text-left">
-                    <span className="text-xs font-bold uppercase text-primary">Live Test Order</span>
-                    <p className="text-xs text-muted">
-                      Simulate a customer order to test the audio alert on your counter screen.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleMockOrder}
-                    className="px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-xs shadow-md hover:bg-primary/90 transition-all flex items-center gap-1.5 whitespace-nowrap"
-                  >
-                    <ShoppingBag className="w-4 h-4" /> Place Mock Test Order
-                  </button>
-                </div>
-
-                {testOrderPlaced && (
-                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-center gap-2">
-                    <Check className="w-4 h-4" /> Sound Alert Played! Order #101 received successfully.
-                  </div>
-                )}
-
-                {setupResult?.branch?.slug && (
-                  <div className="pt-2">
-                    <a
-                      href={`/r/${setupResult.branch.slug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1"
-                    >
-                      Open Customer Storefront Menu in New Tab <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer Navigation Buttons */}
         <div className="p-4 sm:p-6 border-t border-border bg-surface-2 flex items-center justify-between">
-          {currentStep > 1 && currentStep < 5 ? (
+          {currentStep > 1 ? (
             <button
               type="button"
               onClick={() => setCurrentStep((s) => s - 1)}
-              className="px-4 py-2 rounded-xl border border-border text-text font-semibold text-xs hover:bg-surface flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl border border-border text-text font-semibold text-xs hover:bg-surface flex items-center gap-1.5 cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </button>
@@ -1572,16 +1489,16 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
                 }
                 setCurrentStep((s) => s + 1);
               }}
-              className="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-md hover:bg-primary/90 flex items-center gap-1.5 ml-auto"
+              className="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-md hover:bg-primary/90 flex items-center gap-1.5 ml-auto cursor-pointer"
             >
               Continue to Step {currentStep + 1} <ArrowRight className="w-3.5 h-3.5" />
             </button>
-          ) : currentStep === 4 ? (
+          ) : (
             <button
               type="button"
               disabled={isSubmitting}
               onClick={handleFinalSubmit}
-              className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-lg hover:bg-emerald-700 flex items-center gap-1.5 ml-auto disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-lg hover:bg-emerald-700 flex items-center gap-1.5 ml-auto disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
@@ -1592,14 +1509,6 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
                   <Sparkles className="w-4 h-4" /> Launch Storefront in 5 Mins
                 </>
               )}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onComplete}
-              className="px-6 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow-md hover:bg-primary/90 flex items-center gap-1.5 ml-auto"
-            >
-              Go to Dashboard <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}
         </div>

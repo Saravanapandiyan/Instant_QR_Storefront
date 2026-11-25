@@ -239,7 +239,21 @@ export interface ModulePermissions {
   [key: string]: boolean | undefined;
 }
 
+export interface PagePermissions {
+  overview: boolean;     // Overview (/)
+  orders: boolean;       // Live Orders (/orders)
+  kds: boolean;          // Kitchen (KDS) (/kds)
+  tv: boolean;           // TV Order Board (/tv)
+  analytics: boolean;    // Sales & Analytics (/analytics)
+  branches: boolean;     // Branches (/branches)
+  menu: boolean;         // Digital Menu (/menu)
+  staff: boolean;        // Staff & Roles (/staff)
+  billing: boolean;      // Plans & Credits (/billing)
+  payments: boolean;     // Payment Settings (/payments)
+}
+
 export interface StaffPermissions {
+  pages?: PagePermissions;
   orders: {
     view: boolean;
     accept: boolean;
@@ -276,6 +290,18 @@ export interface StaffPermissions {
 
 export const ROLE_PRESET_PERMISSIONS: Record<StaffRole, StaffPermissions> = {
   MANAGER: {
+    pages: {
+      overview: true,
+      orders: true,
+      kds: true,
+      tv: true,
+      analytics: true,
+      branches: true,
+      menu: true,
+      staff: false,
+      billing: false,
+      payments: false,
+    },
     orders: { view: true, accept: true, collectCash: true, cancel: true },
     menu: { view: true, create: true, edit: true, delete: true, toggleStock: true },
     branches: { view: true, create: true, edit: true, delete: false, manageTables: true },
@@ -284,6 +310,18 @@ export const ROLE_PRESET_PERMISSIONS: Record<StaffRole, StaffPermissions> = {
     staff: { view: true, manage: false },
   },
   CASHIER: {
+    pages: {
+      overview: false,
+      orders: true,
+      kds: true,
+      tv: false,
+      analytics: false,
+      branches: false,
+      menu: false,
+      staff: false,
+      billing: false,
+      payments: false,
+    },
     orders: { view: true, accept: true, collectCash: true, cancel: false },
     menu: { view: true, create: false, edit: false, delete: false, toggleStock: true },
     branches: { view: true, create: false, edit: false, delete: false, manageTables: false },
@@ -292,6 +330,18 @@ export const ROLE_PRESET_PERMISSIONS: Record<StaffRole, StaffPermissions> = {
     staff: { view: false, manage: false },
   },
   KITCHEN: {
+    pages: {
+      overview: false,
+      orders: false,
+      kds: true,
+      tv: false,
+      analytics: false,
+      branches: false,
+      menu: false,
+      staff: false,
+      billing: false,
+      payments: false,
+    },
     orders: { view: true, accept: true, collectCash: false, cancel: false },
     menu: { view: true, create: false, edit: false, delete: false, toggleStock: true },
     branches: { view: false, create: false, edit: false, delete: false, manageTables: false },
@@ -300,6 +350,18 @@ export const ROLE_PRESET_PERMISSIONS: Record<StaffRole, StaffPermissions> = {
     staff: { view: false, manage: false },
   },
   CUSTOM: {
+    pages: {
+      overview: false,
+      orders: true,
+      kds: true,
+      tv: false,
+      analytics: false,
+      branches: false,
+      menu: false,
+      staff: false,
+      billing: false,
+      payments: false,
+    },
     orders: { view: true, accept: true, collectCash: false, cancel: false },
     menu: { view: true, create: false, edit: false, delete: false, toggleStock: false },
     branches: { view: true, create: false, edit: false, delete: false, manageTables: false },

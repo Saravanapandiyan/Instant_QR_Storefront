@@ -332,3 +332,33 @@ model PlatformSetting {
   @@map("platform_settings")
 }
 
+// 16. CustomLanguage Model (Dynamic Multilingual Support)
+model CustomLanguage {
+  code       String   @id // e.g. "de", "bn", "mr", "gu", "ja"
+  name       String   // e.g. "German", "Bengali"
+  nativeName String   // e.g. "Deutsch", "বাংলা"
+  flag       String   @default("🌐")
+  direction  String   @default("ltr") // "ltr" | "rtl"
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("custom_languages")
+}
+
+// 17. HelpArticle Model (Customer & Restaurant Knowledge Base)
+model HelpArticle {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  content     String   @db.Text
+  audience    String   @default("ALL") // "CUSTOMER" | "RESTAURANT" | "ALL"
+  category    String   @default("General")
+  sortOrder   Int      @default(0)
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("help_articles")
+}
+

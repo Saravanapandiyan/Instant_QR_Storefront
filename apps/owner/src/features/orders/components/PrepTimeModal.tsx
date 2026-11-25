@@ -27,6 +27,13 @@ export const PrepTimeModal: React.FC<PrepTimeModalProps> = ({
   const [isCustom, setIsCustom] = useState<boolean>(false);
   const [paymentStatus, setPaymentStatus] = useState<'PAID' | 'PENDING'>('PAID');
 
+  React.useEffect(() => {
+    if (order) {
+      // Default should always be 'PAID' (Cash Received / UPI Verified) as requested
+      setPaymentStatus('PAID');
+    }
+  }, [order?.id]);
+
   if (!isOpen || !order) return null;
 
   const isUpi = order.paymentMethod === 'UPI';

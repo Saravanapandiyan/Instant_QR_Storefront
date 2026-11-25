@@ -18,5 +18,5 @@ export const ROUTES = {
   BILLING_PLANS: '/billing/plans',
   BILLING_HISTORY: '/billing/history',
   PAYMENTS: '/payments',
-  SETTINGS: '/settings',
+  HELP: '/help',
 } as const;

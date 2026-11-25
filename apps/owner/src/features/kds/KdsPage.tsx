@@ -617,7 +617,7 @@ const KitchenOrderTicket: React.FC<KitchenOrderTicketProps> = ({
                     {item.quantity}×
                   </span>
                   <span className="font-bold text-text truncate">
-                    {item.productName}
+                    {item.product?.name || item.productName}
                   </span>
                   {item.notes && (
                     <span className="text-[11px] text-amber-700 dark:text-amber-300 italic bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
@@ -745,7 +745,7 @@ const KitchenOrderTicket: React.FC<KitchenOrderTicketProps> = ({
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-sm text-text leading-snug">
-                    {item.productName}
+                    {item.product?.name || item.productName}
                   </div>
                   {item.notes && (
                     <p className="text-xs font-medium text-amber-700 dark:text-amber-300 mt-1 italic py-0.5 px-2 rounded border border-amber-500/20 bg-amber-500/10">
@@ -858,7 +858,9 @@ const ReadyOrderTicket: React.FC<ReadyOrderTicketProps> = ({
                 <span className="shrink-0 px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-black text-xs font-mono">
                   {item.quantity}×
                 </span>
-                <span className="font-bold text-text truncate">{item.productName}</span>
+                <span className="font-bold text-text truncate">
+                  {item.product?.name || item.productName}
+                </span>
               </div>
             ))}
           </div>
@@ -948,7 +950,9 @@ const ReadyOrderTicket: React.FC<ReadyOrderTicketProps> = ({
               <span className="shrink-0 min-w-6 px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-black text-xs text-center border border-emerald-500/30">
                 {item.quantity}×
               </span>
-              <span className="font-bold text-text self-center">{item.productName}</span>
+              <span className="font-bold text-text self-center">
+                {item.product?.name || item.productName}
+              </span>
             </div>
           ))}
         </div>

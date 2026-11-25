@@ -13,6 +13,7 @@ export declare class CreateOrderDto {
     orderNotes?: string;
     paymentMethod?: PaymentMethod;
     turnstileToken?: string;
+    language?: string;
     items: OrderItemDto[];
 }
 export declare class UpdateOrderStatusDto {

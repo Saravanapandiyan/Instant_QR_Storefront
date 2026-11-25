@@ -411,25 +411,33 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               Dishes Ordered
             </h4>
             <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl divide-y divide-zinc-200 dark:divide-zinc-800 overflow-hidden">
-              {order.items.map((item) => (
-                <div key={item.id} className="p-3 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-orange-600">{item.quantity}x</span>
-                    <div>
-                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                        {item.productName}
-                      </span>
-                      {item.notes && (
-                        <p className="text-[10px] text-zinc-500 italic">Note: {item.notes}</p>
-                      )}
+              {order.items.map((item) => {
+                const currentLang = typeof localStorage !== 'undefined' ? localStorage.getItem('instadine_customer_lang') || 'en' : 'en';
+                const localizedName = (currentLang !== 'en' && (item as any)?.product?.translations?.[currentLang]?.name) || item.productName;
+
+                return (
+                  <div key={item.id} className="p-3 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-orange-600">{item.quantity}x</span>
+                      <div>
+                        <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                          {localizedName}
+                        </span>
+                        {localizedName !== item.productName && (
+                          <span className="block text-[10px] text-zinc-400">({item.productName})</span>
+                        )}
+                        {item.notes && (
+                          <p className="text-[10px] text-zinc-500 italic">Note: {item.notes}</p>
+                        )}
+                      </div>
                     </div>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                      {currencySymbol}
+                      {item.totalPrice}
+                    </span>
                   </div>
-                  <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                    {currencySymbol}
-                    {item.totalPrice}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Total Calculation */}
               <div className="p-3 bg-zinc-50 dark:bg-zinc-800/40 space-y-1 text-xs">

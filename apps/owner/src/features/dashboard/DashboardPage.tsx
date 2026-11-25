@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -16,6 +16,13 @@ import {
   Sparkles,
   Plus,
   Coins,
+  Utensils,
+  ShoppingBag,
+  Banknote,
+  Smartphone,
+  Store,
+  MapPin,
+  RotateCcw,
 } from 'lucide-react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Button, toast } from '../../components/ui';
@@ -55,17 +62,66 @@ export const DashboardPage: React.FC = () => {
   const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
   const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const { formatPrice } = useCurrencyStore();
-  const { setActiveRestaurantId, setActiveBranchId } = useActiveStore();
+  const { activeRestaurantId, activeBranchId, setActiveRestaurantId, setActiveBranchId } = useActiveStore();
   const user = useAuthStore((state) => state.user);
   const { can } = usePermissions();
 
   // Fetch restaurants and branches
-  const { restaurants } = useRestaurants();
+  const { restaurants, isLoading: isRestaurantsLoading } = useRestaurants();
   const { branches, isLoading: isBranchesLoading, createBranch } = useBranches();
+
+  // Auto-open Quick Setup Wizard on first-time signup when owner has 0 branches
+  useEffect(() => {
+    if (!isBranchesLoading && !isRestaurantsLoading && branches.length === 0) {
+      try {
+        const isDismissed = sessionStorage.getItem('instadine_quick_setup_dismissed');
+        if (!isDismissed) {
+          setIsQuickSetupOpen(true);
+        }
+      } catch {
+        setIsQuickSetupOpen(true);
+      }
+    }
+  }, [isBranchesLoading, isRestaurantsLoading, branches.length]);
+
+  // Filter state for viewing data by Restaurant Concept and Branch Outlet
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>(() => activeRestaurantId || 'ALL');
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(() => activeBranchId || 'ALL');
+
+  // Available branches for selected restaurant
+  const availableBranchesForFilter = useMemo(() => {
+    if (selectedRestaurantId === 'ALL') {
+      return branches;
+    }
+    return branches.filter((b) => b.restaurantId === selectedRestaurantId);
+  }, [branches, selectedRestaurantId]);
+
+  const handleRestaurantFilterChange = (restId: string) => {
+    setSelectedRestaurantId(restId);
+    setActiveRestaurantId(restId === 'ALL' ? null : restId);
+    setSelectedBranchId('ALL');
+    setActiveBranchId(null);
+  };
+
+  const handleBranchFilterChange = (brId: string) => {
+    setSelectedBranchId(brId);
+    setActiveBranchId(brId === 'ALL' ? null : brId);
+  };
+
+  const filteredBranches = useMemo(() => {
+    let list = branches;
+    if (selectedRestaurantId !== 'ALL') {
+      list = list.filter((b) => b.restaurantId === selectedRestaurantId);
+    }
+    if (selectedBranchId !== 'ALL') {
+      list = list.filter((b) => b.id === selectedBranchId);
+    }
+    return list;
+  }, [branches, selectedRestaurantId, selectedBranchId]);
 
   const restaurantIdsKey = restaurants.map((r) => r.id).sort().join(',');
 
-  // Fetch real Digital Menu stats across all restaurants
+  // Fetch real Digital Menu stats across restaurants
   const { data: menuStats, isLoading: isMenuLoading } = useQuery({
     queryKey: ['overview-menu-stats', user?.id, restaurantIdsKey],
     enabled: restaurants.length > 0 && !!user?.id,
@@ -76,18 +132,26 @@ export const DashboardPage: React.FC = () => {
             getProducts(rest.id).catch(() => []),
             getCategories(rest.id).catch(() => []),
           ]);
-          return { productsCount: prods.length, categoriesCount: cats.length };
+          return { restaurantId: rest.id, productsCount: prods.length, categoriesCount: cats.length };
         }),
       );
-      return results.reduce(
-        (acc, cur) => ({
-          productsCount: acc.productsCount + cur.productsCount,
-          categoriesCount: acc.categoriesCount + cur.categoriesCount,
-        }),
-        { productsCount: 0, categoriesCount: 0 },
-      );
+      return results;
     },
   });
+
+  const { totalDishes, totalCategories } = useMemo(() => {
+    if (!menuStats || !Array.isArray(menuStats)) {
+      return { totalDishes: 0, totalCategories: 0 };
+    }
+    const target = selectedRestaurantId === 'ALL'
+      ? menuStats
+      : menuStats.filter((m) => m.restaurantId === selectedRestaurantId);
+
+    return {
+      totalDishes: target.reduce((sum, m) => sum + m.productsCount, 0),
+      totalCategories: target.reduce((sum, m) => sum + m.categoriesCount, 0),
+    };
+  }, [menuStats, selectedRestaurantId]);
 
   // Fetch real Orders across all restaurants (polling every 10s for live dashboard updates)
   const canViewOrders = can('orders', 'view');
@@ -145,6 +209,17 @@ export const DashboardPage: React.FC = () => {
     navigate(`${ROUTES.ORDERS}?restaurantId=${branch.restaurantId}&branchId=${branch.id}`);
   };
 
+  const filteredOrders = useMemo(() => {
+    let list = allOrders;
+    if (selectedRestaurantId !== 'ALL') {
+      list = list.filter((o) => o.restaurantId === selectedRestaurantId);
+    }
+    if (selectedBranchId !== 'ALL') {
+      list = list.filter((o) => o.branchId === selectedBranchId);
+    }
+    return list;
+  }, [allOrders, selectedRestaurantId, selectedBranchId]);
+
   // Compute wired metrics
   const {
     activeBranchesCount,
@@ -156,13 +231,25 @@ export const DashboardPage: React.FC = () => {
     paidVolume,
     todayVolume,
     liveFeedOrders,
+    dineInCount,
+    todayDineInCount,
+    takeawayCount,
+    todayTakeawayCount,
+    cashCount,
+    todayCashCount,
+    cashCollected,
+    todayCashCollected,
+    onlineCount,
+    todayOnlineCount,
+    onlineCollected,
+    todayOnlineCollected,
   } = useMemo(() => {
-    const activeBranches = branches.filter((b) => b.isActive).length;
-    const valid = allOrders.filter((o) => o.status !== 'CANCELLED');
-    const todayAll = allOrders.filter((o) => isLocalToday(o.createdAt));
+    const activeBranches = filteredBranches.filter((b) => b.isActive).length;
+    const valid = filteredOrders.filter((o) => o.status !== 'CANCELLED');
+    const todayAll = filteredOrders.filter((o) => isLocalToday(o.createdAt));
     const todayValid = valid.filter((o) => isLocalToday(o.createdAt));
     const activeStatuses = new Set<Order['status']>(['PENDING', 'CONFIRMED', 'PREPARING', 'READY']);
-    const activeQueue = allOrders.filter((o) => activeStatuses.has(o.status));
+    const activeQueue = filteredOrders.filter((o) => activeStatuses.has(o.status));
 
     // Overview "Live orders" card strictly displays TODAY's orders
     const todayActiveQueue = todayAll.filter((o) => activeStatuses.has(o.status));
@@ -175,6 +262,32 @@ export const DashboardPage: React.FC = () => {
       .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
     const sumToday = todayValid.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
 
+    // 1. Dine-In vs Takeaway Counts
+    const dineInOrders = valid.filter((o) => o.orderType === 'DINE_IN');
+    const todayDineInOrders = todayValid.filter((o) => o.orderType === 'DINE_IN');
+    const takeawayOrders = valid.filter((o) => o.orderType === 'TAKEAWAY');
+    const todayTakeawayOrders = todayValid.filter((o) => o.orderType === 'TAKEAWAY');
+
+    // 2. Cash vs Online Collections
+    const isCashOrder = (o: Order) => o.paymentMethod === 'CASH' || (o.paymentMethod as string) === 'CASH_ON_COUNTER';
+    const cashOrders = valid.filter(isCashOrder);
+    const todayCashOrders = todayValid.filter(isCashOrder);
+    const sumCashCollected = cashOrders
+      .filter((o) => o.paymentStatus === 'PAID')
+      .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+    const sumTodayCashCollected = todayCashOrders
+      .filter((o) => o.paymentStatus === 'PAID')
+      .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+
+    const onlineOrders = valid.filter((o) => !isCashOrder(o));
+    const todayOnlineOrders = todayValid.filter((o) => !isCashOrder(o));
+    const sumOnlineCollected = onlineOrders
+      .filter((o) => o.paymentStatus === 'PAID')
+      .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+    const sumTodayOnlineCollected = todayOnlineOrders
+      .filter((o) => o.paymentStatus === 'PAID')
+      .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+
     return {
       activeBranchesCount: activeBranches,
       todayOrdersCount: todayValid.length,
@@ -185,11 +298,20 @@ export const DashboardPage: React.FC = () => {
       paidVolume: sumPaid,
       todayVolume: sumToday,
       liveFeedOrders: feed,
+      dineInCount: dineInOrders.length,
+      todayDineInCount: todayDineInOrders.length,
+      takeawayCount: takeawayOrders.length,
+      todayTakeawayCount: todayTakeawayOrders.length,
+      cashCount: cashOrders.length,
+      todayCashCount: todayCashOrders.length,
+      cashCollected: sumCashCollected,
+      todayCashCollected: sumTodayCashCollected,
+      onlineCount: onlineOrders.length,
+      todayOnlineCount: todayOnlineOrders.length,
+      onlineCollected: sumOnlineCollected,
+      todayOnlineCollected: sumTodayOnlineCollected,
     };
-  }, [branches, allOrders]);
-
-  const totalDishes = menuStats?.productsCount ?? 0;
-  const totalCategories = menuStats?.categoriesCount ?? 0;
+  }, [filteredBranches, filteredOrders]);
 
   // Derive checklist completion strictly from real loaded data
   const hasBranch = branches.length > 0;
@@ -314,6 +436,65 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Restaurant Concept & Branch Outlet Selection Filter Toolbar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-surface border border-border rounded-2xl shadow-2xs">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Restaurant Concept Dropdown */}
+            <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-1.5 shadow-2xs">
+              <UtensilsCrossed className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="text-[11px] font-bold text-muted uppercase">Concept:</span>
+              <select
+                aria-label="Filter by Restaurant Concept"
+                value={selectedRestaurantId}
+                onChange={(e) => handleRestaurantFilterChange(e.target.value)}
+                className="bg-transparent text-xs font-bold text-text focus:outline-none cursor-pointer"
+              >
+                <option value="ALL" className="bg-surface text-text">
+                  All Restaurant Concepts ({restaurants.length})
+                </option>
+                {restaurants.map((r) => (
+                  <option key={r.id} value={r.id} className="bg-surface text-text">
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Branch Outlet Dropdown */}
+            <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-1.5 shadow-2xs">
+              <Store className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span className="text-[11px] font-bold text-muted uppercase">Branch Outlet:</span>
+              <select
+                aria-label="Filter by Branch Outlet"
+                value={selectedBranchId}
+                onChange={(e) => handleBranchFilterChange(e.target.value)}
+                className="bg-transparent text-xs font-bold text-text focus:outline-none cursor-pointer"
+              >
+                <option value="ALL" className="bg-surface text-text">
+                  All Outlets & Branches ({availableBranchesForFilter.length})
+                </option>
+                {availableBranchesForFilter.map((b) => (
+                  <option key={b.id} value={b.id} className="bg-surface text-text">
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Active Filter Clear button */}
+          {(selectedRestaurantId !== 'ALL' || selectedBranchId !== 'ALL') && (
+            <button
+              type="button"
+              onClick={() => handleRestaurantFilterChange('ALL')}
+              className="text-[11px] font-bold text-primary hover:underline cursor-pointer self-end sm:self-auto flex items-center gap-1"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Reset to All Concepts</span>
+            </button>
+          )}
+        </div>
+
         {/* 5-Minute Setup Action Banner */}
         {branches.length === 0 && (
           <div className="p-5 rounded-2xl bg-gradient-to-r from-primary/15 via-primary/5 to-surface border border-primary/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
@@ -343,7 +524,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Stats Row: 4 compact cards in a responsive grid */}
+        {/* Stats Row: 4 primary metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Card 1: Total branches */}
           <div className="p-4 rounded-[12px] border border-border bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)] dark:shadow-none">
@@ -354,7 +535,7 @@ export const DashboardPage: React.FC = () => {
               {isBranchesLoading ? (
                 <div className="h-7 w-12 bg-surface-2 rounded-[4px] animate-pulse my-1" />
               ) : (
-                branches.length
+                filteredBranches.length
               )}
             </div>
             <div className="text-[12px] font-medium text-success">
@@ -383,7 +564,7 @@ export const DashboardPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Card 3: Dining orders */}
+          {/* Card 3: Total Orders */}
           <div
             onClick={() => canViewOrders && navigate(ROUTES.ORDERS)}
             className={`p-4 rounded-[12px] border border-border bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)] dark:shadow-none ${
@@ -391,7 +572,7 @@ export const DashboardPage: React.FC = () => {
             }`}
           >
             <span className="text-xs font-medium text-muted uppercase tracking-wider">
-              Dining orders
+              Total orders
             </span>
             <div className="text-[28px] font-bold text-text leading-tight my-1">
               {isOrdersLoading && canViewOrders ? (
@@ -404,15 +585,15 @@ export const DashboardPage: React.FC = () => {
             </div>
             <div className="text-[12px] font-medium text-muted">
               {canViewOrders
-                ? `in-store today • ${activeQueueOrdersCount} active (${totalValidOrdersCount} total)`
+                ? `today's orders • ${activeQueueOrdersCount} active in kitchen (${totalValidOrdersCount} total)`
                 : 'view orders permission required'}
             </div>
           </div>
 
-          {/* Card 4: Gross volume */}
+          {/* Card 4: Gross revenue */}
           <div className="p-4 rounded-[12px] border border-border bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)] dark:shadow-none">
             <span className="text-xs font-medium text-muted uppercase tracking-wider">
-              Gross volume
+              Gross revenue
             </span>
             <div className="text-[28px] font-bold text-text leading-tight my-1">
               {isOrdersLoading && can('overview', 'viewSales') ? (
@@ -427,6 +608,89 @@ export const DashboardPage: React.FC = () => {
               {can('overview', 'viewSales')
                 ? `${formatPrice(paidVolume)} paid • ${formatPrice(todayVolume)} today`
                 : 'view sales permission required'}
+            </div>
+          </div>
+        </div>
+
+        {/* Channels & Payment Breakdown Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 5: Dine-in Orders */}
+          <div className="p-4 rounded-[12px] border border-border bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)] dark:shadow-none">
+            <div className="flex items-center justify-between text-muted">
+              <span className="text-xs font-medium uppercase tracking-wider">Dine-in orders</span>
+              <div className="w-7 h-7 rounded-lg bg-primary-soft text-primary-soft-text flex items-center justify-center">
+                <Utensils size={14} />
+              </div>
+            </div>
+            <div className="text-[26px] font-bold text-text leading-tight my-1">
+              {isOrdersLoading ? (
+                <div className="h-7 w-12 bg-surface-2 rounded-[4px] animate-pulse my-1" />
+              ) : (
+                todayDineInCount
+              )}
+            </div>
+            <div className="text-[12px] font-medium text-muted">
+              in-store today &bull; {dineInCount} all-time
+            </div>
+          </div>
+
+          {/* Card 6: Takeaway Orders */}
+          <div className="p-4 rounded-[12px] border border-border bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)] dark:shadow-none">
+            <div className="flex items-center justify-between text-muted">
+              <span className="text-xs font-medium uppercase tracking-wider">Takeaway orders</span>
+              <div className="w-7 h-7 rounded-lg bg-orange-500/10 text-orange-600 flex items-center justify-center">
+                <ShoppingBag size={14} />
+              </div>
+            </div>
+            <div className="text-[26px] font-bold text-text leading-tight my-1">
+              {isOrdersLoading ? (
+                <div className="h-7 w-12 bg-surface-2 rounded-[4px] animate-pulse my-1" />
+              ) : (
+                todayTakeawayCount
+              )}
+            </div>
+            <div className="text-[12px] font-medium text-muted">
+              pickups today &bull; {takeawayCount} all-time
+            </div>
+          </div>
+
+          {/* Card 7: Cash on Counter */}
+          <div className="p-4 rounded-[12px] border border-border bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)] dark:shadow-none">
+            <div className="flex items-center justify-between text-muted">
+              <span className="text-xs font-medium uppercase tracking-wider">Cash on counter</span>
+              <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                <Banknote size={14} />
+              </div>
+            </div>
+            <div className="text-[26px] font-bold text-text leading-tight my-1">
+              {isOrdersLoading ? (
+                <div className="h-7 w-16 bg-surface-2 rounded-[4px] animate-pulse my-1" />
+              ) : (
+                formatPrice(todayCashCollected)
+              )}
+            </div>
+            <div className="text-[12px] font-medium text-muted">
+              {todayCashCount} cash orders today &bull; {formatPrice(cashCollected)} total
+            </div>
+          </div>
+
+          {/* Card 8: Online / UPI Payments */}
+          <div className="p-4 rounded-[12px] border border-border bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)] dark:shadow-none">
+            <div className="flex items-center justify-between text-muted">
+              <span className="text-xs font-medium uppercase tracking-wider">Online & UPI payments</span>
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                <Smartphone size={14} />
+              </div>
+            </div>
+            <div className="text-[26px] font-bold text-text leading-tight my-1">
+              {isOrdersLoading ? (
+                <div className="h-7 w-16 bg-surface-2 rounded-[4px] animate-pulse my-1" />
+              ) : (
+                formatPrice(todayOnlineCollected)
+              )}
+            </div>
+            <div className="text-[12px] font-medium text-muted">
+              {todayOnlineCount} online orders today &bull; {formatPrice(onlineCollected)} total
             </div>
           </div>
         </div>
@@ -609,26 +873,28 @@ export const DashboardPage: React.FC = () => {
             <div className="space-y-3.5">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold text-text tracking-tight">
-                  Your branches
+                  Your branches {selectedRestaurantId !== 'ALL' || selectedBranchId !== 'ALL' ? `(${filteredBranches.length})` : ''}
                 </h2>
                 <button
                   type="button"
                   onClick={() => navigate(ROUTES.BRANCHES)}
                   className="text-xs font-semibold text-primary hover:underline cursor-pointer"
                 >
-                  View all {branches.length > (allStepsComplete ? 6 : 4) ? `(${branches.length})` : ''}
+                  View all {filteredBranches.length > (allStepsComplete ? 6 : 4) ? `(${filteredBranches.length})` : ''}
                 </button>
               </div>
 
-              {branches.length === 0 && !isBranchesLoading && (
+              {filteredBranches.length === 0 && !isBranchesLoading && (
                 <div className="border border-dashed border-border rounded-[12px] p-8 text-center bg-surface">
                   <p className="text-sm text-muted">
-                    No branches created yet. Click "+ Add Branch" above to create your first restaurant location.
+                    {branches.length === 0
+                      ? 'No branches created yet. Click "+ New Branch" above to create your first restaurant location.'
+                      : 'No branches match the selected concept or outlet filter.'}
                   </p>
                 </div>
               )}
 
-              {branches.length > 0 && (
+              {filteredBranches.length > 0 && (
                 <div
                   className={
                     allStepsComplete
@@ -636,7 +902,7 @@ export const DashboardPage: React.FC = () => {
                       : 'grid grid-cols-1 md:grid-cols-2 gap-4'
                   }
                 >
-                  {branches.slice(0, allStepsComplete ? 6 : 4).map((branch) => (
+                  {filteredBranches.slice(0, allStepsComplete ? 6 : 4).map((branch) => (
                     <div
                       key={branch.id}
                       className="p-4 rounded-[12px] border border-border bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)] dark:shadow-none flex flex-col justify-between"
@@ -821,9 +1087,17 @@ export const DashboardPage: React.FC = () => {
         <QuickSetupWizard
           onComplete={() => {
             setIsQuickSetupOpen(false);
+            try {
+              sessionStorage.setItem('instadine_quick_setup_dismissed', '1');
+            } catch {}
             queryClient.invalidateQueries();
           }}
-          onCancel={() => setIsQuickSetupOpen(false)}
+          onCancel={() => {
+            setIsQuickSetupOpen(false);
+            try {
+              sessionStorage.setItem('instadine_quick_setup_dismissed', '1');
+            } catch {}
+          }}
         />
       )}
     </DashboardLayout>

@@ -55,6 +55,12 @@ let AiController = class AiController {
     getSupportedLanguages() {
         return this.aiService.getSupportedLanguages();
     }
+    async addLanguage(dto) {
+        return this.aiService.addCustomLanguage(dto);
+    }
+    async deleteLanguage(code) {
+        return this.aiService.deleteCustomLanguage(code);
+    }
     async translateMenu(dto) {
         if (!dto.restaurantId || !dto.targetLanguages || dto.targetLanguages.length === 0) {
             throw new common_1.BadRequestException('restaurantId and targetLanguages are required');
@@ -129,6 +135,26 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "getSupportedLanguages", null);
+__decorate([
+    (0, common_1.Post)('languages'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Add a custom language to the platform' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AiController.prototype, "addLanguage", null);
+__decorate([
+    (0, common_1.Delete)('languages/:code'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete a custom language' }),
+    __param(0, (0, common_1.Param)('code')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AiController.prototype, "deleteLanguage", null);
 __decorate([
     (0, common_1.Post)('translate-menu'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

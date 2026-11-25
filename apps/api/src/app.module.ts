@@ -16,6 +16,7 @@ import { AiModule } from './ai/ai.module';
 import { PacksModule } from './packs/packs.module';
 import { CreditsModule } from './credits/credits.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { HelpModule } from './help/help.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     PacksModule,
     CreditsModule,
     AnalyticsModule,
+    HelpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

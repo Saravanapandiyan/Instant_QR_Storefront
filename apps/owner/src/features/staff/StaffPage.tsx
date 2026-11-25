@@ -22,6 +22,10 @@ import {
   UtensilsCrossed,
   LayoutDashboard,
   Layers,
+  Tv,
+  BarChart3,
+  Coins,
+  ClipboardList,
 } from 'lucide-react';
 import { useRestaurants } from '../restaurants/hooks/useRestaurants';
 import { staffApi } from './api/staffApi';
@@ -33,6 +37,7 @@ import {
   type StaffMember,
   type StaffRole,
   type StaffPermissions,
+  type PagePermissions,
 } from '@instant-qr/shared-types';
 
 export const StaffPage: React.FC = () => {
@@ -112,46 +117,95 @@ export const StaffPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  // Helper to ensure permissions object is fully formed with all modules
+  // Helper to ensure permissions object is fully formed with all modules and page-wise controls
   const normalizePermissions = (raw: any, role: StaffRole = 'CUSTOM'): StaffPermissions => {
     const fallback = ROLE_PRESET_PERMISSIONS[role] || ROLE_PRESET_PERMISSIONS.CUSTOM;
+    const defaultPages = fallback.pages || {
+      overview: false,
+      orders: false,
+      kds: true,
+      tv: false,
+      analytics: false,
+      branches: false,
+      menu: false,
+      staff: false,
+      billing: false,
+      payments: false,
+    };
+
+    const rawPages = raw?.pages || {};
+    const pages: PagePermissions = {
+      overview: Boolean(rawPages.overview ?? raw?.overview?.view ?? defaultPages.overview),
+      orders: Boolean(rawPages.orders ?? raw?.orders?.view ?? defaultPages.orders),
+      kds: Boolean(rawPages.kds ?? raw?.orders?.view ?? defaultPages.kds),
+      tv: Boolean(rawPages.tv ?? raw?.orders?.view ?? defaultPages.tv),
+      analytics: Boolean(rawPages.analytics ?? raw?.overview?.view ?? defaultPages.analytics),
+      branches: Boolean(rawPages.branches ?? raw?.branches?.view ?? defaultPages.branches),
+      menu: Boolean(rawPages.menu ?? raw?.menu?.view ?? defaultPages.menu),
+      staff: Boolean(rawPages.staff ?? raw?.staff?.view ?? defaultPages.staff),
+      billing: Boolean(rawPages.billing ?? raw?.payments?.view ?? defaultPages.billing),
+      payments: Boolean(rawPages.payments ?? raw?.payments?.view ?? defaultPages.payments),
+    };
+
     if (!raw || typeof raw !== 'object') {
-      return fallback;
+      return { ...fallback, pages };
     }
+
     return {
+      pages,
       orders: {
-        view: Boolean(raw.orders?.view ?? fallback.orders.view),
+        view: Boolean(raw.orders?.view ?? (pages.orders || pages.kds || pages.tv)),
         accept: Boolean(raw.orders?.accept ?? fallback.orders.accept),
         collectCash: Boolean(raw.orders?.collectCash ?? fallback.orders.collectCash),
         cancel: Boolean(raw.orders?.cancel ?? fallback.orders.cancel),
       },
       menu: {
-        view: Boolean(raw.menu?.view ?? fallback.menu.view),
+        view: Boolean(raw.menu?.view ?? pages.menu),
         create: Boolean(raw.menu?.create ?? fallback.menu.create),
         edit: Boolean(raw.menu?.edit ?? fallback.menu.edit),
         delete: Boolean(raw.menu?.delete ?? fallback.menu.delete),
         toggleStock: Boolean(raw.menu?.toggleStock ?? fallback.menu.toggleStock),
       },
       branches: {
-        view: Boolean(raw.branches?.view ?? fallback.branches.view),
+        view: Boolean(raw.branches?.view ?? pages.branches),
         create: Boolean(raw.branches?.create ?? fallback.branches.create),
         edit: Boolean(raw.branches?.edit ?? fallback.branches.edit),
         delete: Boolean(raw.branches?.delete ?? fallback.branches.delete),
         manageTables: Boolean(raw.branches?.manageTables ?? fallback.branches.manageTables),
       },
       overview: {
-        view: Boolean(raw.overview?.view ?? fallback.overview.view),
+        view: Boolean(raw.overview?.view ?? (pages.overview || pages.analytics)),
         viewFinancials: Boolean(raw.overview?.viewFinancials ?? fallback.overview.viewFinancials),
       },
       payments: {
-        view: Boolean(raw.payments?.view ?? fallback.payments.view),
+        view: Boolean(raw.payments?.view ?? (pages.payments || pages.billing)),
         manage: Boolean(raw.payments?.manage ?? fallback.payments.manage),
       },
       staff: {
-        view: Boolean(raw.staff?.view ?? fallback.staff.view),
+        view: Boolean(raw.staff?.view ?? pages.staff),
         manage: Boolean(raw.staff?.manage ?? fallback.staff.manage),
       },
     };
+  };
+
+  // Helper to extract clean badges for the staff list table
+  const getAllowedPageBadges = (staff: StaffMember) => {
+    const p = normalizePermissions(staff.permissions, staff.role as StaffRole);
+    const pages = p.pages!;
+    const badges: { key: string; label: string; color: string }[] = [];
+
+    if (pages.kds) badges.push({ key: 'kds', label: 'Kitchen (KDS)', color: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20' });
+    if (pages.orders) badges.push({ key: 'orders', label: 'Live Orders', color: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20' });
+    if (pages.overview) badges.push({ key: 'overview', label: 'Overview', color: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20' });
+    if (pages.tv) badges.push({ key: 'tv', label: 'TV Order Board', color: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20' });
+    if (pages.analytics) badges.push({ key: 'analytics', label: 'Sales & Analytics', color: 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/20' });
+    if (pages.menu) badges.push({ key: 'menu', label: 'Digital Menu', color: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20' });
+    if (pages.branches) badges.push({ key: 'branches', label: 'Branches', color: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/20' });
+    if (pages.staff) badges.push({ key: 'staff', label: 'Staff & Roles', color: 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20' });
+    if (pages.billing) badges.push({ key: 'billing', label: 'Plans & Credits', color: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 border-yellow-500/20' });
+    if (pages.payments) badges.push({ key: 'payments', label: 'Payment Settings', color: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20' });
+
+    return badges;
   };
 
   // Open modal for Edit
@@ -189,9 +243,50 @@ export const StaffPage: React.FC = () => {
     }
   };
 
-  // Toggle individual permission
+  // Toggle page-level access
+  const handlePageToggle = (pageKey: keyof PagePermissions, value: boolean) => {
+    setRolePreset('CUSTOM');
+    setPermissions((prev) => {
+      const safe = normalizePermissions(prev, 'CUSTOM');
+      const updatedPages: PagePermissions = {
+        ...safe.pages!,
+        [pageKey]: value,
+      };
+
+      return {
+        ...safe,
+        pages: updatedPages,
+        orders: {
+          ...safe.orders,
+          view: Boolean(updatedPages.orders || updatedPages.kds || updatedPages.tv),
+        },
+        menu: {
+          ...safe.menu,
+          view: updatedPages.menu,
+        },
+        branches: {
+          ...safe.branches,
+          view: updatedPages.branches,
+        },
+        overview: {
+          ...safe.overview,
+          view: Boolean(updatedPages.overview || updatedPages.analytics),
+        },
+        payments: {
+          ...safe.payments,
+          view: Boolean(updatedPages.payments || updatedPages.billing),
+        },
+        staff: {
+          ...safe.staff,
+          view: updatedPages.staff,
+        },
+      };
+    });
+  };
+
+  // Toggle individual action permission
   const handlePermissionToggle = (
-    moduleKey: keyof StaffPermissions,
+    moduleKey: keyof Omit<StaffPermissions, 'pages'>,
     actionKey: string,
     value: boolean
   ) => {
@@ -201,7 +296,7 @@ export const StaffPage: React.FC = () => {
       return {
         ...safePrev,
         [moduleKey]: {
-          ...safePrev[moduleKey],
+          ...(safePrev[moduleKey] as any),
           [actionKey]: value,
         },
       };
@@ -240,12 +335,13 @@ export const StaffPage: React.FC = () => {
       const assignedBranches = branchAccessMode === 'ALL' ? ['ALL'] : selectedBranches;
 
       if (editingStaff) {
+        // STRICT FIX: only pass password if explicitly provided with length >= 6
         await staffApi.update(editingStaff.id, {
           name: name.trim(),
           email: email.trim().toLowerCase(),
           phone: phone.trim() || undefined,
           countryCode: countryCode.trim() || undefined,
-          password: password ? password : undefined,
+          password: password.trim().length >= 6 ? password.trim() : undefined,
           pinCode: pinCode.trim() || undefined,
           role: rolePreset,
           assignedBranches,
@@ -259,7 +355,7 @@ export const StaffPage: React.FC = () => {
           email: email.trim().toLowerCase(),
           phone: phone.trim() || undefined,
           countryCode: countryCode.trim() || undefined,
-          password: password || 'Staff@1234',
+          password: password.trim() ? password.trim() : 'Staff@1234',
           pinCode: pinCode.trim() || undefined,
           role: rolePreset,
           assignedBranches,
@@ -867,303 +963,527 @@ export const StaffPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* 4. Fine-Grained Permissions Matrix */}
+              {/* 4. Page-Wise Menu Access & Fine-Grained Permissions */}
               <div className="space-y-4 pt-3 border-t border-border">
                 <div className="flex items-center justify-between">
-                  <div className="font-bold text-xs uppercase tracking-wider text-muted">
-                    Granular Permission Controls
+                  <div>
+                    <div className="font-bold text-xs uppercase tracking-wider text-muted">
+                      Page-Wise Menu Access
+                    </div>
+                    <p className="text-[11px] text-muted mt-0.5">
+                      Enable exact sidebar navigation menus for this staff member (e.g. Kitchen only sees Kitchen (KDS))
+                    </p>
                   </div>
-                  <span className="text-[11px] text-muted">
-                    Toggle individual actions to restrict Edit or Delete
+                  <span className="text-[11px] font-semibold text-primary">
+                    Exact Sidebar Matching
                   </span>
                 </div>
 
-                {/* Module 1: Live Orders */}
-                <div className="p-4 rounded-xl bg-surface border border-border space-y-3">
-                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                    <div className="flex items-center gap-2">
-                      <FileText size={15} className="text-primary" />
-                      <span className="font-bold text-xs text-text">Live Orders & Kitchen Queue</span>
-                    </div>
-                    <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.orders?.view ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('orders', 'view', e.target.checked)
-                        }
-                        className="rounded accent-primary"
-                      />
-                      <span>View Orders Page</span>
-                    </label>
+                {/* --- GROUP 1: OPERATE --- */}
+                <div className="space-y-3">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <span>OPERATE PAGES</span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                    <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.orders?.accept ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('orders', 'accept', e.target.checked)
-                        }
-                        className="rounded accent-primary"
-                      />
-                      <span>Accept / Dispatch Order</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.orders?.collectCash ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('orders', 'collectCash', e.target.checked)
-                        }
-                        className="rounded accent-primary"
-                      />
-                      <span>Mark Cash Collected</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.orders?.cancel ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('orders', 'cancel', e.target.checked)
-                        }
-                        className="rounded accent-danger"
-                      />
-                      <span>Cancel Order (Restricted)</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Module 2: Digital Menu */}
-                <div className="p-4 rounded-xl bg-surface border border-border space-y-3">
-                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                    <div className="flex items-center gap-2">
-                      <UtensilsCrossed size={15} className="text-primary" />
-                      <span className="font-bold text-xs text-text">Digital Menu Catalog</span>
-                    </div>
-                    <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.menu?.view ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('menu', 'view', e.target.checked)
-                        }
-                        className="rounded accent-primary"
-                      />
-                      <span>View Menu Page</span>
-                    </label>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
-                    <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.menu?.create ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('menu', 'create', e.target.checked)
-                        }
-                        className="rounded accent-primary"
-                      />
-                      <span>Add Dishes / Categories</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.menu?.edit ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('menu', 'edit', e.target.checked)
-                        }
-                        className="rounded accent-primary"
-                      />
-                      <span>Edit Items & Prices</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.menu?.delete ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('menu', 'delete', e.target.checked)
-                        }
-                        className="rounded accent-danger"
-                      />
-                      <span>Delete Items</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 text-xs text-success font-semibold cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.menu?.toggleStock ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('menu', 'toggleStock', e.target.checked)
-                        }
-                        className="rounded accent-success"
-                      />
-                      <span>Toggle Stock (In/Out)</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Module 3: Branches & Tables */}
-                <div className="p-4 rounded-xl bg-surface border border-border space-y-3">
-                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                    <div className="flex items-center gap-2">
-                      <Store size={15} className="text-primary" />
-                      <span className="font-bold text-xs text-text">Branches & QR Codes</span>
-                    </div>
-                    <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.branches?.view ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('branches', 'view', e.target.checked)
-                        }
-                        className="rounded accent-primary"
-                      />
-                      <span>View Branches Page</span>
-                    </label>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                    <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.branches?.create ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('branches', 'create', e.target.checked)
-                        }
-                        className="rounded accent-primary"
-                      />
-                      <span>Create / Edit Branches</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.branches?.manageTables ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('branches', 'manageTables', e.target.checked)
-                        }
-                        className="rounded accent-primary"
-                      />
-                      <span>Manage Tables & QR</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.branches?.delete ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('branches', 'delete', e.target.checked)
-                        }
-                        className="rounded accent-danger"
-                      />
-                      <span>Delete Branch</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Module 4: Overview & Financials */}
-                <div className="p-4 rounded-xl bg-surface border border-border space-y-3">
-                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                    <div className="flex items-center gap-2">
-                      <LayoutDashboard size={15} className="text-primary" />
-                      <span className="font-bold text-xs text-text">Overview & Metrics</span>
-                    </div>
-                    <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.overview?.view ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('overview', 'view', e.target.checked)
-                        }
-                        className="rounded accent-primary"
-                      />
-                      <span>View Overview Dashboard</span>
-                    </label>
-                  </div>
-
-                  <div className="pt-1">
-                    <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
-                      <input
-                        type="checkbox"
-                        checked={permissions?.overview?.viewFinancials ?? false}
-                        onChange={(e) =>
-                          handlePermissionToggle('overview', 'viewFinancials', e.target.checked)
-                        }
-                        className="rounded accent-primary"
-                      />
-                      <span>View Total Sales & Revenue Totals</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Module 5: Payment Settings & Staff Management */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl bg-surface border border-border space-y-2">
-                    <div className="flex items-center gap-2 font-bold text-xs text-text">
-                      <CreditCard size={15} className="text-primary" />
-                      <span>Payment Settings</span>
-                    </div>
-                    <div className="space-y-1.5 pt-1">
-                      <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
+                  {/* 1. Kitchen (KDS) */}
+                  <div
+                    className={`p-3.5 rounded-xl border transition-all ${
+                      permissions.pages?.kds
+                        ? 'bg-amber-500/5 border-amber-500/30'
+                        : 'bg-surface border-border opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                          <ChefHat size={16} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-text flex items-center gap-2">
+                            <span>Kitchen (KDS)</span>
+                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/kds</span>
+                          </div>
+                          <p className="text-[11px] text-muted mt-0.5">
+                            Cooking queue display for kitchen chefs to view tickets and mark dishes ready
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={permissions?.payments?.view ?? false}
-                          onChange={(e) =>
-                            handlePermissionToggle('payments', 'view', e.target.checked)
-                          }
-                          className="rounded accent-primary"
+                          checked={permissions.pages?.kds ?? false}
+                          onChange={(e) => handlePageToggle('kds', e.target.checked)}
+                          className="sr-only peer"
                         />
-                        <span>View Payment Settings</span>
-                      </label>
-                      <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
-                        <input
-                          type="checkbox"
-                          checked={permissions?.payments?.manage ?? false}
-                          onChange={(e) =>
-                            handlePermissionToggle('payments', 'manage', e.target.checked)
-                          }
-                          className="rounded accent-danger"
-                        />
-                        <span>Configure Payment Gateways</span>
+                        <div className="w-9 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
                       </label>
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-surface border border-border space-y-2">
-                    <div className="flex items-center gap-2 font-bold text-xs text-text">
-                      <Users size={15} className="text-primary" />
-                      <span>Staff Management</span>
-                    </div>
-                    <div className="space-y-1.5 pt-1">
-                      <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
+                  {/* 2. Live Orders */}
+                  <div
+                    className={`p-3.5 rounded-xl border transition-all space-y-3 ${
+                      permissions.pages?.orders
+                        ? 'bg-blue-500/5 border-blue-500/30'
+                        : 'bg-surface border-border opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
+                          <ClipboardList size={16} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-text flex items-center gap-2">
+                            <span>Live Orders</span>
+                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/orders</span>
+                          </div>
+                          <p className="text-[11px] text-muted mt-0.5">
+                            Cashier desk queue to accept incoming orders, print bills, and collect payments
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={permissions?.staff?.view ?? false}
-                          onChange={(e) =>
-                            handlePermissionToggle('staff', 'view', e.target.checked)
-                          }
-                          className="rounded accent-primary"
+                          checked={permissions.pages?.orders ?? false}
+                          onChange={(e) => handlePageToggle('orders', e.target.checked)}
+                          className="sr-only peer"
                         />
-                        <span>View Staff List</span>
-                      </label>
-                      <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
-                        <input
-                          type="checkbox"
-                          checked={permissions?.staff?.manage ?? false}
-                          onChange={(e) =>
-                            handlePermissionToggle('staff', 'manage', e.target.checked)
-                          }
-                          className="rounded accent-danger"
-                        />
-                        <span>Create / Edit Team Members</span>
+                        <div className="w-9 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
                       </label>
                     </div>
+
+                    {/* Sub-actions for Live Orders */}
+                    {permissions.pages?.orders && (
+                      <div className="pt-2 border-t border-border/60 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
+                          <input
+                            type="checkbox"
+                            checked={permissions.orders?.accept ?? false}
+                            onChange={(e) => handlePermissionToggle('orders', 'accept', e.target.checked)}
+                            className="rounded accent-primary"
+                          />
+                          <span>Accept / Dispatch Order</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
+                          <input
+                            type="checkbox"
+                            checked={permissions.orders?.collectCash ?? false}
+                            onChange={(e) => handlePermissionToggle('orders', 'collectCash', e.target.checked)}
+                            className="rounded accent-primary"
+                          />
+                          <span>Collect Cash at Counter</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
+                          <input
+                            type="checkbox"
+                            checked={permissions.orders?.cancel ?? false}
+                            onChange={(e) => handlePermissionToggle('orders', 'cancel', e.target.checked)}
+                            className="rounded accent-danger"
+                          />
+                          <span>Cancel Orders (Restricted)</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 3. TV Order Board */}
+                  <div
+                    className={`p-3.5 rounded-xl border transition-all ${
+                      permissions.pages?.tv
+                        ? 'bg-indigo-500/5 border-indigo-500/30'
+                        : 'bg-surface border-border opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 flex items-center justify-center shrink-0">
+                          <Tv size={16} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-text flex items-center gap-2">
+                            <span>TV Order Board</span>
+                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/tv</span>
+                          </div>
+                          <p className="text-[11px] text-muted mt-0.5">
+                            Fullscreen customer queue status display for kitchen pickup counters
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={permissions.pages?.tv ?? false}
+                          onChange={(e) => handlePageToggle('tv', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 4. Overview */}
+                  <div
+                    className={`p-3.5 rounded-xl border transition-all ${
+                      permissions.pages?.overview
+                        ? 'bg-purple-500/5 border-purple-500/30'
+                        : 'bg-surface border-border opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
+                          <LayoutDashboard size={16} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-text flex items-center gap-2">
+                            <span>Overview</span>
+                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/</span>
+                          </div>
+                          <p className="text-[11px] text-muted mt-0.5">
+                            Main store dashboard with live daily summaries, order counters, and setup checklists
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={permissions.pages?.overview ?? false}
+                          onChange={(e) => handlePageToggle('overview', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 5. Sales & Analytics */}
+                  <div
+                    className={`p-3.5 rounded-xl border transition-all ${
+                      permissions.pages?.analytics
+                        ? 'bg-teal-500/5 border-teal-500/30'
+                        : 'bg-surface border-border opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 flex items-center justify-center shrink-0">
+                          <BarChart3 size={16} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-text flex items-center gap-2">
+                            <span>Sales & Analytics</span>
+                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/analytics</span>
+                          </div>
+                          <p className="text-[11px] text-muted mt-0.5">
+                            Financial reports, revenue trends, top-selling items, and outlet volume metrics
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={permissions.pages?.analytics ?? false}
+                          onChange={(e) => handlePageToggle('analytics', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-500"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* --- GROUP 2: MANAGE --- */}
+                <div className="space-y-3 pt-2">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <span>MANAGE PAGES</span>
+                  </div>
+
+                  {/* 6. Branches */}
+                  <div
+                    className={`p-3.5 rounded-xl border transition-all space-y-3 ${
+                      permissions.pages?.branches
+                        ? 'bg-orange-500/5 border-orange-500/30'
+                        : 'bg-surface border-border opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-orange-500/10 text-orange-600 flex items-center justify-center shrink-0">
+                          <Store size={16} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-text flex items-center gap-2">
+                            <span>Branches</span>
+                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/branches</span>
+                          </div>
+                          <p className="text-[11px] text-muted mt-0.5">
+                            Branch outlets, Dine-in QR standees, and physical table management
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={permissions.pages?.branches ?? false}
+                          onChange={(e) => handlePageToggle('branches', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                      </label>
+                    </div>
+
+                    {permissions.pages?.branches && (
+                      <div className="pt-2 border-t border-border/60 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
+                          <input
+                            type="checkbox"
+                            checked={permissions.branches?.create ?? false}
+                            onChange={(e) => handlePermissionToggle('branches', 'create', e.target.checked)}
+                            className="rounded accent-primary"
+                          />
+                          <span>Create / Edit Outlets</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
+                          <input
+                            type="checkbox"
+                            checked={permissions.branches?.manageTables ?? false}
+                            onChange={(e) => handlePermissionToggle('branches', 'manageTables', e.target.checked)}
+                            className="rounded accent-primary"
+                          />
+                          <span>Manage Tables & QR</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
+                          <input
+                            type="checkbox"
+                            checked={permissions.branches?.delete ?? false}
+                            onChange={(e) => handlePermissionToggle('branches', 'delete', e.target.checked)}
+                            className="rounded accent-danger"
+                          />
+                          <span>Delete Branch</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 7. Digital Menu */}
+                  <div
+                    className={`p-3.5 rounded-xl border transition-all space-y-3 ${
+                      permissions.pages?.menu
+                        ? 'bg-emerald-500/5 border-emerald-500/30'
+                        : 'bg-surface border-border opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                          <UtensilsCrossed size={16} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-text flex items-center gap-2">
+                            <span>Digital Menu</span>
+                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/menu</span>
+                          </div>
+                          <p className="text-[11px] text-muted mt-0.5">
+                            Food catalog, dishes, pricing, AI translation, and 86 stock toggles
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={permissions.pages?.menu ?? false}
+                          onChange={(e) => handlePageToggle('menu', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                      </label>
+                    </div>
+
+                    {permissions.pages?.menu && (
+                      <div className="pt-2 border-t border-border/60 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
+                          <input
+                            type="checkbox"
+                            checked={permissions.menu?.create ?? false}
+                            onChange={(e) => handlePermissionToggle('menu', 'create', e.target.checked)}
+                            className="rounded accent-primary"
+                          />
+                          <span>Add Dishes & Categories</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
+                          <input
+                            type="checkbox"
+                            checked={permissions.menu?.edit ?? false}
+                            onChange={(e) => handlePermissionToggle('menu', 'edit', e.target.checked)}
+                            className="rounded accent-primary"
+                          />
+                          <span>Edit Items & Prices</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
+                          <input
+                            type="checkbox"
+                            checked={permissions.menu?.delete ?? false}
+                            onChange={(e) => handlePermissionToggle('menu', 'delete', e.target.checked)}
+                            className="rounded accent-danger"
+                          />
+                          <span>Delete Items</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-xs text-success font-semibold cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={permissions.menu?.toggleStock ?? false}
+                            onChange={(e) => handlePermissionToggle('menu', 'toggleStock', e.target.checked)}
+                            className="rounded accent-success"
+                          />
+                          <span>Toggle Stock (In/Out 86)</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 8. Staff & Roles */}
+                  <div
+                    className={`p-3.5 rounded-xl border transition-all space-y-3 ${
+                      permissions.pages?.staff
+                        ? 'bg-rose-500/5 border-rose-500/30'
+                        : 'bg-surface border-border opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0">
+                          <Users size={16} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-text flex items-center gap-2">
+                            <span>Staff & Roles</span>
+                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/staff</span>
+                          </div>
+                          <p className="text-[11px] text-muted mt-0.5">
+                            Invite team members, assign POS PINs, and configure permissions
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={permissions.pages?.staff ?? false}
+                          onChange={(e) => handlePageToggle('staff', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
+                      </label>
+                    </div>
+
+                    {permissions.pages?.staff && (
+                      <div className="pt-2 border-t border-border/60">
+                        <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
+                          <input
+                            type="checkbox"
+                            checked={permissions.staff?.manage ?? false}
+                            onChange={(e) => handlePermissionToggle('staff', 'manage', e.target.checked)}
+                            className="rounded accent-danger"
+                          />
+                          <span>Create, Edit & Remove Team Members</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* --- GROUP 3: BILLING & CREDITS --- */}
+                <div className="space-y-3 pt-2">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <span>BILLING & CREDITS PAGES</span>
+                  </div>
+
+                  {/* 9. Plans & Credits */}
+                  <div
+                    className={`p-3.5 rounded-xl border transition-all ${
+                      permissions.pages?.billing
+                        ? 'bg-yellow-500/5 border-yellow-500/30'
+                        : 'bg-surface border-border opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-yellow-500/10 text-yellow-600 flex items-center justify-center shrink-0">
+                          <Coins size={16} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-text flex items-center gap-2">
+                            <span>Plans & Credits</span>
+                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/billing</span>
+                          </div>
+                          <p className="text-[11px] text-muted mt-0.5">
+                            Storefront subscription tier, AI import credits, and payment transaction history
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={permissions.pages?.billing ?? false}
+                          onChange={(e) => handlePageToggle('billing', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-yellow-500"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 10. Payment Settings */}
+                  <div
+                    className={`p-3.5 rounded-xl border transition-all space-y-3 ${
+                      permissions.pages?.payments
+                        ? 'bg-cyan-500/5 border-cyan-500/30'
+                        : 'bg-surface border-border opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-cyan-500/10 text-cyan-600 flex items-center justify-center shrink-0">
+                          <CreditCard size={16} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-text flex items-center gap-2">
+                            <span>Payment Settings</span>
+                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/payments</span>
+                          </div>
+                          <p className="text-[11px] text-muted mt-0.5">
+                            UPI IDs, QR payment codes, Cash on Counter toggles, and online gateways
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={permissions.pages?.payments ?? false}
+                          onChange={(e) => handlePageToggle('payments', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-500"></div>
+                      </label>
+                    </div>
+
+                    {permissions.pages?.payments && (
+                      <div className="pt-2 border-t border-border/60">
+                        <label className="flex items-center gap-2 text-xs text-danger cursor-pointer hover:underline">
+                          <input
+                            type="checkbox"
+                            checked={permissions.payments?.manage ?? false}
+                            onChange={(e) => handlePermissionToggle('payments', 'manage', e.target.checked)}
+                            className="rounded accent-danger"
+                          />
+                          <span>Configure Payment Gateways & UPI Keys</span>
+                        </label>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

@@ -152,13 +152,24 @@ export const GlobalOrderAlertManager: React.FC = () => {
   };
 
   // Confirm prep time & deduct credit
-  const handleConfirmPrep = async (orderId: string, prepTimeMinutes: number) => {
+  const handleConfirmPrep = async (
+    orderId: string,
+    prepTimeMinutes: number,
+    paymentStatus?: string,
+  ) => {
     setIsSubmitting(true);
     try {
-      await ordersApi.updateOrderStatus(orderId, 'PREPARING', undefined, prepTimeMinutes);
-      // Also ensure payment is marked as PAID
+      const targetPaymentStatus = (paymentStatus === 'PENDING' ? 'PENDING' : 'PAID') as 'PAID' | 'PENDING';
+      await ordersApi.updateOrderStatus(
+        orderId,
+        'PREPARING',
+        undefined,
+        prepTimeMinutes,
+        targetPaymentStatus,
+      );
+      // Synchronize exact selected payment status (PAID or PENDING)
       try {
-        await ordersApi.updatePaymentStatus(orderId, 'PAID');
+        await ordersApi.updatePaymentStatus(orderId, targetPaymentStatus);
       } catch {
         // Ignore payment status error
       }

@@ -15,6 +15,7 @@ export interface CreateOrderInput {
   orderNotes?: string;
   paymentMethod: 'CASH' | 'UPI' | 'STRIPE';
   turnstileToken?: string;
+  language?: string;
   items: CreateOrderItemInput[];
 }
 
