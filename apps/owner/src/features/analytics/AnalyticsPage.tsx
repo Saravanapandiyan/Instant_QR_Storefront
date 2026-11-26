@@ -15,13 +15,25 @@ import {
   FileSpreadsheet,
   FileText,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Banknote,
+  Smartphone,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useRestaurants } from '../restaurants/hooks/useRestaurants';
 import { useBranches } from '../branches/hooks/useBranches';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { analyticsApi, type AnalyticsResponse } from './api/analyticsApi';
-import { Button, toast } from '../../components/ui';
+import { Button, DatePicker, toast } from '../../components/ui';
+
+function getLocalDateInputString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 export const AnalyticsPage: React.FC = () => {
   const { restaurants } = useRestaurants();
@@ -30,7 +42,11 @@ export const AnalyticsPage: React.FC = () => {
 
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>('');
   const [selectedBranchId, setSelectedBranchId] = useState<string>('ALL');
-  const [period, setPeriod] = useState<'today' | '7d' | '30d' | 'all'>('today');
+  const [period, setPeriod] = useState<'today' | '7d' | '30d' | 'all' | 'custom'>('today');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
   const [data, setData] = useState<AnalyticsResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
@@ -63,14 +79,18 @@ export const AnalyticsPage: React.FC = () => {
   // Fetch analytics
   const fetchAnalytics = async (showLoading = false) => {
     if (!selectedRestaurantId) return;
+    if (period === 'custom' && (!startDate || !endDate)) return;
     if (showLoading) setIsLoading(true);
 
     try {
       const res = await analyticsApi.getAnalytics(selectedRestaurantId, {
         branchId: selectedBranchId === 'ALL' ? undefined : selectedBranchId,
         period,
+        startDate: period === 'custom' && startDate ? new Date(`${startDate}T00:00:00`).toISOString() : undefined,
+        endDate: period === 'custom' && endDate ? new Date(`${endDate}T23:59:59.999`).toISOString() : undefined,
       });
       setData(res);
+      setCurrentPage(1);
     } catch (err: any) {
       toast.error(err.message || 'Failed to fetch sales analytics');
     } finally {
@@ -80,7 +100,7 @@ export const AnalyticsPage: React.FC = () => {
 
   useEffect(() => {
     fetchAnalytics(true);
-  }, [selectedRestaurantId, selectedBranchId, period]);
+  }, [selectedRestaurantId, selectedBranchId, period, startDate, endDate]);
 
   // Export CSV
   const handleExportCsv = () => {
@@ -195,17 +215,28 @@ export const AnalyticsPage: React.FC = () => {
     return Math.max(...hourlyPeak.map((h) => h.orderCount), 1);
   }, [hourlyPeak]);
 
+  // Pagination for Order Audit Ledger
+  const allRecentOrders = data?.recentOrders || [];
+  const totalOrdersCount = allRecentOrders.length;
+  const totalPages = Math.max(1, Math.ceil(totalOrdersCount / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedOrders = useMemo(() => {
+    const startIdx = (safeCurrentPage - 1) * pageSize;
+    return allRecentOrders.slice(startIdx, startIdx + pageSize);
+  }, [allRecentOrders, safeCurrentPage, pageSize]);
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans">
-        {/* Header Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-surface border border-border shadow-xs">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-bold">
+        {/* Header Toolbar (Admin-inspired 2-row layout) */}
+        <div className="p-5 rounded-2xl bg-surface border border-border shadow-xs space-y-4">
+          {/* Row 1: Title & Concept / Branch Dropdowns */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-bold shrink-0">
                 <BarChart3 className="w-5 h-5" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h1 className="text-lg sm:text-xl font-bold text-text">
                   Sales Analytics & Reports
                 </h1>
@@ -214,68 +245,113 @@ export const AnalyticsPage: React.FC = () => {
                 </p>
               </div>
             </div>
-          </div>
 
-          {/* Controls: Restaurant, Branch, Period */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Restaurant selector */}
-            {restaurants.length > 1 && (
-              <select
-                aria-label="Select Restaurant Brand"
-                value={selectedRestaurantId}
-                onChange={(e) => setSelectedRestaurantId(e.target.value)}
-                className="px-3 py-1.5 rounded-xl border border-border bg-surface-2 text-xs font-bold text-text focus:outline-none cursor-pointer"
-              >
-                {restaurants.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-            )}
+            {/* Concept & Branch Dropdowns */}
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              {/* Restaurant Concept Dropdown */}
+              <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-1.5 shadow-2xs">
+                <UtensilsCrossed className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span className="text-[11px] font-bold text-muted uppercase">Concept:</span>
+                <select
+                  aria-label="Select Restaurant Concept"
+                  value={selectedRestaurantId}
+                  onChange={(e) => {
+                    setSelectedRestaurantId(e.target.value);
+                    setSelectedBranchId('ALL');
+                  }}
+                  className="bg-transparent text-xs font-bold text-text focus:outline-none cursor-pointer"
+                >
+                  {restaurants.map((r) => (
+                    <option key={r.id} value={r.id} className="bg-surface text-text">
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Branch selector */}
-            {filteredBranches.length > 0 && (
-              <div className="flex items-center gap-1.5 border border-border bg-surface-2 rounded-xl px-2.5 py-1 text-xs">
-                <Store className="w-3.5 h-3.5 text-muted" />
+              {/* Branch Outlet Dropdown */}
+              <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-1.5 shadow-2xs">
+                <Store className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span className="text-[11px] font-bold text-muted uppercase">Branch:</span>
                 <select
                   aria-label="Select Outlet"
                   value={selectedBranchId}
                   onChange={(e) => setSelectedBranchId(e.target.value)}
                   className="bg-transparent border-none font-bold text-xs focus:outline-none cursor-pointer text-text"
                 >
-                  <option value="ALL">All Outlets</option>
+                  <option value="ALL" className="bg-surface text-text">
+                    All Outlets ({filteredBranches.length})
+                  </option>
                   {filteredBranches.map((b) => (
-                    <option key={b.id} value={b.id}>
+                    <option key={b.id} value={b.id} className="bg-surface text-text">
                       {b.name}
                     </option>
                   ))}
                 </select>
               </div>
-            )}
+            </div>
+          </div>
 
-            {/* Period Pills */}
-            <div className="inline-flex p-1 rounded-xl border border-border bg-surface-2">
-              {(['today', '7d', '30d', 'all'] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setPeriod(p)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    period === p
-                      ? 'bg-primary text-on-primary shadow-xs'
-                      : 'text-muted hover:text-text'
-                  }`}
-                >
-                  {p === 'today'
-                    ? 'Today'
-                    : p === '7d'
-                    ? '7 Days'
-                    : p === '30d'
-                    ? '30 Days'
-                    : 'All'}
-                </button>
-              ))}
+          {/* Row 2: Date Range Filters & Export */}
+          <div className="pt-3.5 border-t border-border/60 flex flex-wrap xl:flex-nowrap items-center justify-between gap-2.5">
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              <span className="text-[11px] font-bold text-muted uppercase tracking-wider flex items-center gap-1.5 mr-1">
+                <Calendar className="w-3.5 h-3.5 text-primary" />
+                <span>Date Range:</span>
+              </span>
+
+              {/* Period Pills */}
+              <div className="inline-flex p-1 rounded-xl border border-border bg-surface-2">
+                {(['today', '7d', '30d', 'all', 'custom'] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPeriod(p)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer whitespace-nowrap ${
+                      period === p
+                        ? 'bg-primary text-on-primary shadow-xs'
+                        : 'text-muted hover:text-text'
+                    }`}
+                  >
+                    {p === 'today'
+                      ? 'Today'
+                      : p === '7d'
+                      ? '7 Days'
+                      : p === '30d'
+                      ? '30 Days'
+                      : p === 'all'
+                      ? 'All'
+                      : 'Custom'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Themed Custom Date Pickers (manual selection, no auto-dates) */}
+              {period === 'custom' && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-semibold text-muted">From:</span>
+                    <DatePicker
+                      ariaLabel="Start Date"
+                      placeholder="Start date"
+                      value={startDate}
+                      max={endDate || getLocalDateInputString(new Date())}
+                      onChange={setStartDate}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-semibold text-muted">To:</span>
+                    <DatePicker
+                      ariaLabel="End Date"
+                      placeholder="End date"
+                      value={endDate}
+                      min={startDate || undefined}
+                      max={getLocalDateInputString(new Date())}
+                      onChange={setEndDate}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Export Dropdown (Excel, CSV) */}
@@ -400,6 +476,81 @@ export const AnalyticsPage: React.FC = () => {
               </span>
               <p className="text-[11px] text-muted mt-1">
                 Live duration on KDS display
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Channels & Payment Breakdown Cards (matching Overview) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 5: Dine-in Orders */}
+          <div className="p-5 rounded-2xl bg-surface border border-border shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-muted mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Dine-in orders</span>
+              <div className="w-8 h-8 rounded-xl bg-primary-soft text-primary-soft-text flex items-center justify-center">
+                <Utensils className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <span className="text-2xl font-black text-text tracking-tight">
+                {summary?.dineInOrders || 0}
+              </span>
+              <p className="text-[11px] text-muted mt-1">
+                In-store table orders
+              </p>
+            </div>
+          </div>
+
+          {/* Card 6: Takeaway Orders */}
+          <div className="p-5 rounded-2xl bg-surface border border-border shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-muted mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Takeaway orders</span>
+              <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+                <ShoppingBag className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <span className="text-2xl font-black text-text tracking-tight">
+                {summary?.takeawayOrders || 0}
+              </span>
+              <p className="text-[11px] text-muted mt-1">
+                Counter pickup orders
+              </p>
+            </div>
+          </div>
+
+          {/* Card 7: Cash on Counter */}
+          <div className="p-5 rounded-2xl bg-surface border border-border shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-muted mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Cash on counter</span>
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Banknote className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <span className="text-2xl font-black text-text tracking-tight">
+                {formatPrice(summary?.cashCollected || 0)}
+              </span>
+              <p className="text-[11px] text-muted mt-1">
+                {summary?.cashOrdersCount || 0} cash {summary?.cashOrdersCount === 1 ? 'order' : 'orders'}
+              </p>
+            </div>
+          </div>
+
+          {/* Card 8: Online & UPI Payments */}
+          <div className="p-5 rounded-2xl bg-surface border border-border shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-muted mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Online & UPI payments</span>
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <Smartphone className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <span className="text-2xl font-black text-text tracking-tight">
+                {formatPrice(summary?.onlineCollected || 0)}
+              </span>
+              <p className="text-[11px] text-muted mt-1">
+                {summary?.onlineOrdersCount || 0} online {summary?.onlineOrdersCount === 1 ? 'order' : 'orders'}
               </p>
             </div>
           </div>
@@ -543,14 +694,14 @@ export const AnalyticsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {(!data?.recentOrders || data.recentOrders.length === 0) ? (
+                {paginatedOrders.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-muted text-xs">
                       No order transactions found for this period.
                     </td>
                   </tr>
                 ) : (
-                  data.recentOrders.map((ord) => (
+                  paginatedOrders.map((ord) => (
                     <tr key={ord.id} className="hover:bg-surface-2/60 transition-colors">
                       <td className="py-3 px-3 font-mono font-bold text-text">
                         #{ord.orderNumber}
@@ -593,7 +744,9 @@ export const AnalyticsPage: React.FC = () => {
                         {formatPrice(ord.totalAmount)}
                       </td>
                       <td className="py-3 px-3 text-muted text-right font-mono text-[11px]">
-                        {new Date(ord.createdAt).toLocaleTimeString([], {
+                        {new Date(ord.createdAt).toLocaleString([], {
+                          month: 'short',
+                          day: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
@@ -604,6 +757,90 @@ export const AnalyticsPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Footer */}
+          {totalOrdersCount > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 mt-3 border-t border-border text-xs">
+              <div className="flex items-center gap-3 text-muted">
+                <span>
+                  Showing <strong className="text-text">{(safeCurrentPage - 1) * pageSize + 1}</strong>–
+                  <strong className="text-text">{Math.min(safeCurrentPage * pageSize, totalOrdersCount)}</strong> of{' '}
+                  <strong className="text-text">{totalOrdersCount}</strong> orders
+                </span>
+                <select
+                  aria-label="Rows per page"
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="px-2 py-1 rounded-lg border border-border bg-surface-2 text-text font-semibold text-xs focus:outline-none cursor-pointer"
+                >
+                  {[10, 25, 50].map((size) => (
+                    <option key={size} value={size}>
+                      {size} / page
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                <button
+                  type="button"
+                  disabled={safeCurrentPage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="px-2.5 py-1.5 rounded-lg border border-border bg-surface-2 text-text font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:border-primary/40 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Prev</span>
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((pageNum) => {
+                    if (totalPages <= 5) return true;
+                    if (pageNum === 1 || pageNum === totalPages) return true;
+                    return Math.abs(pageNum - safeCurrentPage) <= 1;
+                  })
+                  .reduce<(number | 'ellipsis')[]>((acc, pageNum, idx, arr) => {
+                    if (idx > 0 && pageNum - (arr[idx - 1] as number) > 1) {
+                      acc.push('ellipsis');
+                    }
+                    acc.push(pageNum);
+                    return acc;
+                  }, [])
+                  .map((item, idx) =>
+                    item === 'ellipsis' ? (
+                      <span key={`ellipsis-${idx}`} className="px-1.5 text-muted">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setCurrentPage(item)}
+                        className={`min-w-[28px] h-7 px-2 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                          safeCurrentPage === item
+                            ? 'bg-primary text-on-primary shadow-xs'
+                            : 'border border-border bg-surface-2 text-muted hover:text-text'
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    ),
+                  )}
+
+                <button
+                  type="button"
+                  disabled={safeCurrentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="px-2.5 py-1.5 rounded-lg border border-border bg-surface-2 text-text font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:border-primary/40 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

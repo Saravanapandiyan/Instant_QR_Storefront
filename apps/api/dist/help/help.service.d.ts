@@ -10,9 +10,9 @@ export declare class HelpService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        sortOrder: number;
         content: string;
         audience: string;
+        sortOrder: number;
         isPublished: boolean;
     }[]>;
     getArticleBySlug(slug: string): Promise<{
@@ -22,9 +22,9 @@ export declare class HelpService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        sortOrder: number;
         content: string;
         audience: string;
+        sortOrder: number;
         isPublished: boolean;
     }>;
     getAllArticlesAdmin(audience?: string): Promise<{
@@ -34,9 +34,9 @@ export declare class HelpService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        sortOrder: number;
         content: string;
         audience: string;
+        sortOrder: number;
         isPublished: boolean;
     }[]>;
     createArticle(dto: CreateHelpArticleDto): Promise<{
@@ -46,9 +46,9 @@ export declare class HelpService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        sortOrder: number;
         content: string;
         audience: string;
+        sortOrder: number;
         isPublished: boolean;
     }>;
     updateArticle(id: string, dto: UpdateHelpArticleDto): Promise<{
@@ -58,9 +58,9 @@ export declare class HelpService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        sortOrder: number;
         content: string;
         audience: string;
+        sortOrder: number;
         isPublished: boolean;
     }>;
     deleteArticle(id: string): Promise<{
@@ -70,9 +70,9 @@ export declare class HelpService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        sortOrder: number;
         content: string;
         audience: string;
+        sortOrder: number;
         isPublished: boolean;
     }>;
 }

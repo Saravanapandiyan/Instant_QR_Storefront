@@ -2,11 +2,11 @@ import { AnalyticsService } from './analytics.service';
 export declare class AnalyticsController {
     private readonly analyticsService;
     constructor(analyticsService: AnalyticsService);
-    getRestaurantAnalytics(restaurantId: string, user: any, branchId?: string, period?: 'today' | '7d' | '30d' | 'all', startDate?: string, endDate?: string): Promise<{
+    getRestaurantAnalytics(restaurantId: string, user: any, branchId?: string, period?: 'today' | '7d' | '30d' | 'all' | 'custom', startDate?: string, endDate?: string): Promise<{
         restaurantId: string;
         restaurantName: string;
         currency: string;
-        period: "all" | "7d" | "today" | "30d";
+        period: "all" | "7d" | "today" | "30d" | "custom";
         summary: {
             totalGrossRevenue: number;
             totalTax: number;
@@ -14,6 +14,10 @@ export declare class AnalyticsController {
             completedOrders: number;
             dineInOrders: number;
             takeawayOrders: number;
+            cashOrdersCount: number;
+            cashCollected: number;
+            onlineOrdersCount: number;
+            onlineCollected: number;
             averageOrderValue: number;
             averagePrepTimeMinutes: number;
         };
@@ -41,6 +45,8 @@ export declare class AnalyticsController {
             orderType: import("@prisma/client").$Enums.OrderType;
             tableNumber: string | null;
             status: import("@prisma/client").$Enums.OrderStatus;
+            paymentMethod: import("@prisma/client").$Enums.PaymentMethod;
+            paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
             totalAmount: number;
             createdAt: Date;
             branchName: string;

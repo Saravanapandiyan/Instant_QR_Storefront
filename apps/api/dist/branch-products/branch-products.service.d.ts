@@ -16,8 +16,8 @@ export declare class BranchProductsService {
                 deletedAt: Date | null;
                 deletedBy: string | null;
                 restaurantId: string;
-                sortOrder: number;
                 translations: import("@prisma/client/runtime/library").JsonValue | null;
+                sortOrder: number;
             };
             branchProducts: {
                 id: string;
@@ -37,10 +37,10 @@ export declare class BranchProductsService {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
-            translations: import("@prisma/client/runtime/library").JsonValue | null;
             categoryId: string;
             basePrice: import("@prisma/client/runtime/library").Decimal;
             imageUrl: string | null;
+            translations: import("@prisma/client/runtime/library").JsonValue | null;
         })[];
         branches: {
             name: string;
@@ -69,8 +69,8 @@ export declare class BranchProductsService {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
-            sortOrder: number;
             translations: import("@prisma/client/runtime/library").JsonValue | null;
+            sortOrder: number;
         }[];
     } & {
         description: string | null;
@@ -138,8 +138,8 @@ export declare class BranchProductsService {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
-            sortOrder: number;
             translations: import("@prisma/client/runtime/library").JsonValue | null;
+            sortOrder: number;
         }[];
         items: {
             id: string;

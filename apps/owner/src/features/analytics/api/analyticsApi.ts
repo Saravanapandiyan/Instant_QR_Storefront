@@ -7,6 +7,10 @@ export interface AnalyticsSummary {
   completedOrders: number;
   dineInOrders: number;
   takeawayOrders: number;
+  cashOrdersCount: number;
+  cashCollected: number;
+  onlineOrdersCount: number;
+  onlineCollected: number;
   averageOrderValue: number;
   averagePrepTimeMinutes: number;
 }

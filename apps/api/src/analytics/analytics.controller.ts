@@ -23,7 +23,7 @@ export class AnalyticsController {
     @Param('restaurantId') restaurantId: string,
     @CurrentUser() user: any,
     @Query('branchId') branchId?: string,
-    @Query('period') period?: 'today' | '7d' | '30d' | 'all',
+    @Query('period') period?: 'today' | '7d' | '30d' | 'all' | 'custom',
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {

@@ -23,6 +23,7 @@ import {
 import { AdminLayout } from '../../components/layout/AdminLayout.tsx';
 import { AdminPageHeader } from '../../components/layout/AdminPageHeader.tsx';
 import { AdminPagination } from '../../components/common/AdminPagination.tsx';
+import { AdminDatePicker } from '../../components/ui/DatePicker.tsx';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock.ts';
 import {
   adminOrdersApi,
@@ -534,11 +535,11 @@ export function AdminOrdersPage() {
 
                 {/* Row 2: Date Filters */}
                 <div
-                  className="pt-2.5 border-t flex flex-wrap items-center justify-between gap-2.5 text-xs"
+                  className="pt-2.5 border-t flex flex-wrap xl:flex-nowrap items-center justify-between gap-2 text-xs"
                   style={{ borderColor: 'var(--adm-border)' }}
                 >
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-neutral-400 font-semibold flex items-center gap-1 mr-1 text-[11px]">
+                  <div className="flex flex-wrap items-center gap-1 shrink-0">
+                    <span className="text-neutral-400 font-semibold flex items-center gap-1 mr-1 text-[11px] whitespace-nowrap">
                       <Calendar className="w-3.5 h-3.5" /> Date Range:
                     </span>
                     {(
@@ -558,7 +559,7 @@ export function AdminOrdersPage() {
                           setDatePreset(preset.id);
                           setPage(1);
                         }}
-                        className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
+                        className={`px-2 py-1 rounded-md text-[11px] font-medium border transition-colors cursor-pointer whitespace-nowrap ${
                           datePreset === preset.id
                             ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-transparent font-bold'
                             : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
@@ -570,31 +571,32 @@ export function AdminOrdersPage() {
                   </div>
 
                   {datePreset === 'CUSTOM' && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 shrink-0">
                       <div className="flex items-center gap-1">
                         <span className="text-[11px] text-neutral-400">From:</span>
-                        <input
-                          type="date"
+                        <AdminDatePicker
+                          ariaLabel="Start Date"
+                          placeholder="Start date"
                           value={customStartDate}
-                          onChange={(e) => {
-                            setCustomStartDate(e.target.value);
+                          max={customEndDate || undefined}
+                          onChange={(val) => {
+                            setCustomStartDate(val);
                             setPage(1);
                           }}
-                          className="px-2 py-1 rounded border text-xs bg-transparent"
-                          style={{ borderColor: 'var(--adm-border)', color: 'var(--adm-text)' }}
                         />
                       </div>
                       <div className="flex items-center gap-1">
                         <span className="text-[11px] text-neutral-400">To:</span>
-                        <input
-                          type="date"
+                        <AdminDatePicker
+                          ariaLabel="End Date"
+                          placeholder="End date"
                           value={customEndDate}
-                          onChange={(e) => {
-                            setCustomEndDate(e.target.value);
+                          min={customStartDate || undefined}
+                          onChange={(val) => {
+                            setCustomEndDate(val);
                             setPage(1);
                           }}
-                          className="px-2 py-1 rounded border text-xs bg-transparent"
-                          style={{ borderColor: 'var(--adm-border)', color: 'var(--adm-text)' }}
+                          align="right"
                         />
                       </div>
                     </div>

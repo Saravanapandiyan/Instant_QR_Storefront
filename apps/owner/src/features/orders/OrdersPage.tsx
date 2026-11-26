@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { getMediaUrl } from '../../lib/utils';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { Button } from '../../components/ui';
+import { Button, DatePicker } from '../../components/ui';
 import { useRestaurants } from '../restaurants/hooks/useRestaurants';
 import { useBranches } from '../branches/hooks/useBranches';
 import { ordersApi } from './api/ordersApi';
@@ -602,29 +602,28 @@ export const OrdersPage: React.FC = () => {
           </div>
 
           {datePreset === 'CUSTOM' && (
-            <div className="flex flex-wrap items-center gap-2 bg-surface border border-border rounded-xl px-3 py-1.5 shadow-xs">
-              <label className="text-[11px] font-semibold text-muted flex items-center gap-1.5">
-                <span>From</span>
-                <input
-                  type="date"
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-muted">From:</span>
+                <DatePicker
+                  ariaLabel="Custom start date"
+                  placeholder="Start date"
                   value={customStartDate}
                   max={customEndDate || todayYMD}
-                  onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="bg-surface-2 border border-border rounded-lg px-2 py-1 text-xs text-text font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+                  onChange={setCustomStartDate}
                 />
-              </label>
-              <span className="text-xs text-muted">&rarr;</span>
-              <label className="text-[11px] font-semibold text-muted flex items-center gap-1.5">
-                <span>To</span>
-                <input
-                  type="date"
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-muted">To:</span>
+                <DatePicker
+                  ariaLabel="Custom end date"
+                  placeholder="End date"
                   value={customEndDate}
                   min={customStartDate}
                   max={todayYMD}
-                  onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="bg-surface-2 border border-border rounded-lg px-2 py-1 text-xs text-text font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+                  onChange={setCustomEndDate}
                 />
-              </label>
+              </div>
             </div>
           )}
         </div>

@@ -15,8 +15,8 @@ export declare class CategoriesService {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        sortOrder: number;
         translations: import("@prisma/client/runtime/library").JsonValue | null;
+        sortOrder: number;
     }>;
     findAllByRestaurant(restaurantId: string): Promise<({
         _count: {
@@ -33,8 +33,8 @@ export declare class CategoriesService {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        sortOrder: number;
         translations: import("@prisma/client/runtime/library").JsonValue | null;
+        sortOrder: number;
     })[]>;
     findOne(id: string): Promise<{
         description: string | null;
@@ -47,8 +47,8 @@ export declare class CategoriesService {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        sortOrder: number;
         translations: import("@prisma/client/runtime/library").JsonValue | null;
+        sortOrder: number;
     }>;
     update(id: string, updateDto: UpdateCategoryDto): Promise<{
         description: string | null;
@@ -61,8 +61,8 @@ export declare class CategoriesService {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        sortOrder: number;
         translations: import("@prisma/client/runtime/library").JsonValue | null;
+        sortOrder: number;
     }>;
     remove(id: string, userId: string): Promise<{
         description: string | null;
@@ -75,7 +75,7 @@ export declare class CategoriesService {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        sortOrder: number;
         translations: import("@prisma/client/runtime/library").JsonValue | null;
+        sortOrder: number;
     }>;
 }

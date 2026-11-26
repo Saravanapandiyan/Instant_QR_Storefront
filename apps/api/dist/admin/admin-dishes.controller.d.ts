@@ -48,8 +48,8 @@ export declare class AdminDishesController {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
-            sortOrder: number;
             translations: import("@prisma/client/runtime/library").JsonValue | null;
+            sortOrder: number;
         };
         branchProducts: ({
             branch: {
@@ -74,9 +74,9 @@ export declare class AdminDishesController {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         imageUrl: string | null;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     createDish(body: CreateAdminDishDto): Promise<{
         basePrice: number;
@@ -97,8 +97,8 @@ export declare class AdminDishesController {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
-            sortOrder: number;
             translations: import("@prisma/client/runtime/library").JsonValue | null;
+            sortOrder: number;
         };
         branchProducts: ({
             branch: {
@@ -123,9 +123,9 @@ export declare class AdminDishesController {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         imageUrl: string | null;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     updateDish(id: string, body: UpdateAdminDishDto): Promise<{
         basePrice: number;
@@ -146,8 +146,8 @@ export declare class AdminDishesController {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
-            sortOrder: number;
             translations: import("@prisma/client/runtime/library").JsonValue | null;
+            sortOrder: number;
         };
         branchProducts: ({
             branch: {
@@ -172,9 +172,9 @@ export declare class AdminDishesController {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         imageUrl: string | null;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     toggleStock(id: string, body: {
         inStock: boolean;

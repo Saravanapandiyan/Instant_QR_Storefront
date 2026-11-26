@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { OrderStatus, OrderType } from '@prisma/client';
+import { OrderStatus, OrderType, PaymentMethod, PaymentStatus } from '@prisma/client';
 
 export interface AnalyticsQueryDto {
   branchId?: string;
-  period?: 'today' | '7d' | '30d' | 'all';
+  period?: 'today' | '7d' | '30d' | 'all' | 'custom';
   startDate?: string;
   endDate?: string;
 }
@@ -69,11 +69,23 @@ export class AnalyticsService {
     } else if (query.period === '30d') {
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       where.createdAt = { gte: thirtyDaysAgo };
-    } else if (query.startDate || query.endDate) {
+    } else if (query.period === 'custom' || query.startDate || query.endDate) {
       const dateRange: any = {};
-      if (query.startDate) dateRange.gte = new Date(query.startDate);
-      if (query.endDate) dateRange.lte = new Date(query.endDate);
-      where.createdAt = dateRange;
+      if (query.startDate) {
+        const start = /^\d{4}-\d{2}-\d{2}$/.test(query.startDate)
+          ? new Date(`${query.startDate}T00:00:00`)
+          : new Date(query.startDate);
+        if (!Number.isNaN(start.getTime())) dateRange.gte = start;
+      }
+      if (query.endDate) {
+        const end = /^\d{4}-\d{2}-\d{2}$/.test(query.endDate)
+          ? new Date(`${query.endDate}T23:59:59.999`)
+          : new Date(query.endDate);
+        if (!Number.isNaN(end.getTime())) dateRange.lte = end;
+      }
+      if (Object.keys(dateRange).length > 0) {
+        where.createdAt = dateRange;
+      }
     }
 
     // Fetch matching orders
@@ -92,6 +104,10 @@ export class AnalyticsService {
     let completedOrders = 0;
     let dineInOrders = 0;
     let takeawayOrders = 0;
+    let cashOrdersCount = 0;
+    let cashCollected = 0;
+    let onlineOrdersCount = 0;
+    let onlineCollected = 0;
     let totalPrepTimeMinutes = 0;
     let prepOrdersCount = 0;
 
@@ -116,6 +132,21 @@ export class AnalyticsService {
         dineInOrders++;
       } else {
         takeawayOrders++;
+      }
+
+      const isCash =
+        ord.paymentMethod === PaymentMethod.CASH ||
+        (ord.paymentMethod as string) === 'CASH_ON_COUNTER';
+      if (isCash) {
+        cashOrdersCount++;
+        if (ord.paymentStatus === PaymentStatus.PAID) {
+          cashCollected += amt;
+        }
+      } else {
+        onlineOrdersCount++;
+        if (ord.paymentStatus === PaymentStatus.PAID) {
+          onlineCollected += amt;
+        }
       }
 
       if (ord.prepTimeMinutes && ord.prepTimeMinutes > 0) {
@@ -189,13 +220,17 @@ export class AnalyticsService {
         completedOrders,
         dineInOrders,
         takeawayOrders,
+        cashOrdersCount,
+        cashCollected: Math.round(cashCollected * 100) / 100,
+        onlineOrdersCount,
+        onlineCollected: Math.round(onlineCollected * 100) / 100,
         averageOrderValue,
         averagePrepTimeMinutes,
       },
       hourlyPeak,
       topDishes,
       timeline,
-      recentOrders: orders.slice(0, 20).map((o) => ({
+      recentOrders: orders.map((o) => ({
         id: o.id,
         orderNumber: o.orderNumber,
         customerName: o.customerName,
@@ -203,6 +238,8 @@ export class AnalyticsService {
         orderType: o.orderType,
         tableNumber: o.tableNumber,
         status: o.status,
+        paymentMethod: o.paymentMethod,
+        paymentStatus: o.paymentStatus,
         totalAmount: Number(o.totalAmount),
         createdAt: o.createdAt,
         branchName: o.branch?.name,

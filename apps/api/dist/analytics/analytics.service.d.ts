@@ -1,7 +1,7 @@
 import { PrismaService } from '../prisma/prisma.service';
 export interface AnalyticsQueryDto {
     branchId?: string;
-    period?: 'today' | '7d' | '30d' | 'all';
+    period?: 'today' | '7d' | '30d' | 'all' | 'custom';
     startDate?: string;
     endDate?: string;
 }
@@ -12,7 +12,7 @@ export declare class AnalyticsService {
         restaurantId: string;
         restaurantName: string;
         currency: string;
-        period: "all" | "7d" | "today" | "30d";
+        period: "all" | "7d" | "today" | "30d" | "custom";
         summary: {
             totalGrossRevenue: number;
             totalTax: number;
@@ -20,6 +20,10 @@ export declare class AnalyticsService {
             completedOrders: number;
             dineInOrders: number;
             takeawayOrders: number;
+            cashOrdersCount: number;
+            cashCollected: number;
+            onlineOrdersCount: number;
+            onlineCollected: number;
             averageOrderValue: number;
             averagePrepTimeMinutes: number;
         };
@@ -47,6 +51,8 @@ export declare class AnalyticsService {
             orderType: import("@prisma/client").$Enums.OrderType;
             tableNumber: string | null;
             status: import("@prisma/client").$Enums.OrderStatus;
+            paymentMethod: import("@prisma/client").$Enums.PaymentMethod;
+            paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
             totalAmount: number;
             createdAt: Date;
             branchName: string;

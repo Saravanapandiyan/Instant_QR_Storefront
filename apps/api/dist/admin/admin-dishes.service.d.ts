@@ -69,8 +69,8 @@ export declare class AdminDishesService {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
-            sortOrder: number;
             translations: import("@prisma/client/runtime/library").JsonValue | null;
+            sortOrder: number;
         };
         branchProducts: ({
             branch: {
@@ -95,9 +95,9 @@ export declare class AdminDishesService {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         imageUrl: string | null;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     createDish(dto: CreateAdminDishDto): Promise<{
         basePrice: number;
@@ -118,8 +118,8 @@ export declare class AdminDishesService {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
-            sortOrder: number;
             translations: import("@prisma/client/runtime/library").JsonValue | null;
+            sortOrder: number;
         };
         branchProducts: ({
             branch: {
@@ -144,9 +144,9 @@ export declare class AdminDishesService {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         imageUrl: string | null;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     updateDish(id: string, dto: UpdateAdminDishDto): Promise<{
         basePrice: number;
@@ -167,8 +167,8 @@ export declare class AdminDishesService {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
-            sortOrder: number;
             translations: import("@prisma/client/runtime/library").JsonValue | null;
+            sortOrder: number;
         };
         branchProducts: ({
             branch: {
@@ -193,9 +193,9 @@ export declare class AdminDishesService {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         imageUrl: string | null;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     toggleStock(id: string, inStock: boolean, branchId?: string): Promise<{
         success: boolean;

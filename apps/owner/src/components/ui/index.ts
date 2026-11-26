@@ -6,3 +6,4 @@ export * from './ThemeToggle';
 export * from './modal/ConfirmModal';
 export * from './toast/useToastStore';
 export * from './toast/ToastContainer';
+export * from './date-picker/DatePicker';
