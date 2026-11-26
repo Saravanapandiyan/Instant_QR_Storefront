@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Coins,
   Sparkles,
@@ -24,84 +25,11 @@ import {
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useRestaurants } from '../restaurants/hooks/useRestaurants';
 import { useActiveStore } from '../../store/useActiveStore';
+import { QUERY_KEYS } from '../../constants/query-keys';
 import { packsApi, type DynamicPack } from './api/packsApi';
 import { creditsApi, type CreditBalanceInfo, type CreditLedgerEntry, type PurchasePackResponse } from './api/creditsApi';
 import { CreditCheckoutModal } from './components/CreditCheckoutModal';
 import { toast } from '../../components/ui';
-
-// High-reliability default packs
-const DEFAULT_PACKS: DynamicPack[] = [
-  {
-    id: 'starter',
-    code: 'STARTER',
-    name: 'Starter',
-    ordersCount: 500,
-    bonusCredits: 0,
-    priceUsd: 5,
-    priceInr: 149,
-    isActive: true,
-    sortOrder: 1,
-    createdAt: '',
-    updatedAt: '',
-    featuresJson: { qrMenu: true, aiMenuImport: true, counterDashboard: true, liveOrderStatus: true },
-  },
-  {
-    id: 'growth',
-    code: 'GROWTH',
-    name: 'Growth',
-    ordersCount: 1500,
-    bonusCredits: 0,
-    priceUsd: 12,
-    priceInr: 399,
-    isActive: true,
-    sortOrder: 2,
-    createdAt: '',
-    updatedAt: '',
-    featuresJson: { qrMenu: true, aiMenuImport: true, dailyReports: true, counterDashboard: true, liveOrderStatus: true },
-  },
-  {
-    id: 'pro',
-    code: 'PRO',
-    name: 'Pro',
-    ordersCount: 3000,
-    bonusCredits: 300,
-    priceUsd: 20,
-    priceInr: 699,
-    isActive: true,
-    sortOrder: 3,
-    createdAt: '',
-    updatedAt: '',
-    featuresJson: { qrMenu: true, aiMenuImport: true, dailyReports: true, kitchenScreen: true, tvDisplay: true, counterDashboard: true, liveOrderStatus: true },
-  },
-  {
-    id: 'business',
-    code: 'BUSINESS',
-    name: 'Business',
-    ordersCount: 10000,
-    bonusCredits: 1500,
-    priceUsd: 50,
-    priceInr: 1999,
-    isActive: true,
-    sortOrder: 4,
-    createdAt: '',
-    updatedAt: '',
-    featuresJson: { qrMenu: true, aiMenuImport: true, dailyReports: true, kitchenScreen: true, tvDisplay: true, staffRoles: true, multiCounter: true, counterDashboard: true, liveOrderStatus: true },
-  },
-  {
-    id: 'chain',
-    code: 'CHAIN',
-    name: 'Enterprise',
-    ordersCount: 25000,
-    bonusCredits: 5000,
-    priceUsd: 100,
-    priceInr: 4999,
-    isActive: true,
-    sortOrder: 5,
-    createdAt: '',
-    updatedAt: '',
-    featuresJson: { qrMenu: true, aiMenuImport: true, dailyReports: true, kitchenScreen: true, tvDisplay: true, staffRoles: true, multiCounter: true, multiOutlets: true, prioritySupport: true, counterDashboard: true, liveOrderStatus: true },
-  },
-];
 
 // Refined metadata for clean, professional cards
 const PACK_DESCRIPTIONS: Record<string, string> = {
@@ -137,17 +65,94 @@ export const BillingPage: React.FC = () => {
   };
 
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
-  const [packs, setPacks] = useState<DynamicPack[]>([]);
-  const [balanceInfo, setBalanceInfo] = useState<CreditBalanceInfo | null>(null);
-  const [ledgerEntries, setLedgerEntries] = useState<CreditLedgerEntry[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [selectedPackForCheckout, setSelectedPackForCheckout] = useState<DynamicPack | null>(null);
+  const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   const [planFilter, setPlanFilter] = useState<'ALL' | 'CORE' | 'SCALE'>('ALL');
   const [ledgerFilter, setLedgerFilter] = useState<'ALL' | 'ORDER_CONFIRMED' | 'PACK_PURCHASE' | 'SIGNUP_BONUS'>('ALL');
 
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isVerifyingSession, setIsVerifyingSession] = useState(false);
+  const verifiedSessionRef = useRef<string | null>(null);
+
+  const targetRestId = selectedRestaurant?.id || restaurants[0]?.id;
+
+  // 1. Fetch active credit packs strictly from Admin/API (with automatic retry)
+  const {
+    data: packs = [],
+    isLoading: isPacksLoading,
+    refetch: refetchPacks,
+  } = useQuery({
+    queryKey: ['billing-active-packs'],
+    queryFn: async () => {
+      const activePacks = await packsApi.getActivePacks();
+      return Array.isArray(activePacks) ? activePacks.filter((p) => p.code !== 'FREE') : [];
+    },
+    retry: 3,
+    retryDelay: 800,
+  });
+
+  // 2. Fetch live credit balance (with automatic retry)
+  const {
+    data: fetchedBalanceInfo,
+    isLoading: isBalanceLoading,
+    refetch: refetchBalance,
+  } = useQuery({
+    queryKey: ['billing-balance', targetRestId],
+    enabled: Boolean(targetRestId),
+    queryFn: () => creditsApi.getBalance(targetRestId!),
+    retry: 3,
+    retryDelay: 800,
+  });
+
+  // 3. Fetch transaction ledger (with automatic retry)
+  const {
+    data: ledgerRes,
+    refetch: refetchLedger,
+  } = useQuery({
+    queryKey: ['billing-ledger', targetRestId],
+    enabled: Boolean(targetRestId),
+    queryFn: () => creditsApi.getLedger(targetRestId!, 50, 1),
+    retry: 3,
+    retryDelay: 800,
+  });
+
+  const ledgerEntries: CreditLedgerEntry[] = ledgerRes?.entries || [];
+  const isLoading = isPacksLoading || (Boolean(targetRestId) && isBalanceLoading);
+
+  // Optimistic fallback for balanceInfo until query resolves
+  const balanceInfo: CreditBalanceInfo | null = useMemo(() => {
+    if (fetchedBalanceInfo) return fetchedBalanceInfo;
+    if (!selectedRestaurant) return null;
+    const bal = selectedRestaurant.creditBalance ?? 100;
+    return {
+      restaurantId: selectedRestaurant.id,
+      restaurantName: selectedRestaurant.name,
+      creditBalance: bal,
+      isGraceMode: bal < 0,
+      graceOrdersUsed: bal < 0 ? Math.abs(bal) : 0,
+      graceOrdersRemaining: bal < 0 ? Math.max(0, 20 + bal) : 20,
+      isExhausted: bal <= -20,
+      isLowCredit: bal < 20 && bal > 0,
+    };
+  }, [fetchedBalanceInfo, selectedRestaurant]);
+
+  const loadData = useCallback(
+    async (showSpinner = false) => {
+      if (showSpinner) setIsRefreshing(true);
+      try {
+        await Promise.all([
+          refetchPacks(),
+          targetRestId ? refetchBalance() : Promise.resolve(),
+          targetRestId ? refetchLedger() : Promise.resolve(),
+        ]);
+      } finally {
+        setIsRefreshing(false);
+      }
+    },
+    [refetchPacks, refetchBalance, refetchLedger, targetRestId],
+  );
 
   // Handle return from Stripe Checkout (success verification or cancel notice)
   useEffect(() => {
@@ -162,13 +167,18 @@ export const BillingPage: React.FC = () => {
       return;
     }
 
-    if (sessionId && isSuccess && !isVerifyingSession) {
+    if (sessionId && isSuccess && !isVerifyingSession && verifiedSessionRef.current !== sessionId) {
+      verifiedSessionRef.current = sessionId;
       setIsVerifyingSession(true);
       creditsApi
         .verifySession(sessionId)
-        .then((res) => {
+        .then(async (res) => {
           toast.success(`🎉 Payment verified! +${res.creditsAdded.toLocaleString()} credits added!`);
-          loadData(true);
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.restaurants.all }),
+            queryClient.invalidateQueries({ queryKey: ['billing-balance'] }),
+            queryClient.invalidateQueries({ queryKey: ['billing-ledger'] }),
+          ]);
         })
         .catch((err) => {
           console.error('Failed to verify Stripe session:', err);
@@ -183,83 +193,16 @@ export const BillingPage: React.FC = () => {
     }
   }, [searchParams]);
 
-  // Optimistically set initial balance
   useEffect(() => {
-    if (selectedRestaurant && !balanceInfo) {
-      const bal = selectedRestaurant.creditBalance ?? 100;
-      setBalanceInfo({
-        restaurantId: selectedRestaurant.id,
-        restaurantName: selectedRestaurant.name,
-        creditBalance: bal,
-        isGraceMode: bal < 0,
-        graceOrdersUsed: bal < 0 ? Math.abs(bal) : 0,
-        graceOrdersRemaining: bal < 0 ? Math.max(0, 20 + bal) : 20,
-        isExhausted: bal <= -20,
-        isLowCredit: bal <= 50 && bal > 0,
-      });
+    if (restaurants.length > 0 && !activeRestaurantId) {
+      setActiveRestaurantId(restaurants[0].id);
     }
-  }, [selectedRestaurant, balanceInfo]);
-
-  // Load packs and restaurant balance
-  const loadData = useCallback(
-    async (showSpinner = false, targetRestId?: string) => {
-      if (showSpinner) setIsRefreshing(true);
-      else setIsLoading(true);
-
-      const targetId = targetRestId || selectedRestaurant?.id || restaurants[0]?.id;
-
-      try {
-        // 1. Fetch active credit packs
-        try {
-          const activePacks = await packsApi.getActivePacks();
-          if (Array.isArray(activePacks) && activePacks.length > 0) {
-            setPacks(activePacks.filter((p) => p.code !== 'FREE'));
-          }
-        } catch (packErr) {
-          console.warn('Using default packs fallback:', packErr);
-          if (packs.length === 0) setPacks(DEFAULT_PACKS);
-        }
-
-        // 2. Fetch live balance & ledger
-        if (targetId) {
-          try {
-            const bal = await creditsApi.getBalance(targetId);
-            if (bal) setBalanceInfo(bal);
-          } catch (balErr) {
-            console.warn('Credits balance fetch warning:', balErr);
-          }
-
-          try {
-            const ledgerRes = await creditsApi.getLedger(targetId, 50, 1);
-            if (ledgerRes?.entries) setLedgerEntries(ledgerRes.entries);
-          } catch (ledgerErr) {
-            console.warn('Credits ledger fetch warning:', ledgerErr);
-          }
-        }
-      } catch (err: any) {
-        console.error('Failed to load billing data:', err);
-      } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    },
-    [selectedRestaurant?.id, restaurants, packs.length],
-  );
-
-  useEffect(() => {
-    if (restaurants.length > 0) {
-      if (!activeRestaurantId) {
-        setActiveRestaurantId(restaurants[0].id);
-      }
-      loadData(false, selectedRestaurant?.id || restaurants[0].id);
-    } else {
-      loadData(false);
-    }
-  }, [restaurants.length, activeRestaurantId, selectedRestaurant?.id]);
+  }, [restaurants.length, activeRestaurantId]);
 
   const handleCheckoutSuccess = (res: PurchasePackResponse) => {
     toast.success(`+${res.creditsAdded.toLocaleString()} credits added to ${selectedRestaurant?.name || 'storefront'}!`);
-    loadData(true, selectedRestaurant?.id);
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.restaurants.all });
+    loadData(true);
   };
 
   const filteredEntries = ledgerEntries.filter((entry) => {
@@ -270,17 +213,26 @@ export const BillingPage: React.FC = () => {
     return true;
   });
 
-  const displayPacks = packs.length > 0 ? packs : DEFAULT_PACKS;
+  const displayPacks = packs;
+
+  const corePacks = useMemo(
+    () => displayPacks.filter((p) => ['STARTER', 'GROWTH', 'PRO'].includes(p.code)),
+    [displayPacks],
+  );
+  const scalePacks = useMemo(
+    () => displayPacks.filter((p) => ['BUSINESS', 'CHAIN'].includes(p.code)),
+    [displayPacks],
+  );
 
   const visiblePacks = useMemo(() => {
     if (planFilter === 'CORE') {
-      return displayPacks.filter((p) => ['STARTER', 'GROWTH', 'PRO'].includes(p.code));
+      return corePacks;
     }
     if (planFilter === 'SCALE') {
-      return displayPacks.filter((p) => ['BUSINESS', 'CHAIN'].includes(p.code));
+      return scalePacks;
     }
     return displayPacks;
-  }, [displayPacks, planFilter]);
+  }, [displayPacks, corePacks, scalePacks, planFilter]);
 
   return (
     <DashboardLayout>
@@ -380,7 +332,7 @@ export const BillingPage: React.FC = () => {
                     : 'bg-surface-2 text-muted'
                 }`}
               >
-                5 Packs
+                {displayPacks.length} {displayPacks.length === 1 ? 'Pack' : 'Packs'}
               </span>
             </button>
 
@@ -431,44 +383,73 @@ export const BillingPage: React.FC = () => {
               </div>
 
               {/* Segmented Filter */}
-              <div className="inline-flex p-0.5 rounded-lg bg-surface-2 border border-border text-xs">
-                <button
-                  type="button"
-                  onClick={() => setPlanFilter('ALL')}
-                  className={`px-3 py-1 rounded-md font-medium transition-all cursor-pointer ${
-                    planFilter === 'ALL'
-                      ? 'bg-surface text-text shadow-2xs font-semibold'
-                      : 'text-muted hover:text-text'
-                  }`}
-                >
-                  All Packs (5)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPlanFilter('CORE')}
-                  className={`px-3 py-1 rounded-md font-medium transition-all cursor-pointer ${
-                    planFilter === 'CORE'
-                      ? 'bg-surface text-text shadow-2xs font-semibold'
-                      : 'text-muted hover:text-text'
-                  }`}
-                >
-                  Single Outlets (3)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPlanFilter('SCALE')}
-                  className={`px-3 py-1 rounded-md font-medium transition-all cursor-pointer ${
-                    planFilter === 'SCALE'
-                      ? 'bg-surface text-text shadow-2xs font-semibold'
-                      : 'text-muted hover:text-text'
-                  }`}
-                >
-                  Chains & Multi-Store (2)
-                </button>
-              </div>
+              {displayPacks.length > 0 && (
+                <div className="inline-flex p-0.5 rounded-lg bg-surface-2 border border-border text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setPlanFilter('ALL')}
+                    className={`px-3 py-1 rounded-md font-medium transition-all cursor-pointer ${
+                      planFilter === 'ALL'
+                        ? 'bg-surface text-text shadow-2xs font-semibold'
+                        : 'text-muted hover:text-text'
+                    }`}
+                  >
+                    All Packs ({displayPacks.length})
+                  </button>
+                  {corePacks.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setPlanFilter('CORE')}
+                      className={`px-3 py-1 rounded-md font-medium transition-all cursor-pointer ${
+                        planFilter === 'CORE'
+                          ? 'bg-surface text-text shadow-2xs font-semibold'
+                          : 'text-muted hover:text-text'
+                      }`}
+                    >
+                      Single Outlets ({corePacks.length})
+                    </button>
+                  )}
+                  {scalePacks.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setPlanFilter('SCALE')}
+                      className={`px-3 py-1 rounded-md font-medium transition-all cursor-pointer ${
+                        planFilter === 'SCALE'
+                          ? 'bg-surface text-text shadow-2xs font-semibold'
+                          : 'text-muted hover:text-text'
+                      }`}
+                    >
+                      Chains & Multi-Store ({scalePacks.length})
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Clean Professional Cards Grid */}
+            {/* Clean Professional Cards Grid or Empty State */}
+            {isLoading && displayPacks.length === 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[1, 2, 3].map((idx) => (
+                  <div
+                    key={idx}
+                    className="h-80 rounded-2xl bg-surface border border-border animate-pulse p-5"
+                  />
+                ))}
+              </div>
+            ) : visiblePacks.length === 0 ? (
+              <div className="p-10 rounded-2xl bg-surface border border-border text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-surface-2 border border-border text-muted flex items-center justify-center mx-auto">
+                  <Coins className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text">No Credit Plans Available</h3>
+                  <p className="text-xs text-muted mt-1 max-w-md mx-auto">
+                    There are currently no active credit plans configured in the Admin panel.
+                    Once plans are published by the administrator, they will appear here automatically.
+                  </p>
+                </div>
+              </div>
+            ) : (
             <div
               className={`grid gap-4 ${
                 visiblePacks.length === 2
@@ -480,19 +461,21 @@ export const BillingPage: React.FC = () => {
             >
               {visiblePacks.map((pack) => {
                 const isPro = pack.code === 'PRO';
+                const isHighlighted = selectedPackId ? selectedPackId === pack.id : isPro;
                 const price = currency === 'USD' ? Number(pack.priceUsd) : Number(pack.priceInr);
                 const symbol = currency === 'USD' ? '$' : '₹';
                 const totalCredits = pack.ordersCount + (pack.bonusCredits || 0);
-                const costPerOrder = (price / totalCredits).toFixed(2);
+                const costPerOrder = totalCredits > 0 ? (price / totalCredits).toFixed(2) : '0.00';
                 const tagline = PACK_DESCRIPTIONS[pack.code] || 'Prepaid credit pack';
 
                 return (
                   <div
                     key={pack.id}
-                    className={`relative p-5 rounded-2xl bg-surface border flex flex-col justify-between transition-all duration-200 ${
-                      isPro
-                        ? 'border-primary ring-1 ring-primary/40 shadow-sm'
-                        : 'border-border hover:border-text/30 shadow-2xs'
+                    onClick={() => setSelectedPackId(pack.id)}
+                    className={`relative p-5 rounded-2xl bg-surface border flex flex-col justify-between transition-all duration-200 cursor-pointer ${
+                      isHighlighted
+                        ? 'border-primary ring-2 ring-primary/30 shadow-sm'
+                        : 'border-border hover:border-primary/40 shadow-2xs'
                     }`}
                   >
                     {/* Most Popular Badge */}
@@ -507,7 +490,7 @@ export const BillingPage: React.FC = () => {
                       <div>
                         <div className="flex items-center justify-between">
                           <h3 className="text-base font-bold text-text tracking-tight">
-                            {pack.name} Pack
+                            {pack.name.toLowerCase().includes('pack') ? pack.name : `${pack.name} Pack`}
                           </h3>
                           <span className="text-[10px] font-semibold text-muted font-mono uppercase bg-surface-2 px-1.5 py-0.5 rounded">
                             {pack.code}
@@ -603,9 +586,13 @@ export const BillingPage: React.FC = () => {
                     <div className="pt-4 mt-4 border-t border-border/60">
                       <button
                         type="button"
-                        onClick={() => setSelectedPackForCheckout(pack)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPackId(pack.id);
+                          setSelectedPackForCheckout(pack);
+                        }}
                         className={`w-full py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
-                          isPro
+                          isHighlighted
                             ? 'bg-primary hover:bg-primary-hover text-on-primary shadow-xs'
                             : 'bg-surface-2 hover:bg-surface-3 text-text border border-border'
                         }`}
@@ -618,6 +605,7 @@ export const BillingPage: React.FC = () => {
                 );
               })}
             </div>
+            )}
 
             {/* Quick Link to Tab 2 */}
             <div className="p-4 rounded-xl bg-surface border border-border flex items-center justify-between text-xs text-muted">
@@ -656,7 +644,7 @@ export const BillingPage: React.FC = () => {
                           className={`text-3xl font-bold tracking-tight ${
                             balanceInfo.creditBalance < 0
                               ? 'text-rose-600 dark:text-rose-400'
-                              : balanceInfo.creditBalance <= 50
+                              : balanceInfo.creditBalance < 20
                               ? 'text-amber-600 dark:text-amber-400'
                               : 'text-text'
                           }`}
@@ -697,6 +685,9 @@ export const BillingPage: React.FC = () => {
                       <ShieldCheck className="w-3.5 h-3.5" />
                       <span>{balanceInfo.graceOrdersRemaining}/20 Grace Orders Left</span>
                     </span>
+                    <span className="text-[10px] text-muted mt-0.5 block">
+                      Used grace credits deduct on recharge
+                    </span>
                   </div>
 
                   <div className="p-3 rounded-xl bg-surface-2/60 border border-border/80">
@@ -711,12 +702,16 @@ export const BillingPage: React.FC = () => {
                 {balanceInfo.isExhausted ? (
                   <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 flex items-center gap-2 text-xs">
                     <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
-                    <span>Credit balance exhausted. New orders cannot be accepted until topped up.</span>
+                    <span>
+                      Credit balance exhausted. New orders cannot be accepted until topped up (the 20 used grace credits will be automatically deducted once you recharge).
+                    </span>
                   </div>
                 ) : balanceInfo.isGraceMode ? (
                   <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 flex items-center gap-2 text-xs">
                     <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
-                    <span>Grace buffer active: {balanceInfo.graceOrdersRemaining} emergency orders remaining before auto-cutoff.</span>
+                    <span>
+                      Grace buffer active: {balanceInfo.graceOrdersRemaining}/20 emergency orders remaining before auto-cutoff. Any grace credits used ({balanceInfo.graceOrdersUsed}) will be deducted once you recharge.
+                    </span>
                   </div>
                 ) : null}
               </div>

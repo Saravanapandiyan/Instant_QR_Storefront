@@ -50,7 +50,7 @@ let CreditsService = class CreditsService {
         const graceOrdersUsed = isGraceMode ? Math.abs(balance) : 0;
         const graceOrdersRemaining = isGraceMode ? Math.max(0, 20 + balance) : 20;
         const isExhausted = balance <= -20;
-        const isLowCredit = balance <= 50 && balance > 0;
+        const isLowCredit = balance < 20 && balance > 0;
         return {
             restaurantId: restaurant.id,
             restaurantName: restaurant.name,
@@ -209,6 +209,7 @@ let CreditsService = class CreditsService {
             throw new common_1.BadRequestException('Invalid credit amount in session metadata.');
         }
         return this.prisma.$transaction(async (tx) => {
+            await tx.$executeRaw `SELECT pg_advisory_xact_lock(hashtext(${session.id}))`;
             const existing = await tx.creditLedger.findFirst({
                 where: {
                     restaurantId: restaurant.id,

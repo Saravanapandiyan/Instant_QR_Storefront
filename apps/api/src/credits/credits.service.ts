@@ -55,7 +55,7 @@ export class CreditsService {
     const graceOrdersUsed = isGraceMode ? Math.abs(balance) : 0;
     const graceOrdersRemaining = isGraceMode ? Math.max(0, 20 + balance) : 20;
     const isExhausted = balance <= -20;
-    const isLowCredit = balance <= 50 && balance > 0;
+    const isLowCredit = balance < 20 && balance > 0;
 
     return {
       restaurantId: restaurant.id,
@@ -273,8 +273,11 @@ export class CreditsService {
       throw new BadRequestException('Invalid credit amount in session metadata.');
     }
 
-    // Atomic execution with idempotency protection
+    // Atomic execution with PostgreSQL transaction-scoped advisory lock + idempotency protection
     return this.prisma.$transaction(async (tx) => {
+      // Serialize concurrent verification requests for the same Stripe session ID
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${session.id}))`;
+
       const existing = await tx.creditLedger.findFirst({
         where: {
           restaurantId: restaurant.id,

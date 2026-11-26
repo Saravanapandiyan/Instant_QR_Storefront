@@ -314,7 +314,7 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
                 </span>
               </div>
               <p className="text-xs text-muted">
-                Step {currentStep} of 4 — Fast-track setup for cafés, food stalls & restaurants
+                Step {currentStep} of 5 — Fast-track setup for cafés, food stalls & restaurants
               </p>
             </div>
           </div>
@@ -337,12 +337,13 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
         </div>
 
         {/* Step Progress Bar */}
-        <div className="grid grid-cols-4 border-b border-border text-xs font-medium bg-surface">
+        <div className="grid grid-cols-5 border-b border-border text-xs font-medium bg-surface">
           {[
             { step: 1, label: 'Profile' },
             { step: 2, label: 'Menu & AI' },
             { step: 3, label: 'Staff PIN' },
             { step: 4, label: 'Tables & QR' },
+            { step: 5, label: 'Free Plan' },
           ].map((item) => (
             <button
               key={item.step}
@@ -370,19 +371,9 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
 
         {/* Content Body */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
-          {/* STEP 1: Profile & Free Credits */}
+          {/* STEP 1: Profile */}
           {currentStep === 1 && (
             <div className="space-y-5 max-w-2xl mx-auto">
-              <div className="p-4 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 flex items-center gap-3">
-                <Gift className="w-8 h-8 text-primary flex-shrink-0" />
-                <div>
-                  <h4 className="text-sm font-bold text-text">100 Free Orders Credited to Your Account</h4>
-                  <p className="text-xs text-muted">
-                    No credit card required. 1 confirmed order = 1 credit (~$0.01 / ~₹0.30). Credits never expire!
-                  </p>
-                </div>
-              </div>
-
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-text uppercase tracking-wider mb-1.5">
@@ -1463,6 +1454,74 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
               </div>
             );
           })()}
+
+          {/* STEP 5: Free Starter Plan Details */}
+          {currentStep === 5 && (
+            <div className="space-y-6 max-w-2xl mx-auto">
+              <div className="text-center space-y-2">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 mx-auto flex items-center justify-center border border-emerald-500/20">
+                  <Gift className="w-6 h-6" />
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-text">
+                  Free Starter Plan — 100 Free Orders Included
+                </h3>
+                <p className="text-xs text-muted max-w-md mx-auto">
+                  No credit card required and zero monthly subscription fees. Review your included free plan details before launching.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-surface border border-primary/25 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-border/60">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                      Included Free Plan
+                    </span>
+                    <h4 className="text-base font-bold text-text">100 Free Order Credits</h4>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold">
+                    ₹0 / $0 • Active on Launch
+                  </span>
+                </div>
+
+                <ul className="space-y-2.5 text-xs text-text">
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>100 Free Orders:</strong> Credited immediately to <strong>{restaurantName || 'your storefront'}</strong> upon launch.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>1 Confirmed Order = 1 Credit:</strong> Credits never expire and roll over indefinitely—no monthly fees or contracts.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>20-Order Emergency Grace Buffer:</strong> If credits hit 0 during a rush, up to 20 extra orders are allowed (used grace credits are deducted on your next recharge).
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>All Core Features Included:</strong> QR Menu, AI Menu Import, Live Orders, Kitchen Display (KDS), TV Order Board & Sales Analytics.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-surface-2 border border-border flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+                <span>
+                  Ready to launch <strong className="text-text">{restaurantName || 'your restaurant'}</strong>
+                </span>
+                <span>
+                  <strong className="text-text">{categories.reduce((sum, c) => sum + c.items.length, 0)}</strong> dishes •{' '}
+                  <strong className="text-text">{tablesCount}</strong> {Number(tablesCount) === 1 ? 'table' : 'tables'}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer Navigation Buttons */}
@@ -1479,7 +1538,7 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
             <div />
           )}
 
-          {currentStep < 4 ? (
+          {currentStep < 5 ? (
             <button
               type="button"
               onClick={() => {

@@ -85,18 +85,18 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </div>
         )}
 
-        {/* Global Low Credit & Emergency Grace Buffer Alert Banner */}
-        {!isBillingPage && creditBalance <= 50 && (
+        {/* Global Low Credit & Emergency Grace Buffer Alert Banner (shown on all pages) */}
+        {creditBalance < 20 && (
           <div
-            className={`px-4 sm:px-6 py-2.5 text-xs font-semibold flex flex-wrap items-center justify-between gap-3 border-b shadow-2xs transition-colors ${
+            className={`px-4 sm:px-6 py-2 text-xs font-semibold flex items-center justify-between gap-3 border-b shadow-2xs transition-colors ${
               creditBalance <= 0
-                ? 'bg-rose-500/10 border-rose-500/30 text-rose-800 dark:text-rose-200'
+                ? 'bg-red-500/15 border-red-500/40 text-red-800 dark:text-red-200'
                 : 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200'
             }`}
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               {creditBalance <= 0 ? (
-                <div className="w-6 h-6 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 rounded-full bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
                   <AlertTriangle className="w-3.5 h-3.5 animate-bounce" />
                 </div>
               ) : (
@@ -105,38 +105,42 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 </div>
               )}
 
-              <div>
+              <div className="min-w-0 truncate">
                 {creditBalance <= 0 ? (
                   <span>
-                    <strong className="font-bold text-rose-600 dark:text-rose-400">
-                      Emergency Grace Buffer Active!
+                    <strong className="font-bold text-red-600 dark:text-red-400">
+                      {creditBalance <= -20 ? 'Credits Exhausted!' : '0 Credits Remaining!'}
                     </strong>{' '}
-                    You have <strong>{Math.max(0, 20 + creditBalance)}/20</strong> grace orders left. Once exhausted, incoming orders will pause.
+                    {creditBalance <= -20
+                      ? '20/20 grace orders used — recharge to resume orders (deducted on top-up).'
+                      : `${Math.max(0, 20 + creditBalance)}/20 grace orders left (used grace credits deduct on recharge).`}
                   </span>
                 ) : (
                   <span>
                     <strong className="font-bold text-amber-700 dark:text-amber-300">
-                      Low Order Credit Alert:
+                      Low Credits:
                     </strong>{' '}
-                    Only <strong>{creditBalance} orders</strong> remaining. Top up to ensure zero interruption during lunch and dinner rushes.
+                    Only <strong>{creditBalance} {creditBalance === 1 ? 'order' : 'orders'}</strong> left. Top up to avoid interruption.
                   </span>
                 )}
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => navigate(ROUTES.BILLING)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-transform active:scale-95 shadow-2xs ${
-                creditBalance <= 0
-                  ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                  : 'bg-amber-600 hover:bg-amber-700 text-white'
-              }`}
-            >
-              <Zap className="w-3 h-3 fill-current" />
-              <span>Top Up Credits</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+            {!isBillingPage && (
+              <button
+                type="button"
+                onClick={() => navigate(ROUTES.BILLING)}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-transform active:scale-95 shadow-2xs shrink-0 whitespace-nowrap ${
+                  creditBalance <= 0
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-amber-600 hover:bg-amber-700 text-white'
+                }`}
+              >
+                <Zap className="w-3 h-3 fill-current" />
+                <span>Top Up Credits</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         )}
 

@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { LoginForm } from '../features/auth/components/LoginForm';
 import { RegisterForm } from '../features/auth/components/RegisterForm';
 import { ImpersonatePage } from '../features/auth/ImpersonatePage';
@@ -42,9 +42,18 @@ const FallbackRoute: React.FC = () => {
   return <NotFoundPage />;
 };
 
+const ScrollToTop: React.FC = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+  }, [pathname]);
+  return null;
+};
+
 export const AppRoutes: React.FC = () => {
   return (
     <BrowserRouter basename={ownerBasename}>
+      <ScrollToTop />
       <Routes>
         {/* Guest / Public Auth Routes (Redirects to dashboard if already logged in) */}
         <Route element={<PublicRoute />}>

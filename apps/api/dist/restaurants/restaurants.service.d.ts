@@ -117,8 +117,8 @@ export declare class RestaurantsService {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
-            translations: import("@prisma/client/runtime/library").JsonValue | null;
             sortOrder: number;
+            translations: import("@prisma/client/runtime/library").JsonValue | null;
         }[];
         _count: {
             products: number;
