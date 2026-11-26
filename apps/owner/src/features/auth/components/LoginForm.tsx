@@ -27,9 +27,10 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
-  const { appName } = useBrandStore();
+  const { appName, supportEmail } = useBrandStore();
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
 
   const {
     register,
@@ -166,13 +167,13 @@ export const LoginForm: React.FC = () => {
               autoComplete="current-password"
               error={errors.password?.message}
               labelRightElement={
-                <a
-                  href="#forgot"
-                  onClick={(e) => e.preventDefault()}
-                  className="text-xs font-medium text-primary hover:underline"
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(true)}
+                  className="text-xs font-medium text-primary hover:underline cursor-pointer"
                 >
                   Forgot password?
-                </a>
+                </button>
               }
               suffixElement={
                 <button
@@ -229,6 +230,56 @@ export const LoginForm: React.FC = () => {
           © {new Date().getFullYear()} {appName}
         </div>
       </div>
+
+      {/* Forgot Password -> Contact Admin Modal */}
+      {showForgotModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+          onClick={() => setShowForgotModal(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-surface border border-border shadow-2xl p-6 space-y-4 text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-text">Forgot Password?</h3>
+                <p className="text-xs text-muted">Account &amp; PIN recovery</p>
+              </div>
+            </div>
+
+            <p className="text-xs sm:text-sm text-text leading-relaxed">
+              Please <strong>contact your platform administrator</strong> to reset your account password or 4-digit staff PIN.
+            </p>
+
+            {supportEmail && (
+              <div className="p-3 rounded-xl bg-surface-2 border border-border text-xs">
+                <span className="text-muted block text-[11px] mb-0.5">Admin Support Email:</span>
+                <a
+                  href={`mailto:${supportEmail}`}
+                  className="font-semibold text-primary hover:underline break-all"
+                >
+                  {supportEmail}
+                </a>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-1">
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={() => setShowForgotModal(false)}
+              >
+                Got it
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

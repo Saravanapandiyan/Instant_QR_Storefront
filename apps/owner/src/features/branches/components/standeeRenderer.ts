@@ -1,4 +1,5 @@
 import type { QRDotPattern, QREyePattern, QRShape } from './StylizedQRCode';
+import { useBrandStore } from '../../../store/useBrandStore';
 
 // 4 Professional Restaurant Stand Layouts
 export type StandTemplate = 'brand' | 'acrylic' | 'luxury' | 'badge';
@@ -241,6 +242,10 @@ export function renderStandeeToCanvas(
     centerIcon = 'cutlery',
   } = options;
 
+  const brand = useBrandStore.getState();
+  const poweredByText = brand.poweredByText || `Powered by ${brand.appName || 'InstaDine'}`;
+  const showPoweredBy = brand.showPoweredByBadge !== false;
+  const brandTitle = brand.appName || 'InstaDine';
   const currentTheme = THEME_CONFIGS[colorTheme] || THEME_CONFIGS.terracotta;
 
   const drawRoundRect = (
@@ -318,9 +323,11 @@ export function renderStandeeToCanvas(
     ctx.font = 'bold 26px monospace';
     ctx.fillText(customerUrl, width / 2, 1420);
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.font = '22px sans-serif';
-    ctx.fillText('Instant QR Storefront', width / 2, 1510);
+    if (showPoweredBy) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.font = '22px sans-serif';
+      ctx.fillText(brandTitle, width / 2, 1510);
+    }
   } else if (template === 'acrylic') {
     // --- MODERN TABLETOP TENT ---
     ctx.fillStyle = '#f8fafc';
@@ -382,9 +389,11 @@ export function renderStandeeToCanvas(
     ctx.font = '500 24px monospace';
     ctx.fillText(customerUrl, width / 2, 1470);
 
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = 'normal 20px sans-serif';
-    ctx.fillText('Powered by Instant QR Storefront', width / 2, 1530);
+    if (showPoweredBy) {
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'normal 20px sans-serif';
+      ctx.fillText(poweredByText, width / 2, 1530);
+    }
   } else if (template === 'badge') {
     // --- BISTRO ROUND DECAL / COASTER ---
     ctx.fillStyle = '#ffffff';
@@ -495,8 +504,10 @@ export function renderStandeeToCanvas(
     ctx.font = '600 24px monospace';
     ctx.fillText(customerUrl, width / 2, 1375);
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.font = 'normal 20px -apple-system, BlinkMacSystemFont, sans-serif';
-    ctx.fillText('Powered by Instant QR Storefront', width / 2, 1490);
+    if (showPoweredBy) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.font = 'normal 20px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.fillText(poweredByText, width / 2, 1490);
+    }
   }
 }

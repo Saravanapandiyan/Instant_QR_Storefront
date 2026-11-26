@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { adminSettingsApi } from './api/adminSettingsApi.ts';
 import { AdminDashboardPage } from './features/dashboard/AdminDashboardPage.tsx';
 import { AdminOrdersPage } from './features/orders/AdminOrdersPage.tsx';
 import { AdminRestaurantsPage } from './features/restaurants/AdminRestaurantsPage.tsx';
@@ -43,9 +45,34 @@ function AdminFallbackRoute() {
   return <AdminNotFoundPage />;
 }
 
+function AdminBrandingSync() {
+  const { data: branding } = useQuery({
+    queryKey: ['public-branding'],
+    queryFn: adminSettingsApi.getPublicBranding,
+  });
+
+  useEffect(() => {
+    const title = branding?.siteTitle?.trim() || 'InstaDine';
+    document.title = `${title} — Platform Control Plane`;
+
+    if (branding?.faviconUrl) {
+      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = branding.faviconUrl;
+    }
+  }, [branding]);
+
+  return null;
+}
+
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <AdminBrandingSync />
       <AdminToastContainer />
       <BrowserRouter basename={adminBasename}>
         <Routes>

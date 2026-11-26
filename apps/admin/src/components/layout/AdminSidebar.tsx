@@ -1,4 +1,6 @@
 import { NavLink } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { adminSettingsApi } from '../../api/adminSettingsApi.ts';
 import {
   LayoutDashboard,
   Store,
@@ -54,6 +56,11 @@ const NAV_SECTIONS: NavSection[] = [
 export function AdminSidebar() {
   const { user, logout } = useAdminAuthStore();
   const { theme, toggleTheme } = useAdminThemeStore();
+  const { data: branding } = useQuery({
+    queryKey: ['public-branding'],
+    queryFn: adminSettingsApi.getPublicBranding,
+  });
+  const siteTitle = branding?.siteTitle?.trim() || 'InstaDine';
 
   return (
     <aside
@@ -80,9 +87,9 @@ export function AdminSidebar() {
             >
               <QrCode className="w-4 h-4" />
             </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-sm tracking-tight leading-none" style={{ color: 'var(--adm-text)' }}>
-                OrdZo
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-sm tracking-tight leading-none truncate" style={{ color: 'var(--adm-text)' }}>
+                {siteTitle}
               </span>
               <span className="text-[10px] uppercase tracking-wider font-semibold leading-tight mt-0.5" style={{ color: 'var(--adm-muted)' }}>
                 Control Plane
