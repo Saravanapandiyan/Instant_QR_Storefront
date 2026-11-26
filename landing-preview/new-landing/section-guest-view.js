@@ -12,7 +12,7 @@
     <div class="sxa-dish${opts.sold ? ' sold' : ''}">
       <div class="sxa-dish-t">
         <div class="sxa-row">${veg(opts.veg !== false)}${opts.best ? '<span class="sxa-best">BEST SELLING</span>' : ''}</div>
-        <b>${name}</b><small>${desc}</small><em>$${price}</em>
+        <b>${name}</b><small>${desc}</small><em>₹${price}</em>
       </div>
       <div class="sxa-img" style="background:${img}">
         ${opts.sold ? '<span class="sxa-sold">SOLD OUT</span>' : opts.qty ? `<span class="sxa-step"><i>−</i>${opts.qty}<i>+</i></span>` : '<span class="sxa-addbtn">ADD</span>'}
@@ -27,12 +27,12 @@
   };
   const trackHead = `<div class="sxa-th"><div><div class="sxa-thr"><b>Order #A1042</b><span class="sxa-tag">Table 4</span></div><small>Sea Breeze Café (Beach Road)</small></div><span class="sxa-x">✕</span></div>`;
   const dishesOrdered = `<div class="sxa-lbl">DISHES ORDERED</div>
-    <div class="sxa-box"><div class="sxa-li"><span><i>2x</i> Chicken Wings<small>Note: Extra spicy</small></span><b>$8</b></div>
-      <div class="sxa-li"><span><i>1x</i> Prawn Curry &amp; Rice</span><b>$12</b></div>
-      <div class="sxa-tot"><span>Total Due</span><b>$20</b></div></div>`;
+    <div class="sxa-box"><div class="sxa-li"><span><i>2x</i> Chicken Wings<small>Note: Extra spicy</small></span><b>₹480</b></div>
+      <div class="sxa-li"><span><i>1x</i> Prawn Curry &amp; Rice</span><b>₹380</b></div>
+      <div class="sxa-tot"><span>Total Due</span><b>₹860</b></div></div>`;
   const cash = (paid) => paid
-    ? '<div class="sxa-cash paid"><span class="ic">$</span><div><b>Payment Confirmed</b><small>Cash received by cashier. Thank you!</small></div><span class="pill">PAID</span></div>'
-    : '<div class="sxa-cash"><span class="ic">$</span><div><b>Pay Cash at Counter</b><small>Please pay $20 in cash at the cashier desk.</small></div><span class="pill">PENDING CASH</span></div>';
+    ? '<div class="sxa-cash paid"><span class="ic">₹</span><div><b>Payment Confirmed</b><small>Cash received by cashier. Thank you!</small></div><span class="pill">PAID</span></div>'
+    : '<div class="sxa-cash"><span class="ic">₹</span><div><b>Pay Cash at Counter</b><small>Please pay ₹860 in cash or UPI at the cashier desk.</small></div><span class="pill">PENDING CASH</span></div>';
   // A QR-looking 21x21 grid (finder patterns + deterministic modules) for the table stand.
   const qrSvg = () => {
     const n = 21, cells = [];
@@ -72,23 +72,23 @@
           <div class="sxa-search">⌕&nbsp; Search dishes</div>
           <div class="sxa-pills"><i class="on">All</i><i>Starters</i><i>Mains</i><i>Drinks</i></div>
           <div class="sxa-sec"><b>Starters</b><small>6 dishes</small></div>
-          ${dish('Chicken Wings', 'Honey glaze, ranch dip', 4, 'url(assets/img/dishes/chicken-wings.webp) center/cover', { veg: false, best: true, qty: 2 })}
-          ${dish('Prawn Curry & Rice', 'Coastal spices, steamed rice', 12, 'url(assets/img/dishes/prawn-curry.webp) center/cover', { veg: false, qty: 1 })}
-          ${dish('Grilled Fish Fillet', 'Today’s catch', 9, 'url(assets/img/dishes/grilled-fish.webp) center/cover', { veg: false, sold: true })}
-          <div class="sxa-cartbar"><b>3 items • $20</b><span>View cart →</span></div>
+          ${dish('Chicken Wings', 'Honey glaze, ranch dip', 240, 'url(assets/img/dishes/chicken-wings.webp) center/cover', { veg: false, best: true, qty: 2 })}
+          ${dish('Prawn Curry & Rice', 'Coastal spices, steamed rice', 380, 'url(assets/img/dishes/prawn-curry.webp) center/cover', { veg: false, qty: 1 })}
+          ${dish('Grilled Fish Fillet', 'Today’s catch', 320, 'url(assets/img/dishes/grilled-fish.webp) center/cover', { veg: false, sold: true })}
+          <div class="sxa-cartbar"><b>3 items • ₹860</b><span>View cart →</span></div>
         </div>
         <div class="sx-scr sx-s2 sxa-sheetwrap">
           <div class="sxa-sheet">
             <div class="sxa-sh"><b>Review Order</b><span class="sxa-x">✕</span></div>
             <div class="sxa-lblrow"><b>Your Dishes (3)</b><small>Tap dish to customize</small></div>
             <div class="sxa-box">
-              <div class="sxa-ci">${veg(false)}<div><b>Chicken Wings</b><small>$4 each</small><em>Note: Extra spicy</em></div><span class="sxa-stp2"><i>−</i>2<i>+</i></span><b>$8</b></div>
-              <div class="sxa-ci">${veg(false)}<div><b>Prawn Curry &amp; Rice</b><small>$12 each</small></div><span class="sxa-stp2"><i>−</i>1<i>+</i></span><b>$12</b></div>
+              <div class="sxa-ci">${veg(false)}<div><b>Chicken Wings</b><small>₹240 each</small><em>Note: Extra spicy</em></div><span class="sxa-stp2"><i>−</i>2<i>+</i></span><b>₹480</b></div>
+              <div class="sxa-ci">${veg(false)}<div><b>Prawn Curry &amp; Rice</b><small>₹380 each</small></div><span class="sxa-stp2"><i>−</i>1<i>+</i></span><b>₹380</b></div>
             </div>
             <div class="sxa-lbl2">Payment Method</div>
             <div class="sxa-pay"><span><b>Cash on Counter</b> <i>Default</i></span><small>Pay at cashier counter</small></div>
-            <div class="sxa-bill"><div><span>Subtotal</span><span>$20</span></div><div class="tot"><span>Total Due</span><span>$20</span></div></div>
-            <div class="sxa-paybtn"><span class="a">Pay Cash on Counter • $20</span><span class="b"><i class="sxa-spin"></i> Placing order...</span></div>
+            <div class="sxa-bill"><div><span>Subtotal</span><span>₹860</span></div><div class="tot"><span>Total Due</span><span>₹860</span></div></div>
+            <div class="sxa-paybtn"><span class="a">Pay Cash on Counter • ₹860</span><span class="b"><i class="sxa-spin"></i> Placing order...</span></div>
           </div>
         </div>
         <div class="sx-scr sx-s3 sxa-track">${trackHead}${steps(0)}${cash(false)}${dishesOrdered}</div>

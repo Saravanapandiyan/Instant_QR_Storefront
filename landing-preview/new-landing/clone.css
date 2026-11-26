@@ -9,17 +9,92 @@ header { transition: color .3s ease-out; }
 header[data-dark-bg="false"] { color: #0c0c09; }
 header[data-dark-bg="true"] { color: #fff; }
 
-.clone-ocean { position: absolute; inset: 0; z-index: 0; pointer-events: none; display: none;
-  background: linear-gradient(to right, #0F766E 0%, #138a86 28%, #1a9a96 calc(100% - max(80vh, 576px))); }
-.clone-site { position: absolute; z-index: 0; top: 0; right: 0; height: 100%; width: max(80vh, 576px); display: none; pointer-events: none; overflow: hidden; contain: layout paint; }
+.clone-ocean {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  display: block;
+  background: #0F766E;
+  background: -webkit-linear-gradient(left, #0F766E 0%, #138a86 28%, #1a9a96 calc(100% - 576px));
+  background: linear-gradient(to right, #0F766E 0%, #138a86 28%, #1a9a96 calc(100% - 576px));
+  background: linear-gradient(to right, #0F766E 0%, #138a86 28%, #1a9a96 calc(100% - max(80vh, 576px)));
+}
+.clone-site {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  width: 55%;
+  min-width: 460px;
+  display: block;
+  pointer-events: none;
+  overflow: hidden;
+  -webkit-contain: layout paint;
+  contain: layout paint;
+}
+/* On desktop and wide screens */
+@media (min-width: 1100px) {
+  .clone-site {
+    width: 576px;
+    width: max(80vh, 576px);
+    opacity: 1;
+  }
+}
+/* On mid-sized windows (e.g. 768px-1099px on 13"/14" MacBooks) */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .clone-site {
+    width: 50%;
+    min-width: 380px;
+    opacity: 0.9;
+  }
+}
+/* On mobile (< 768px), keep the beach scene as a subtle background atmosphere */
+@media (max-width: 767px) {
+  .clone-site {
+    width: 100%;
+    min-width: 0;
+    opacity: 0.35;
+  }
+}
 /* left-edge fade into the ocean, as a plain overlay (a CSS mask here caused one-frame black flashes in Chrome) */
-.clone-site::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to right, #1a9a96 0, rgba(26,154,150,0) 9%); }
-.clone-scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: right center; }
-.clone-scene-anim > svg { display: block; width: 100%; height: 100%; }
-.clone-scene-anim.is-paused * { animation-play-state: paused !important; }
-@media (min-width: 1100px) { .clone-site, .clone-ocean { display: block; } }
+.clone-site::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  inset: 0;
+  pointer-events: none;
+  background: -webkit-linear-gradient(left, #1a9a96 0, rgba(26,154,150,0) 9%);
+  background: linear-gradient(to right, #1a9a96 0, rgba(26,154,150,0) 9%);
+}
+.clone-scene {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right center;
+}
+.clone-scene-anim > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 
-@media (prefers-reduced-motion: reduce) { [style*="translateY"] { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { [style*="translateY"] { -webkit-transition: none !important; transition: none !important; } }
 
 /* No rubber-band / bounce scrolling past the page edges */
 html, body { overscroll-behavior: none; }

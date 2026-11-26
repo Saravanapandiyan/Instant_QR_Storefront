@@ -32,7 +32,7 @@
             <div class="hw-paper"><i class="w60"></i><i class="w80"></i><i class="w70"></i><i class="w50"></i><i class="w80"></i><i class="w60"></i></div>
             <div class="hw-out">
               <div class="hw-out-h"><span>Menu builder</span><b>3 dishes added</b></div>
-              ${menuRow('Chicken Wings', '$4', 'c1')}${menuRow('Prawn Curry &amp; Rice', '$12', 'c2')}${menuRow('Fresh Lime Soda', '$3', 'c3')}
+              ${menuRow('Chicken Wings', '₹240', 'c1')}${menuRow('Prawn Curry &amp; Rice', '₹380', 'c2')}${menuRow('Fresh Lime Soda', '₹80', 'c3')}
             </div>
           </div>
         </li>
@@ -60,10 +60,10 @@
             <div class="hw-tabs"><span class="t-new">New <i>1</i></span><span class="t-kit">Kitchen</span><span>Ready</span></div>
             <div class="hw-order">
               <div class="hw-oh"><b>Order #A1042</b><span>Table 4</span></div>
-              <div class="hw-ol"><span>2x Chicken Wings</span><b>$8</b></div>
+              <div class="hw-ol"><span>2x Chicken Wings</span><b>₹480</b></div>
               <div class="hw-note">Customer Note: Extra spicy</div>
-              <div class="hw-ol"><span>1x Prawn Curry &amp; Rice</span><b>$12</b></div>
-              <div class="hw-of"><span class="hw-cash">Cash Pending</span><b>Total Bill $20</b></div>
+              <div class="hw-ol"><span>1x Prawn Curry &amp; Rice</span><b>₹380</b></div>
+              <div class="hw-of"><span class="hw-cash">Cash Pending</span><b>Total Bill ₹860</b></div>
               <div class="hw-btn"><span class="a">Accept Order</span><span class="b">✓ Sent to Kitchen</span></div>
             </div>
           </div>

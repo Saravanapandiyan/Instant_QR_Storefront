@@ -7,7 +7,7 @@
 
   const FACTS = [
     ['Pending until accepted', 'Nothing reaches the kitchen until your counter says yes.'],
-    ['Rejected orders cost $0', 'Only confirmed orders use a credit.'],
+    ['Rejected orders cost ₹0', 'Only confirmed orders use a credit.'],
     ['Pause ordering anytime', 'Turn QR ordering off for a branch in one tap.'],
     ['Roles decide who can accept', 'Manager, Cashier and Kitchen logins.'],
   ];
