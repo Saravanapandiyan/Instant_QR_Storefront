@@ -644,24 +644,47 @@ Do NOT include markdown backticks (\`\`\`json), comments, or introductory text. 
    * Creates Restaurant, 100 free credits, Branch, Categories, Products, and Staff in one atomic call.
    */
   async executeQuickSetup(ownerId: string, dto: QuickSetupDto) {
-    const restaurantSlug = await this.generateUniqueRestaurantSlug(dto.restaurantName);
+    try {
+      const owner = await this.prisma.user.findUnique({
+        where: { id: ownerId },
+        select: { id: true },
+      });
+      if (!owner) {
+        throw new BadRequestException('Owner account not found. Please log out and sign in again.');
+      }
+
+      const restaurantSlug = await this.generateUniqueRestaurantSlug(dto.restaurantName);
     const branchSlug = await this.generateUniqueBranchSlug(`${dto.restaurantName} main`);
     const currency = dto.currency || 'INR';
 
-    // Persist external dish images to local disk before transaction
+    // Persist external dish images to local disk before transaction (best-effort)
     if (dto.categories && dto.categories.length > 0) {
       for (const catDto of dto.categories) {
         await Promise.all(
           (catDto.items || []).map(async (item) => {
             if (item.imageUrl && item.imageUrl.startsWith('http')) {
-              item.imageUrl = await this.storageService.downloadAndStoreUrl(item.imageUrl, 'products');
+              try {
+                item.imageUrl = await this.storageService.downloadAndStoreUrl(item.imageUrl, 'products');
+              } catch {
+                // Keep original URL if local image caching fails
+              }
             }
           }),
         );
       }
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    // Pre-hash staff password outside transaction to avoid wasting transaction time
+    let staffEmail: string | null = null;
+    let staffPasswordHash: string | null = null;
+    if (dto.staffName && (dto.staffPin || dto.staffEmail)) {
+      staffEmail = dto.staffEmail?.trim().toLowerCase() || null;
+      const staffPasswordToHash = dto.staffPassword?.trim() || dto.staffPin || '1234';
+      staffPasswordHash = await bcrypt.hash(staffPasswordToHash, 10);
+    }
+
+    return this.prisma.$transaction(
+      async (tx) => {
       // 1. Create Restaurant with initial 100 free credits
       const restaurant = await tx.restaurant.create({
         data: {
@@ -719,9 +742,9 @@ Do NOT include markdown backticks (\`\`\`json), comments, or introductory text. 
               data: {
                 restaurantId: restaurant.id,
                 categoryId: category.id,
-                name: itemDto.name,
+                name: (itemDto.name || 'Dish').trim(),
                 description: itemDto.description || '',
-                basePrice: itemDto.price || 0,
+                basePrice: Number(itemDto.price) || 0,
                 imageUrl: itemDto.imageUrl || null,
               },
             });
@@ -743,20 +766,24 @@ Do NOT include markdown backticks (\`\`\`json), comments, or introductory text. 
       let staffCreated = null;
       if (dto.staffName && (dto.staffPin || dto.staffEmail)) {
         // Use provided email or generate unique internal email
-        const staffEmail =
-          dto.staffEmail?.trim() ||
+        const resolvedStaffEmail =
+          staffEmail ||
           `staff_${restaurant.id.slice(0, 8)}_${Date.now()}@instantqr.internal`;
 
-        // Use provided password or fallback to PIN code
-        const staffPasswordToHash =
-          dto.staffPassword?.trim() || dto.staffPin || '1234';
-        const passwordHash = await bcrypt.hash(staffPasswordToHash, 10);
+        const existingStaffUser = await tx.user.findUnique({
+          where: { email: resolvedStaffEmail },
+        });
+        if (existingStaffUser) {
+          throw new BadRequestException(
+            `Staff email "${resolvedStaffEmail}" is already registered to another account. Please use a different email.`,
+          );
+        }
 
         const staffUser = await tx.user.create({
           data: {
-            email: staffEmail,
+            email: resolvedStaffEmail,
             name: dto.staffName,
-            passwordHash,
+            passwordHash: staffPasswordHash!,
             role: 'STAFF',
           },
         });
@@ -806,7 +833,18 @@ Do NOT include markdown backticks (\`\`\`json), comments, or introductory text. 
             }
           : null,
       };
-    });
+    },
+    { maxWait: 10000, timeout: 60000 },
+    );
+    } catch (err: any) {
+      this.logger.error(`Quick Setup failed for owner=${ownerId}: ${err?.message}`, err?.stack);
+      if (err instanceof BadRequestException) {
+        throw err;
+      }
+      throw new InternalServerErrorException(
+        err?.message || 'Failed to complete Quick Setup. Please check API logs.',
+      );
+    }
   }
 
   // ==========================================

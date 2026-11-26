@@ -17,6 +17,7 @@ class CreatePackDto {
     name;
     ordersCount;
     bonusCredits;
+    price;
     priceUsd;
     priceInr;
     regionalPricingJson;
@@ -64,21 +65,33 @@ __decorate([
     __metadata("design:type", Number)
 ], CreatePackDto.prototype, "bonusCredits", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 499.0,
+        description: 'Single plan price in platform currency',
+    }),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreatePackDto.prototype, "price", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
         example: 20.0,
         description: 'Price in USD',
     }),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], CreatePackDto.prototype, "priceUsd", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({
+    (0, swagger_1.ApiPropertyOptional)({
         example: 699.0,
         description: 'Price in INR',
     }),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], CreatePackDto.prototype, "priceInr", void 0);
 __decorate([

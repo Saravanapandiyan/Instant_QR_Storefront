@@ -17,6 +17,7 @@ exports.DEFAULT_BRANDING = {
     siteTitle: 'InstaDine',
     siteTagline: 'Turn every table into a storefront.',
     supportEmail: 'support@instadine.com',
+    defaultCurrency: 'INR',
     lightLogoUrl: null,
     darkLogoUrl: null,
     faviconUrl: null,

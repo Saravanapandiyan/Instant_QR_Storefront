@@ -17,23 +17,50 @@ import { useBrandStore } from '../../../store/useBrandStore';
 import { ROUTES } from '../../../constants/routes';
 
 const COUNTRY_CODES = [
-  { code: '+91', label: '🇮🇳 +91 (India)' },
-  { code: '+1', label: '🇺🇸 +1 (US / Canada)' },
-  { code: '+44', label: '🇬🇧 +44 (UK)' },
-  { code: '+971', label: '🇦🇪 +971 (UAE)' },
-  { code: '+65', label: '🇸🇬 +65 (Singapore)' },
-  { code: '+61', label: '🇦🇺 +61 (Australia)' },
-  { code: '+49', label: '🇩🇪 +49 (Germany)' },
-  { code: '+33', label: '🇫🇷 +33 (France)' },
+  { code: '+91', label: '🇮🇳 +91 (India)', minDigits: 10, maxDigits: 10, placeholder: '9876543210' },
+  { code: '+1', label: '🇺🇸 +1 (US / Canada)', minDigits: 10, maxDigits: 10, placeholder: '4155550199' },
+  { code: '+44', label: '🇬🇧 +44 (UK)', minDigits: 10, maxDigits: 11, placeholder: '7911123456' },
+  { code: '+971', label: '🇦🇪 +971 (UAE)', minDigits: 9, maxDigits: 9, placeholder: '501234567' },
+  { code: '+65', label: '🇸🇬 +65 (Singapore)', minDigits: 8, maxDigits: 8, placeholder: '81234567' },
+  { code: '+61', label: '🇦🇺 +61 (Australia)', minDigits: 9, maxDigits: 9, placeholder: '412345678' },
+  { code: '+49', label: '🇩🇪 +49 (Germany)', minDigits: 10, maxDigits: 11, placeholder: '15123456789' },
+  { code: '+33', label: '🇫🇷 +33 (France)', minDigits: 9, maxDigits: 9, placeholder: '612345678' },
 ];
 
-const registerSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  countryCode: z.string().optional(),
-  phone: z.string().optional(),
-});
+const registerSchema = z
+  .object({
+    name: z.string().min(2, 'Name must be at least 2 characters'),
+    email: z.string().email('Please enter a valid email address'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    countryCode: z.string().optional(),
+    phone: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const rawPhone = (data.phone || '').trim();
+    if (!rawPhone) return; // Phone is optional
+
+    if (!/^\d+$/.test(rawPhone)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['phone'],
+        message: 'Phone number must contain digits only',
+      });
+      return;
+    }
+
+    const country = COUNTRY_CODES.find((c) => c.code === data.countryCode) || COUNTRY_CODES[0];
+    if (rawPhone.length < country.minDigits || rawPhone.length > country.maxDigits) {
+      const expected =
+        country.minDigits === country.maxDigits
+          ? `${country.minDigits} digits`
+          : `${country.minDigits}–${country.maxDigits} digits`;
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['phone'],
+        message: `Phone number for ${country.code} must be ${expected}`,
+      });
+    }
+  });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -47,6 +74,8 @@ export const RegisterForm: React.FC = () => {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -58,6 +87,10 @@ export const RegisterForm: React.FC = () => {
       phone: '',
     },
   });
+
+  const selectedCountryCode = watch('countryCode') || '+91';
+  const selectedCountry =
+    COUNTRY_CODES.find((c) => c.code === selectedCountryCode) || COUNTRY_CODES[0];
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
@@ -208,9 +241,20 @@ export const RegisterForm: React.FC = () => {
               <label className="text-xs sm:text-sm font-medium text-text tracking-tight">
                 Phone Number (Optional)
               </label>
-              <div className="flex items-center gap-2">
+              <div className="flex items-start gap-2">
                 <select
-                  {...register('countryCode')}
+                  {...register('countryCode', {
+                    onChange: (e) => {
+                      const nextCountry =
+                        COUNTRY_CODES.find((c) => c.code === e.target.value) || COUNTRY_CODES[0];
+                      const currentPhone = watch('phone') || '';
+                      if (currentPhone.length > nextCountry.maxDigits) {
+                        setValue('phone', currentPhone.slice(0, nextCountry.maxDigits), {
+                          shouldValidate: true,
+                        });
+                      }
+                    },
+                  })}
                   className="h-[44px] px-2.5 rounded-[8px] border border-border bg-surface text-text text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors cursor-pointer shrink-0"
                 >
                   {COUNTRY_CODES.map((c) => (
@@ -222,10 +266,19 @@ export const RegisterForm: React.FC = () => {
 
                 <div className="flex-1">
                   <Input
-                    placeholder="9876543210"
+                    placeholder={selectedCountry.placeholder}
                     type="tel"
+                    inputMode="numeric"
+                    maxLength={selectedCountry.maxDigits}
                     error={errors.phone?.message}
-                    {...register('phone')}
+                    {...register('phone', {
+                      onChange: (e) => {
+                        const digitsOnly = e.target.value
+                          .replace(/\D/g, '')
+                          .slice(0, selectedCountry.maxDigits);
+                        setValue('phone', digitsOnly, { shouldValidate: true });
+                      },
+                    })}
                   />
                 </div>
               </div>

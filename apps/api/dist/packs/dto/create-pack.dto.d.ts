@@ -3,8 +3,9 @@ export declare class CreatePackDto {
     name: string;
     ordersCount: number;
     bonusCredits?: number;
-    priceUsd: number;
-    priceInr: number;
+    price?: number;
+    priceUsd?: number;
+    priceInr?: number;
     regionalPricingJson?: any;
     featuresJson?: any;
     isActive?: boolean;

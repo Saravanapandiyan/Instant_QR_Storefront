@@ -22,8 +22,28 @@ interface CreditCheckoutModalProps {
   pack: DynamicPack | null;
   restaurantId: string;
   restaurantName: string;
-  currency: 'INR' | 'USD';
+  currency: string;
   onSuccess: (res: PurchasePackResponse) => void;
+}
+
+function getCurrencySymbol(currency: string): string {
+  switch (currency?.toUpperCase()) {
+    case 'USD':
+      return '$';
+    case 'EUR':
+      return '€';
+    case 'GBP':
+      return '£';
+    case 'AED':
+      return 'AED ';
+    case 'SGD':
+      return 'S$';
+    case 'AUD':
+      return 'A$';
+    case 'INR':
+    default:
+      return '₹';
+  }
 }
 
 export const CreditCheckoutModal: React.FC<CreditCheckoutModalProps> = ({
@@ -44,9 +64,12 @@ export const CreditCheckoutModal: React.FC<CreditCheckoutModalProps> = ({
   if (!isOpen || !pack) return null;
 
   const totalCredits = pack.ordersCount + (pack.bonusCredits || 0);
-  const price = currency === 'USD' ? Number(pack.priceUsd) : Number(pack.priceInr);
-  const currencySymbol = currency === 'USD' ? '$' : '₹';
-  const costPerOrder = (price / totalCredits).toFixed(2);
+  const price =
+    currency.toUpperCase() === 'USD'
+      ? Number(pack.priceUsd || pack.priceInr)
+      : Number(pack.priceInr || pack.priceUsd);
+  const currencySymbol = getCurrencySymbol(currency);
+  const costPerOrder = totalCredits > 0 ? (price / totalCredits).toFixed(2) : '0.00';
 
   const handleCheckout = async () => {
     setIsProcessing(true);

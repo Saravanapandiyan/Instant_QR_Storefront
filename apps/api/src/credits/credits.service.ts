@@ -168,15 +168,24 @@ export class CreditsService {
 
     const { stripe, config } = await this.getStripeClient();
 
-    // Determine target currency (e.g. INR or USD)
-    const targetCurrency = (dto.currency || config.defaultCurrency || 'INR').toLowerCase();
+    // Read platform currency from Site Branding settings first, fallback to Stripe config
+    const brandingSetting = await this.prisma.platformSetting.findUnique({
+      where: { key: 'SITE_BRANDING' },
+    });
+    const brandingCurrency = (brandingSetting?.value as any)?.defaultCurrency;
+    const targetCurrency = (
+      dto.currency ||
+      brandingCurrency ||
+      config.defaultCurrency ||
+      'INR'
+    ).toLowerCase();
 
-    // Determine unit amount in smallest currency unit (paise for INR, cents for USD)
+    // Determine unit amount in smallest currency unit (e.g. paise/cents)
     let unitAmount: number;
-    if (targetCurrency === 'inr') {
-      unitAmount = Math.round(Number(pack.priceInr) * 100);
+    if (targetCurrency === 'usd') {
+      unitAmount = Math.round(Number(pack.priceUsd || pack.priceInr) * 100);
     } else {
-      unitAmount = Math.round(Number(pack.priceUsd) * 100);
+      unitAmount = Math.round(Number(pack.priceInr || pack.priceUsd) * 100);
     }
 
     if (unitAmount <= 0) {

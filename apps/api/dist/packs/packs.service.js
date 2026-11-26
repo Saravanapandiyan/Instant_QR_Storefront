@@ -50,14 +50,15 @@ let PacksService = class PacksService {
         if (existing) {
             throw new common_1.ConflictException(`Pack with code ${code} already exists.`);
         }
+        const resolvedPrice = dto.price ?? dto.priceInr ?? dto.priceUsd ?? 0;
         return this.prisma.pack.create({
             data: {
                 code,
                 name: dto.name.trim(),
                 ordersCount: dto.ordersCount,
                 bonusCredits: dto.bonusCredits ?? 0,
-                priceUsd: dto.priceUsd,
-                priceInr: dto.priceInr,
+                priceUsd: dto.priceUsd ?? resolvedPrice,
+                priceInr: dto.priceInr ?? resolvedPrice,
                 regionalPricingJson: dto.regionalPricingJson ?? null,
                 featuresJson: dto.featuresJson ?? null,
                 isActive: dto.isActive ?? true,
@@ -76,6 +77,10 @@ let PacksService = class PacksService {
             data.ordersCount = dto.ordersCount;
         if (dto.bonusCredits !== undefined)
             data.bonusCredits = dto.bonusCredits;
+        if (dto.price !== undefined) {
+            data.priceUsd = dto.price;
+            data.priceInr = dto.price;
+        }
         if (dto.priceUsd !== undefined)
             data.priceUsd = dto.priceUsd;
         if (dto.priceInr !== undefined)

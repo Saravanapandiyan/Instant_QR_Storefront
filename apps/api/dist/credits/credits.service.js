@@ -124,13 +124,20 @@ let CreditsService = class CreditsService {
             throw new common_1.BadRequestException('Selected credit pack is not available for purchase.');
         }
         const { stripe, config } = await this.getStripeClient();
-        const targetCurrency = (dto.currency || config.defaultCurrency || 'INR').toLowerCase();
+        const brandingSetting = await this.prisma.platformSetting.findUnique({
+            where: { key: 'SITE_BRANDING' },
+        });
+        const brandingCurrency = brandingSetting?.value?.defaultCurrency;
+        const targetCurrency = (dto.currency ||
+            brandingCurrency ||
+            config.defaultCurrency ||
+            'INR').toLowerCase();
         let unitAmount;
-        if (targetCurrency === 'inr') {
-            unitAmount = Math.round(Number(pack.priceInr) * 100);
+        if (targetCurrency === 'usd') {
+            unitAmount = Math.round(Number(pack.priceUsd || pack.priceInr) * 100);
         }
         else {
-            unitAmount = Math.round(Number(pack.priceUsd) * 100);
+            unitAmount = Math.round(Number(pack.priceInr || pack.priceUsd) * 100);
         }
         if (unitAmount <= 0) {
             throw new common_1.BadRequestException('Pack price must be greater than zero for card checkout.');

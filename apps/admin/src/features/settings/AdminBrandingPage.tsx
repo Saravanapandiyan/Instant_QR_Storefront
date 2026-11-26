@@ -221,6 +221,7 @@ export function AdminBrandingPage() {
     siteTitle: 'InstaDine',
     siteTagline: 'Turn every table into a storefront.',
     supportEmail: 'support@instadine.com',
+    defaultCurrency: 'INR',
     lightLogoUrl: null,
     darkLogoUrl: null,
     faviconUrl: null,
@@ -374,6 +375,33 @@ export function AdminBrandingPage() {
                     }}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--adm-text)' }}>
+                  Plan &amp; Billing Currency <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={form.defaultCurrency || 'INR'}
+                  onChange={(e) => setForm({ ...form, defaultCurrency: e.target.value })}
+                  className="w-full h-9 px-3 rounded-lg text-xs border focus:outline-none focus:ring-1 transition-all cursor-pointer font-semibold"
+                  style={{
+                    backgroundColor: 'var(--adm-surface-subtle)',
+                    borderColor: 'var(--adm-border)',
+                    color: 'var(--adm-text)',
+                  }}
+                >
+                  <option value="INR">🇮🇳 INR (₹) — Indian Rupee</option>
+                  <option value="USD">🇺🇸 USD ($) — US Dollar</option>
+                  <option value="EUR">🇪🇺 EUR (€) — Euro</option>
+                  <option value="GBP">🇬🇧 GBP (£) — British Pound</option>
+                  <option value="AED">🇦🇪 AED (د.إ) — UAE Dirham</option>
+                  <option value="SGD">🇸🇬 SGD (S$) — Singapore Dollar</option>
+                  <option value="AUD">🇦🇺 AUD (A$) — Australian Dollar</option>
+                </select>
+                <p className="text-[11px] mt-1" style={{ color: 'var(--adm-muted)' }}>
+                  Applies to all Subscription &amp; Credit Plans across Admin and Restaurant billing.
+                </p>
               </div>
             </div>
           </div>

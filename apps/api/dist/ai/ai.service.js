@@ -551,143 +551,174 @@ Do NOT include markdown backticks (\`\`\`json), comments, or introductory text. 
         }));
     }
     async executeQuickSetup(ownerId, dto) {
-        const restaurantSlug = await this.generateUniqueRestaurantSlug(dto.restaurantName);
-        const branchSlug = await this.generateUniqueBranchSlug(`${dto.restaurantName} main`);
-        const currency = dto.currency || 'INR';
-        if (dto.categories && dto.categories.length > 0) {
-            for (const catDto of dto.categories) {
-                await Promise.all((catDto.items || []).map(async (item) => {
-                    if (item.imageUrl && item.imageUrl.startsWith('http')) {
-                        item.imageUrl = await this.storageService.downloadAndStoreUrl(item.imageUrl, 'products');
-                    }
-                }));
+        try {
+            const owner = await this.prisma.user.findUnique({
+                where: { id: ownerId },
+                select: { id: true },
+            });
+            if (!owner) {
+                throw new common_1.BadRequestException('Owner account not found. Please log out and sign in again.');
             }
-        }
-        return this.prisma.$transaction(async (tx) => {
-            const restaurant = await tx.restaurant.create({
-                data: {
-                    ownerId,
-                    name: dto.restaurantName,
-                    slug: restaurantSlug,
-                    defaultCurrency: currency,
-                    creditBalance: 100,
-                    paymentConfig: {
-                        enableCash: true,
-                        serviceType: dto.serviceType || 'BOTH',
-                    },
-                },
-            });
-            await tx.creditLedger.create({
-                data: {
-                    restaurantId: restaurant.id,
-                    delta: 100,
-                    reason: 'SIGNUP_BONUS',
-                    balanceAfter: 100,
-                },
-            });
-            const branch = await tx.branch.create({
-                data: {
-                    restaurantId: restaurant.id,
-                    name: `${dto.restaurantName} - Main Store`,
-                    slug: branchSlug,
-                    currency,
-                    isActive: true,
-                },
-            });
-            let categoriesCreated = 0;
-            let productsCreated = 0;
+            const restaurantSlug = await this.generateUniqueRestaurantSlug(dto.restaurantName);
+            const branchSlug = await this.generateUniqueBranchSlug(`${dto.restaurantName} main`);
+            const currency = dto.currency || 'INR';
             if (dto.categories && dto.categories.length > 0) {
-                for (let i = 0; i < dto.categories.length; i++) {
-                    const catDto = dto.categories[i];
-                    const category = await tx.category.create({
-                        data: {
-                            restaurantId: restaurant.id,
-                            name: catDto.name,
-                            sortOrder: i,
-                        },
-                    });
-                    categoriesCreated++;
-                    for (const itemDto of catDto.items || []) {
-                        const product = await tx.product.create({
-                            data: {
-                                restaurantId: restaurant.id,
-                                categoryId: category.id,
-                                name: itemDto.name,
-                                description: itemDto.description || '',
-                                basePrice: itemDto.price || 0,
-                                imageUrl: itemDto.imageUrl || null,
-                            },
-                        });
-                        productsCreated++;
-                        await tx.branchProduct.create({
-                            data: {
-                                branchId: branch.id,
-                                productId: product.id,
-                                isAvailable: true,
-                            },
-                        });
-                    }
+                for (const catDto of dto.categories) {
+                    await Promise.all((catDto.items || []).map(async (item) => {
+                        if (item.imageUrl && item.imageUrl.startsWith('http')) {
+                            try {
+                                item.imageUrl = await this.storageService.downloadAndStoreUrl(item.imageUrl, 'products');
+                            }
+                            catch {
+                            }
+                        }
+                    }));
                 }
             }
-            let staffCreated = null;
+            let staffEmail = null;
+            let staffPasswordHash = null;
             if (dto.staffName && (dto.staffPin || dto.staffEmail)) {
-                const staffEmail = dto.staffEmail?.trim() ||
-                    `staff_${restaurant.id.slice(0, 8)}_${Date.now()}@instantqr.internal`;
+                staffEmail = dto.staffEmail?.trim().toLowerCase() || null;
                 const staffPasswordToHash = dto.staffPassword?.trim() || dto.staffPin || '1234';
-                const passwordHash = await bcrypt.hash(staffPasswordToHash, 10);
-                const staffUser = await tx.user.create({
+                staffPasswordHash = await bcrypt.hash(staffPasswordToHash, 10);
+            }
+            return this.prisma.$transaction(async (tx) => {
+                const restaurant = await tx.restaurant.create({
                     data: {
-                        email: staffEmail,
-                        name: dto.staffName,
-                        passwordHash,
-                        role: 'STAFF',
-                    },
-                });
-                staffCreated = await tx.staffMember.create({
-                    data: {
-                        restaurantId: restaurant.id,
-                        userId: staffUser.id,
-                        role: dto.staffRole || 'CASHIER',
-                        pinCode: dto.staffPin || '1234',
-                        assignedBranches: ['ALL'],
-                        permissions: {
-                            canConfirmOrders: true,
-                            canViewKds: true,
+                        ownerId,
+                        name: dto.restaurantName,
+                        slug: restaurantSlug,
+                        defaultCurrency: currency,
+                        creditBalance: 100,
+                        paymentConfig: {
+                            enableCash: true,
+                            serviceType: dto.serviceType || 'BOTH',
                         },
                     },
                 });
-            }
-            return {
-                success: true,
-                message: '5-Minute Quick Setup Completed Successfully!',
-                restaurant: {
-                    id: restaurant.id,
-                    name: restaurant.name,
-                    slug: restaurant.slug,
-                    currency: restaurant.defaultCurrency,
-                    creditBalance: restaurant.creditBalance,
-                },
-                branch: {
-                    id: branch.id,
-                    name: branch.name,
-                    slug: branch.slug,
-                    storefrontPath: `/r/${branch.slug}`,
-                },
-                counts: {
-                    categoriesCount: categoriesCreated,
-                    productsCount: productsCreated,
-                    freeCredits: 100,
-                },
-                staff: staffCreated
-                    ? {
-                        name: dto.staffName,
-                        email: dto.staffEmail || undefined,
-                        role: staffCreated.role,
-                        pinCode: staffCreated.pinCode,
+                await tx.creditLedger.create({
+                    data: {
+                        restaurantId: restaurant.id,
+                        delta: 100,
+                        reason: 'SIGNUP_BONUS',
+                        balanceAfter: 100,
+                    },
+                });
+                const branch = await tx.branch.create({
+                    data: {
+                        restaurantId: restaurant.id,
+                        name: `${dto.restaurantName} - Main Store`,
+                        slug: branchSlug,
+                        currency,
+                        isActive: true,
+                    },
+                });
+                let categoriesCreated = 0;
+                let productsCreated = 0;
+                if (dto.categories && dto.categories.length > 0) {
+                    for (let i = 0; i < dto.categories.length; i++) {
+                        const catDto = dto.categories[i];
+                        const category = await tx.category.create({
+                            data: {
+                                restaurantId: restaurant.id,
+                                name: catDto.name,
+                                sortOrder: i,
+                            },
+                        });
+                        categoriesCreated++;
+                        for (const itemDto of catDto.items || []) {
+                            const product = await tx.product.create({
+                                data: {
+                                    restaurantId: restaurant.id,
+                                    categoryId: category.id,
+                                    name: (itemDto.name || 'Dish').trim(),
+                                    description: itemDto.description || '',
+                                    basePrice: Number(itemDto.price) || 0,
+                                    imageUrl: itemDto.imageUrl || null,
+                                },
+                            });
+                            productsCreated++;
+                            await tx.branchProduct.create({
+                                data: {
+                                    branchId: branch.id,
+                                    productId: product.id,
+                                    isAvailable: true,
+                                },
+                            });
+                        }
                     }
-                    : null,
-            };
-        });
+                }
+                let staffCreated = null;
+                if (dto.staffName && (dto.staffPin || dto.staffEmail)) {
+                    const resolvedStaffEmail = staffEmail ||
+                        `staff_${restaurant.id.slice(0, 8)}_${Date.now()}@instantqr.internal`;
+                    const existingStaffUser = await tx.user.findUnique({
+                        where: { email: resolvedStaffEmail },
+                    });
+                    if (existingStaffUser) {
+                        throw new common_1.BadRequestException(`Staff email "${resolvedStaffEmail}" is already registered to another account. Please use a different email.`);
+                    }
+                    const staffUser = await tx.user.create({
+                        data: {
+                            email: resolvedStaffEmail,
+                            name: dto.staffName,
+                            passwordHash: staffPasswordHash,
+                            role: 'STAFF',
+                        },
+                    });
+                    staffCreated = await tx.staffMember.create({
+                        data: {
+                            restaurantId: restaurant.id,
+                            userId: staffUser.id,
+                            role: dto.staffRole || 'CASHIER',
+                            pinCode: dto.staffPin || '1234',
+                            assignedBranches: ['ALL'],
+                            permissions: {
+                                canConfirmOrders: true,
+                                canViewKds: true,
+                            },
+                        },
+                    });
+                }
+                return {
+                    success: true,
+                    message: '5-Minute Quick Setup Completed Successfully!',
+                    restaurant: {
+                        id: restaurant.id,
+                        name: restaurant.name,
+                        slug: restaurant.slug,
+                        currency: restaurant.defaultCurrency,
+                        creditBalance: restaurant.creditBalance,
+                    },
+                    branch: {
+                        id: branch.id,
+                        name: branch.name,
+                        slug: branch.slug,
+                        storefrontPath: `/r/${branch.slug}`,
+                    },
+                    counts: {
+                        categoriesCount: categoriesCreated,
+                        productsCount: productsCreated,
+                        freeCredits: 100,
+                    },
+                    staff: staffCreated
+                        ? {
+                            name: dto.staffName,
+                            email: dto.staffEmail || undefined,
+                            role: staffCreated.role,
+                            pinCode: staffCreated.pinCode,
+                        }
+                        : null,
+                };
+            }, { maxWait: 10000, timeout: 60000 });
+        }
+        catch (err) {
+            this.logger.error(`Quick Setup failed for owner=${ownerId}: ${err?.message}`, err?.stack);
+            if (err instanceof common_1.BadRequestException) {
+                throw err;
+            }
+            throw new common_1.InternalServerErrorException(err?.message || 'Failed to complete Quick Setup. Please check API logs.');
+        }
     }
     DEFAULT_LANGUAGES = [
         { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },

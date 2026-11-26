@@ -4,6 +4,7 @@ export interface SiteBrandingConfig {
   siteTitle: string;
   siteTagline: string;
   supportEmail: string;
+  defaultCurrency?: string;
   lightLogoUrl: string | null;
   darkLogoUrl: string | null;
   faviconUrl: string | null;

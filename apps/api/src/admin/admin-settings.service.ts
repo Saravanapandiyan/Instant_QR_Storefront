@@ -6,6 +6,7 @@ export interface SiteBrandingConfig {
   siteTitle: string;
   siteTagline: string;
   supportEmail: string;
+  defaultCurrency: string;
   lightLogoUrl: string | null;
   darkLogoUrl: string | null;
   faviconUrl: string | null;
@@ -19,6 +20,7 @@ export const DEFAULT_BRANDING: SiteBrandingConfig = {
   siteTitle: 'InstaDine',
   siteTagline: 'Turn every table into a storefront.',
   supportEmail: 'support@instadine.com',
+  defaultCurrency: 'INR',
   lightLogoUrl: null,
   darkLogoUrl: null,
   faviconUrl: null,

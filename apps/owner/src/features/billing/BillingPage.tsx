@@ -26,6 +26,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useRestaurants } from '../restaurants/hooks/useRestaurants';
 import { useActiveStore } from '../../store/useActiveStore';
 import { QUERY_KEYS } from '../../constants/query-keys';
+import { apiClient } from '../../lib/api-client';
 import { packsApi, type DynamicPack } from './api/packsApi';
 import { creditsApi, type CreditBalanceInfo, type CreditLedgerEntry, type PurchasePackResponse } from './api/creditsApi';
 import { CreditCheckoutModal } from './components/CreditCheckoutModal';
@@ -39,6 +40,26 @@ const PACK_DESCRIPTIONS: Record<string, string> = {
   BUSINESS: 'For high meal rush & multi-counter operations',
   CHAIN: 'For multi-outlet franchises & restaurant chains',
 };
+
+function getCurrencySymbol(currency: string): string {
+  switch (currency?.toUpperCase()) {
+    case 'USD':
+      return '$';
+    case 'EUR':
+      return '€';
+    case 'GBP':
+      return '£';
+    case 'AED':
+      return 'AED ';
+    case 'SGD':
+      return 'S$';
+    case 'AUD':
+      return 'A$';
+    case 'INR':
+    default:
+      return '₹';
+  }
+}
 
 export const BillingPage: React.FC = () => {
   const { restaurants = [] } = useRestaurants();
@@ -64,11 +85,9 @@ export const BillingPage: React.FC = () => {
     navigate(`/billing/${newTab}`);
   };
 
-  const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [selectedPackForCheckout, setSelectedPackForCheckout] = useState<DynamicPack | null>(null);
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
-  const [planFilter, setPlanFilter] = useState<'ALL' | 'CORE' | 'SCALE'>('ALL');
   const [ledgerFilter, setLedgerFilter] = useState<'ALL' | 'ORDER_CONFIRMED' | 'PACK_PURCHASE' | 'SIGNUP_BONUS'>('ALL');
 
   const queryClient = useQueryClient();
@@ -77,6 +96,14 @@ export const BillingPage: React.FC = () => {
   const verifiedSessionRef = useRef<string | null>(null);
 
   const targetRestId = selectedRestaurant?.id || restaurants[0]?.id;
+
+  // 0. Fetch platform currency from Admin Site Branding settings
+  const { data: brandingConfig } = useQuery({
+    queryKey: ['public-branding'],
+    queryFn: () => apiClient.get<{ defaultCurrency?: string }>('/platform/branding'),
+  });
+  const currency = (brandingConfig?.defaultCurrency || 'INR').toUpperCase();
+  const symbol = getCurrencySymbol(currency);
 
   // 1. Fetch active credit packs strictly from Admin/API (with automatic retry)
   const {
@@ -214,25 +241,7 @@ export const BillingPage: React.FC = () => {
   });
 
   const displayPacks = packs;
-
-  const corePacks = useMemo(
-    () => displayPacks.filter((p) => ['STARTER', 'GROWTH', 'PRO'].includes(p.code)),
-    [displayPacks],
-  );
-  const scalePacks = useMemo(
-    () => displayPacks.filter((p) => ['BUSINESS', 'CHAIN'].includes(p.code)),
-    [displayPacks],
-  );
-
-  const visiblePacks = useMemo(() => {
-    if (planFilter === 'CORE') {
-      return corePacks;
-    }
-    if (planFilter === 'SCALE') {
-      return scalePacks;
-    }
-    return displayPacks;
-  }, [displayPacks, corePacks, scalePacks, planFilter]);
+  const visiblePacks = displayPacks;
 
   return (
     <DashboardLayout>
@@ -268,36 +277,10 @@ export const BillingPage: React.FC = () => {
               </div>
             )}
 
-            {/* Currency Switcher */}
-            <div className="inline-flex p-0.5 rounded-lg bg-surface-2 border border-border text-xs">
-              <button
-                type="button"
-                onClick={() => setCurrency('INR')}
-                className={`px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${
-                  currency === 'INR'
-                    ? 'bg-surface text-text shadow-2xs font-semibold'
-                    : 'text-muted hover:text-text'
-                }`}
-              >
-                ₹ INR
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrency('USD')}
-                className={`px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${
-                  currency === 'USD'
-                    ? 'bg-surface text-text shadow-2xs font-semibold'
-                    : 'text-muted hover:text-text'
-                }`}
-              >
-                $ USD
-              </button>
-            </div>
-
             {/* Refresh */}
             <button
               type="button"
-              onClick={() => loadData(true, selectedRestaurant?.id)}
+              onClick={() => loadData(true)}
               disabled={isRefreshing}
               className="p-1.5 rounded-lg border border-border bg-surface text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
               title="Refresh"
@@ -371,59 +354,16 @@ export const BillingPage: React.FC = () => {
         {/* ========================================================================= */}
         {activeMainTab === 'plans' && (
           <div className="space-y-5 animate-in fade-in duration-150">
-            {/* Quick Strip Summary & Filter */}
+            {/* Quick Strip Summary */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
               <div>
                 <h2 className="text-base font-bold text-text tracking-tight">
-                  Choose a Prepaid Pack
+                  Choose a Prepaid Credit Pack
                 </h2>
                 <p className="text-xs text-muted mt-0.5">
-                  Credits never expire and roll over indefinitely. No contracts or monthly renewals.
+                  All platform features &amp; pages are unlocked for every recharged account. Credits never expire.
                 </p>
               </div>
-
-              {/* Segmented Filter */}
-              {displayPacks.length > 0 && (
-                <div className="inline-flex p-0.5 rounded-lg bg-surface-2 border border-border text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setPlanFilter('ALL')}
-                    className={`px-3 py-1 rounded-md font-medium transition-all cursor-pointer ${
-                      planFilter === 'ALL'
-                        ? 'bg-surface text-text shadow-2xs font-semibold'
-                        : 'text-muted hover:text-text'
-                    }`}
-                  >
-                    All Packs ({displayPacks.length})
-                  </button>
-                  {corePacks.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setPlanFilter('CORE')}
-                      className={`px-3 py-1 rounded-md font-medium transition-all cursor-pointer ${
-                        planFilter === 'CORE'
-                          ? 'bg-surface text-text shadow-2xs font-semibold'
-                          : 'text-muted hover:text-text'
-                      }`}
-                    >
-                      Single Outlets ({corePacks.length})
-                    </button>
-                  )}
-                  {scalePacks.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setPlanFilter('SCALE')}
-                      className={`px-3 py-1 rounded-md font-medium transition-all cursor-pointer ${
-                        planFilter === 'SCALE'
-                          ? 'bg-surface text-text shadow-2xs font-semibold'
-                          : 'text-muted hover:text-text'
-                      }`}
-                    >
-                      Chains & Multi-Store ({scalePacks.length})
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Clean Professional Cards Grid or Empty State */}
@@ -462,8 +402,10 @@ export const BillingPage: React.FC = () => {
               {visiblePacks.map((pack) => {
                 const isPro = pack.code === 'PRO';
                 const isHighlighted = selectedPackId ? selectedPackId === pack.id : isPro;
-                const price = currency === 'USD' ? Number(pack.priceUsd) : Number(pack.priceInr);
-                const symbol = currency === 'USD' ? '$' : '₹';
+                const price =
+                  currency === 'USD'
+                    ? Number(pack.priceUsd || pack.priceInr)
+                    : Number(pack.priceInr || pack.priceUsd);
                 const totalCredits = pack.ordersCount + (pack.bonusCredits || 0);
                 const costPerOrder = totalCredits > 0 ? (price / totalCredits).toFixed(2) : '0.00';
                 const tagline = PACK_DESCRIPTIONS[pack.code] || 'Prepaid credit pack';
@@ -531,54 +473,30 @@ export const BillingPage: React.FC = () => {
                         )}
                       </div>
 
-                      {/* Features List */}
+                      {/* Credits Breakdown */}
                       <div className="space-y-2 text-xs pt-1">
                         <div className="flex items-center gap-2 text-text">
                           <Check className="w-3.5 h-3.5 text-primary shrink-0" />
-                          <span>Touchless QR Menu & Ordering</span>
+                          <span>
+                            <strong>{pack.ordersCount.toLocaleString()}</strong> Base Order Credits
+                          </span>
+                        </div>
+                        {pack.bonusCredits > 0 && (
+                          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-medium">
+                            <Check className="w-3.5 h-3.5 shrink-0" />
+                            <span>
+                              +{pack.bonusCredits.toLocaleString()} Bonus Credits Included
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 text-text">
+                          <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <span>All platform pages &amp; features included</span>
                         </div>
                         <div className="flex items-center gap-2 text-text">
                           <Check className="w-3.5 h-3.5 text-primary shrink-0" />
-                          <span>AI Menu Auto-Import & Photos</span>
+                          <span>Never expires • Infinite rollover</span>
                         </div>
-                        <div className="flex items-center gap-2 text-text">
-                          <Check className="w-3.5 h-3.5 text-primary shrink-0" />
-                          <span>Kitchen Display (KDS with Timers)</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-text">
-                          <Check className="w-3.5 h-3.5 text-primary shrink-0" />
-                          <span>Live Customer Tracking & Receipts</span>
-                        </div>
-                        {pack.featuresJson?.dailyReports && (
-                          <div className="flex items-center gap-2 text-text font-medium">
-                            <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                            <span>Daily Sales & Revenue Analytics</span>
-                          </div>
-                        )}
-                        {pack.featuresJson?.multiLanguage && (
-                          <div className="flex items-center gap-2 text-text font-medium">
-                            <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                            <span>Multi-Language Menu Translation</span>
-                          </div>
-                        )}
-                        {pack.featuresJson?.tvDisplay && (
-                          <div className="flex items-center gap-2 text-text font-medium">
-                            <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                            <span>TV Order Ready Expeditor Display</span>
-                          </div>
-                        )}
-                        {pack.featuresJson?.multiCounter && (
-                          <div className="flex items-center gap-2 text-text font-medium text-primary">
-                            <Check className="w-3.5 h-3.5 text-primary shrink-0" />
-                            <span>Multi-Counter & Cashier Split</span>
-                          </div>
-                        )}
-                        {pack.featuresJson?.multiOutlets && (
-                          <div className="flex items-center gap-2 text-text font-medium text-primary">
-                            <Check className="w-3.5 h-3.5 text-primary shrink-0" />
-                            <span>Multi-Outlet Franchise Matrix</span>
-                          </div>
-                        )}
                       </div>
                     </div>
 

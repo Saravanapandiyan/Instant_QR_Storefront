@@ -36,21 +36,32 @@ export class CreatePackDto {
   @IsOptional()
   bonusCredits?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
+    example: 499.0,
+    description: 'Single plan price in platform currency',
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  price?: number;
+
+  @ApiPropertyOptional({
     example: 20.0,
     description: 'Price in USD',
   })
   @IsNumber()
   @Min(0)
-  priceUsd: number;
+  @IsOptional()
+  priceUsd?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 699.0,
     description: 'Price in INR',
   })
   @IsNumber()
   @Min(0)
-  priceInr: number;
+  @IsOptional()
+  priceInr?: number;
 
   @ApiPropertyOptional({
     example: { PHP: 1150, MYR: 95 },

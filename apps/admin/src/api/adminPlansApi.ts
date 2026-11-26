@@ -37,8 +37,9 @@ export interface CreatePlanPayload {
   name: string;
   ordersCount: number;
   bonusCredits?: number;
-  priceUsd: number;
-  priceInr: number;
+  price?: number;
+  priceUsd?: number;
+  priceInr?: number;
   regionalPricingJson?: Record<string, number> | null;
   featuresJson?: PlanFeatures | null;
   isActive?: boolean;

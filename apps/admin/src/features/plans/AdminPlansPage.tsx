@@ -9,9 +9,7 @@ import {
   Sparkles,
   RefreshCw,
   Search,
-  DollarSign,
   Package,
-  Check,
   X,
   AlertTriangle,
   Flame,
@@ -23,22 +21,29 @@ import {
   adminPlansApi,
   type AdminPack,
   type CreatePlanPayload,
-  type PlanFeatures,
 } from '../../api/adminPlansApi.ts';
+import { adminSettingsApi } from '../../api/adminSettingsApi.ts';
 import { toast } from '../../components/ui/toast/useAdminToastStore.ts';
 
-const AVAILABLE_FEATURES: { key: keyof PlanFeatures; label: string; desc: string }[] = [
-  { key: 'qrMenu', label: 'Touchless QR Storefront', desc: 'Scan-and-order customer webapp' },
-  { key: 'liveOrderStatus', label: 'Real-time Order Tracking', desc: 'Live customer order updates' },
-  { key: 'counterDashboard', label: 'Counter & Cashier POS', desc: 'POS order creation and settlement' },
-  { key: 'kitchenScreen', label: 'Kitchen Display (KDS)', desc: 'Real-time chef orders board' },
-  { key: 'tvDisplay', label: 'TV Status Screen', desc: 'Large screen order token display' },
-  { key: 'multiLanguage', label: 'Multi-Language Menu', desc: '10+ instant menu languages' },
-  { key: 'dailyReports', label: 'Sales & Daily Reports', desc: 'Daily settlement and revenue exports' },
-  { key: 'staffRoles', label: 'Staff Roles & 4-Digit PINs', desc: 'Manager, Cashier, Kitchen security' },
-  { key: 'multiOutlets', label: 'Multi-Branch Management', desc: 'Scale across multiple restaurant locations' },
-  { key: 'prioritySupport', label: 'Priority SLA Support', desc: 'Dedicated engineering support channel' },
-];
+function getCurrencySymbol(currency: string): string {
+  switch (currency?.toUpperCase()) {
+    case 'USD':
+      return '$';
+    case 'EUR':
+      return '€';
+    case 'GBP':
+      return '£';
+    case 'AED':
+      return 'AED ';
+    case 'SGD':
+      return 'S$';
+    case 'AUD':
+      return 'A$';
+    case 'INR':
+    default:
+      return '₹';
+  }
+}
 
 export function AdminPlansPage() {
   const queryClient = useQueryClient();
@@ -53,22 +58,23 @@ export function AdminPlansPage() {
   // Lock background scroll when plan modal is open
   useBodyScrollLock(Boolean(isModalOpen || editingPack || deleteConfirmPack));
 
-  // Form State
+  const { data: branding } = useQuery({
+    queryKey: ['admin-branding-settings'],
+    queryFn: adminSettingsApi.getBranding,
+  });
+
+  const platformCurrency = (branding?.defaultCurrency || 'INR').toUpperCase();
+  const currencySymbol = getCurrencySymbol(platformCurrency);
+
+  // Form State (credits-only + single price)
   const [formData, setFormData] = useState<CreatePlanPayload>({
     code: '',
     name: '',
     ordersCount: 1000,
     bonusCredits: 0,
-    priceUsd: 15,
-    priceInr: 499,
+    price: 499,
     isActive: true,
     sortOrder: 1,
-    featuresJson: {
-      qrMenu: true,
-      liveOrderStatus: true,
-      counterDashboard: true,
-      dailyReports: true,
-    },
   });
 
   const { data: packs = [], isLoading, refetch, isRefetching } = useQuery({
@@ -121,44 +127,29 @@ export function AdminPlansPage() {
       name: '',
       ordersCount: 1000,
       bonusCredits: 0,
-      priceUsd: 15,
-      priceInr: 499,
+      price: 499,
       isActive: true,
-      sortOrder: (packs.length + 1),
-      featuresJson: {
-        qrMenu: true,
-        liveOrderStatus: true,
-        counterDashboard: true,
-        dailyReports: true,
-      },
+      sortOrder: packs.length + 1,
     });
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (pack: AdminPack) => {
     setEditingPack(pack);
+    const existingPrice =
+      platformCurrency === 'USD'
+        ? Number(pack.priceUsd || pack.priceInr || 0)
+        : Number(pack.priceInr || pack.priceUsd || 0);
     setFormData({
       code: pack.code,
       name: pack.name,
       ordersCount: pack.ordersCount,
       bonusCredits: pack.bonusCredits,
-      priceUsd: Number(pack.priceUsd),
-      priceInr: Number(pack.priceInr),
+      price: existingPrice,
       isActive: pack.isActive,
       sortOrder: pack.sortOrder,
-      featuresJson: pack.featuresJson || { qrMenu: true, liveOrderStatus: true },
     });
     setIsModalOpen(true);
-  };
-
-  const handleToggleFeature = (key: keyof PlanFeatures) => {
-    setFormData((prev) => ({
-      ...prev,
-      featuresJson: {
-        ...prev.featuresJson,
-        [key]: !prev.featuresJson?.[key],
-      },
-    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -168,13 +159,21 @@ export function AdminPlansPage() {
       return;
     }
 
+    const numericPrice = Number(formData.price) || 0;
+    const payload: CreatePlanPayload = {
+      ...formData,
+      price: numericPrice,
+      priceUsd: numericPrice,
+      priceInr: numericPrice,
+    };
+
     if (editingPack) {
       updateMutation.mutate({
         id: editingPack.id,
-        payload: formData,
+        payload,
       });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(payload);
     }
   };
 
@@ -284,7 +283,11 @@ export function AdminPlansPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredPacks.map((pack) => {
-              const isFree = pack.code === 'FREE' || Number(pack.priceUsd) === 0;
+              const displayPrice =
+                platformCurrency === 'USD'
+                  ? Number(pack.priceUsd || pack.priceInr || 0)
+                  : Number(pack.priceInr || pack.priceUsd || 0);
+              const isFree = pack.code === 'FREE' || displayPrice === 0;
               const isPopular = pack.code === 'PRO';
               const totalCredits = pack.ordersCount + (pack.bonusCredits || 0);
 
@@ -349,10 +352,10 @@ export function AdminPlansPage() {
 
                     <div className="mt-3 flex items-baseline gap-2">
                       <span className="text-2xl font-extrabold text-neutral-900 dark:text-white">
-                        ${pack.priceUsd}
+                        {currencySymbol}{displayPrice}
                       </span>
                       <span className="text-xs text-neutral-500 font-medium">
-                        / ₹{pack.priceInr}
+                        {platformCurrency} • one-time
                       </span>
                     </div>
 
@@ -380,23 +383,6 @@ export function AdminPlansPage() {
                       <span className="text-xs font-mono font-bold text-neutral-600 dark:text-neutral-400">
                         {totalCredits.toLocaleString()} Total
                       </span>
-                    </div>
-
-                    {/* Features Checklist */}
-                    <div className="mt-4 space-y-1.5 border-t pt-3" style={{ borderColor: 'var(--adm-border)' }}>
-                      <div className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2">
-                        Included Features
-                      </div>
-                      {AVAILABLE_FEATURES.map((feat) => {
-                        const hasFeature = Boolean(pack.featuresJson?.[feat.key]);
-                        if (!hasFeature) return null;
-                        return (
-                          <div key={feat.key} className="flex items-center gap-2 text-xs text-neutral-700 dark:text-neutral-300">
-                            <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                            <span>{feat.label}</span>
-                          </div>
-                        );
-                      })}
                     </div>
                   </div>
 
@@ -452,7 +438,7 @@ export function AdminPlansPage() {
                       {editingPack ? `Edit Plan: ${editingPack.name}` : 'Create New Subscription Plan'}
                     </h2>
                     <p className="text-xs text-neutral-500">
-                      Configure credit amounts, pricing, and feature permissions.
+                      Configure order credits, bonus credits, and single price ({platformCurrency}).
                     </p>
                   </div>
                 </div>
@@ -532,41 +518,23 @@ export function AdminPlansPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
-                      Price in USD ($) *
+                      Price ({currencySymbol.trim()} {platformCurrency}) *
                     </label>
                     <div className="relative">
-                      <DollarSign className="w-3.5 h-3.5 absolute left-3 top-2.5 text-neutral-400" />
+                      <span className="text-xs font-bold absolute left-3 top-2 text-neutral-400">
+                        {currencySymbol.trim()}
+                      </span>
                       <input
                         type="number"
                         min="0"
                         step="0.01"
-                        placeholder="19.99"
-                        value={formData.priceUsd}
-                        onChange={(e) => setFormData({ ...formData, priceUsd: parseFloat(e.target.value) || 0 })}
-                        className="w-full pl-8 pr-3 py-2 text-xs font-mono rounded-lg border bg-transparent focus:ring-1 focus:ring-emerald-500 outline-hidden"
-                        style={{ borderColor: 'var(--adm-border)', color: 'var(--adm-text)' }}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
-                      Price in INR (₹) *
-                    </label>
-                    <div className="relative">
-                      <span className="text-xs font-bold absolute left-3 top-2 text-neutral-400">₹</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        placeholder="699"
-                        value={formData.priceInr}
-                        onChange={(e) => setFormData({ ...formData, priceInr: parseFloat(e.target.value) || 0 })}
-                        className="w-full pl-8 pr-3 py-2 text-xs font-mono rounded-lg border bg-transparent focus:ring-1 focus:ring-emerald-500 outline-hidden"
+                        placeholder="499"
+                        value={formData.price ?? 0}
+                        onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                        className="w-full pl-9 pr-3 py-2 text-xs font-mono rounded-lg border bg-transparent focus:ring-1 focus:ring-emerald-500 outline-hidden"
                         style={{ borderColor: 'var(--adm-border)', color: 'var(--adm-text)' }}
                         required
                       />
@@ -585,42 +553,6 @@ export function AdminPlansPage() {
                       className="w-full px-3 py-2 text-xs font-mono rounded-lg border bg-transparent focus:ring-1 focus:ring-emerald-500 outline-hidden"
                       style={{ borderColor: 'var(--adm-border)', color: 'var(--adm-text)' }}
                     />
-                  </div>
-                </div>
-
-                {/* Feature Permissions Checklist */}
-                <div className="pt-2">
-                  <label className="block text-xs font-bold text-neutral-800 dark:text-neutral-200 mb-2">
-                    Included Features & Permissions:
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {AVAILABLE_FEATURES.map((feat) => {
-                      const isChecked = Boolean(formData.featuresJson?.[feat.key]);
-                      return (
-                        <label
-                          key={feat.key}
-                          onClick={() => handleToggleFeature(feat.key)}
-                          className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-colors ${
-                            isChecked
-                              ? 'border-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20'
-                              : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => {}}
-                            className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500"
-                          />
-                          <div>
-                            <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                              {feat.label}
-                            </div>
-                            <div className="text-[11px] text-neutral-500">{feat.desc}</div>
-                          </div>
-                        </label>
-                      );
-                    })}
                   </div>
                 </div>
 

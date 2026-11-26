@@ -62,14 +62,16 @@ export class PacksService {
       throw new ConflictException(`Pack with code ${code} already exists.`);
     }
 
+    const resolvedPrice = dto.price ?? dto.priceInr ?? dto.priceUsd ?? 0;
+
     return this.prisma.pack.create({
       data: {
         code,
         name: dto.name.trim(),
         ordersCount: dto.ordersCount,
         bonusCredits: dto.bonusCredits ?? 0,
-        priceUsd: dto.priceUsd,
-        priceInr: dto.priceInr,
+        priceUsd: dto.priceUsd ?? resolvedPrice,
+        priceInr: dto.priceInr ?? resolvedPrice,
         regionalPricingJson: dto.regionalPricingJson ?? null,
         featuresJson: dto.featuresJson ?? null,
         isActive: dto.isActive ?? true,
@@ -89,6 +91,10 @@ export class PacksService {
     if (dto.name !== undefined) data.name = dto.name.trim();
     if (dto.ordersCount !== undefined) data.ordersCount = dto.ordersCount;
     if (dto.bonusCredits !== undefined) data.bonusCredits = dto.bonusCredits;
+    if (dto.price !== undefined) {
+      data.priceUsd = dto.price;
+      data.priceInr = dto.price;
+    }
     if (dto.priceUsd !== undefined) data.priceUsd = dto.priceUsd;
     if (dto.priceInr !== undefined) data.priceInr = dto.priceInr;
     if (dto.regionalPricingJson !== undefined) data.regionalPricingJson = dto.regionalPricingJson;
