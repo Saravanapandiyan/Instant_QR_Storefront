@@ -1,7 +1,24 @@
 import type { StorefrontBranch, StorefrontMenuData } from '../types/storefront.ts';
 
-const API_BASE = '/api/v1';
+const API_BASE = (import.meta.env as any).VITE_API_BASE_URL || '/api/v1';
 const CACHE_KEY_PREFIX = 'instadine_cached_menu_';
+
+export interface ResolvedQrPayload {
+  branchSlug: string;
+  tableNumber: string | null;
+  storefrontToken: string;
+}
+
+export async function resolveQrToken(token: string): Promise<ResolvedQrPayload> {
+  const res = await fetch(`${API_BASE}/branches/resolve-qr?token=${encodeURIComponent(token)}`);
+  if (!res.ok) {
+    if (res.status === 404 || res.status === 400) {
+      throw new Error('This QR code is invalid or expired.');
+    }
+    throw new Error('Failed to resolve QR code.');
+  }
+  return res.json();
+}
 
 export async function fetchBranchBySlug(slug: string): Promise<StorefrontBranch & { restaurant: any }> {
   const res = await fetch(`${API_BASE}/branches/slug/${encodeURIComponent(slug)}`);
@@ -35,6 +52,10 @@ export async function fetchStorefrontBySlug(slug: string): Promise<StorefrontMen
     // Ensure restaurant themeConfig from branch lookup is preserved
     if (branchData.restaurant && !menuData.restaurant.themeConfig) {
       menuData.restaurant.themeConfig = branchData.restaurant.themeConfig;
+    }
+
+    if (branchData.storefrontToken) {
+      menuData.storefrontToken = branchData.storefrontToken;
     }
 
     // Persist snapshot to localStorage for offline / poor network resilience

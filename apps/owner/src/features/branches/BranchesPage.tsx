@@ -29,7 +29,11 @@ import { useActiveStore } from '../../store/useActiveStore';
 import { BranchModal } from './components/BranchModal';
 import { InstagramQRModal } from './components/InstagramQRModal';
 import { TableQrModal } from './components/TableQrModal';
-import { getCustomerStorefrontUrl } from '../../lib/urls';
+import {
+  getCustomerStorefrontUrl,
+  getEncryptedStorefrontUrl,
+  fetchEncryptedQrTokens,
+} from '../../lib/urls';
 import { getMediaUrl, cn } from '../../lib/utils';
 import { ROUTES } from '../../constants/routes';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -70,9 +74,47 @@ export const BranchesPage: React.FC = () => {
   const [qrModalBranch, setQrModalBranch] = useState<Branch | null>(null);
   const [qrModalTableNumber, setQrModalTableNumber] = useState<string | null>(null);
   const [tableQrBranch, setTableQrBranch] = useState<Branch | null>(null);
+  const [encryptedBranchTokens, setEncryptedBranchTokens] = useState<Record<string, string>>({});
+
+  React.useEffect(() => {
+    if (!allBranches.length) return;
+    let cancelled = false;
+    Promise.all(
+      allBranches.map(async (b) => {
+        try {
+          const res = await fetchEncryptedQrTokens(b.slug);
+          return [b.slug, res.baseToken] as const;
+        } catch {
+          return null;
+        }
+      }),
+    ).then((entries) => {
+      if (cancelled) return;
+      const map: Record<string, string> = {};
+      for (const entry of entries) {
+        if (entry && entry[1]) {
+          map[entry[0]] = entry[1];
+        }
+      }
+      setEncryptedBranchTokens(map);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [allBranches]);
+
+  const getBranchStorefrontHref = (slug: string) => {
+    const token = encryptedBranchTokens[slug];
+    return token ? getEncryptedStorefrontUrl(token) : getCustomerStorefrontUrl(slug);
+  };
+
+  const getBranchDisplayPath = (slug: string) => {
+    const token = encryptedBranchTokens[slug];
+    return token ? `/s/${token}` : `/r/${slug}`;
+  };
 
   const handleCopyUrl = (slug: string) => {
-    const fullUrl = getCustomerStorefrontUrl(slug);
+    const fullUrl = getBranchStorefrontHref(slug);
     navigator.clipboard.writeText(fullUrl);
     setCopiedSlug(slug);
     setTimeout(() => setCopiedSlug(null), 2000);
@@ -440,7 +482,7 @@ export const BranchesPage: React.FC = () => {
                     <div className="p-2 rounded-[8px] bg-surface-2 border border-border flex items-center justify-between text-xs gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className="font-mono text-primary font-semibold truncate text-[11px]">
-                          /r/{branch.slug}
+                          {getBranchDisplayPath(branch.slug)}
                         </span>
                       </div>
 
@@ -466,7 +508,7 @@ export const BranchesPage: React.FC = () => {
                           <QrCode size={13} />
                         </button>
                         <a
-                          href={getCustomerStorefrontUrl(branch.slug)}
+                          href={getBranchStorefrontHref(branch.slug)}
                           target="_blank"
                           rel="noreferrer"
                           title="Open Storefront Menu"
@@ -592,7 +634,7 @@ export const BranchesPage: React.FC = () => {
                         <td className="py-2.5 px-3">
                           <div className="flex items-center gap-1.5">
                             <span className="font-mono text-primary text-[11px] font-medium truncate max-w-[140px]">
-                              /r/{branch.slug}
+                              {getBranchDisplayPath(branch.slug)}
                             </span>
                             <button
                               type="button"

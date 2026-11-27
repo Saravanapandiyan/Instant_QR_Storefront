@@ -6,10 +6,12 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   HttpCode,
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
+import { RateLimit, RateLimitGuard } from '../common/guards/rate-limit.guard';
 import {
   ApiTags,
   ApiOperation,
@@ -55,6 +57,24 @@ export class BranchesController {
   @ApiParam({ name: 'restaurantId' })
   findByRestaurant(@Param('restaurantId') restaurantId: string) {
     return this.branchesService.findByRestaurant(restaurantId);
+  }
+
+  @Get('resolve-qr')
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ limit: 60, windowMs: 60_000 })
+  @ApiOperation({ summary: 'Decrypt an encrypted QR storefront token into branchSlug, tableNumber, and session token' })
+  resolveQrToken(@Query('token') token: string) {
+    return this.branchesService.resolveQrToken(token);
+  }
+
+  @Post('qr-tokens')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Generate encrypted AES-256-GCM QR tokens for a branch and its tables (Owner only)' })
+  generateQrTokens(
+    @Body() body: { branchSlug: string; tableNumbers?: (string | number)[] },
+  ) {
+    return this.branchesService.generateQrTokens(body.branchSlug, body.tableNumbers);
   }
 
   @Get('slug/:slug')

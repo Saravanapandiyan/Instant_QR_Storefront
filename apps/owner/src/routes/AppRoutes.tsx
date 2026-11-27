@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { LoginForm } from '../features/auth/components/LoginForm';
 import { RegisterForm } from '../features/auth/components/RegisterForm';
+import { PwaLandingPage } from '../features/auth/PwaLandingPage';
 import { ImpersonatePage } from '../features/auth/ImpersonatePage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
@@ -57,6 +58,7 @@ export const AppRoutes: React.FC = () => {
       <Routes>
         {/* Guest / Public Auth Routes (Redirects to dashboard if already logged in) */}
         <Route element={<PublicRoute />}>
+          <Route path={ROUTES.AUTH.WELCOME} element={<PwaLandingPage />} />
           <Route path={ROUTES.AUTH.LOGIN} element={<LoginForm />} />
           <Route path={ROUTES.AUTH.REGISTER} element={<RegisterForm />} />
           <Route path="/auth/impersonate" element={<ImpersonatePage />} />

@@ -3,23 +3,12 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="manifest" href="/owner/manifest.webmanifest" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <script>
-    // Immediately unregister all Service Workers and clear legacy CacheStorage
+    // Register lightweight pass-through Service Worker for PWA installability
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(regs) {
-        if (Array.isArray(regs)) {
-          for (var i = 0; i < regs.length; i++) {
-            if (regs[i] && typeof regs[i].unregister === 'function') {
-              regs[i].unregister();
-            }
-          }
-        }
-      }).catch(function() {});
-    }
-    if ('caches' in window) {
-      caches.keys().then(function(names) {
-        for (var i = 0; i < names.length; i++) caches.delete(names[i]);
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/owner/sw.js', { scope: '/owner/' }).catch(function() {});
       });
     }
   </script>

@@ -31,7 +31,13 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { usePWAInstall } from '../../hooks/usePWAInstall.ts';
-import { fetchStorefrontBySlug, fetchPlatformBranding, type PlatformBranding } from '../../api/storefrontApi.ts';
+import {
+  fetchStorefrontBySlug,
+  fetchBranchBySlug,
+  resolveQrToken,
+  fetchPlatformBranding,
+  type PlatformBranding,
+} from '../../api/storefrontApi.ts';
 import { placeCashOrder } from '../../api/ordersApi.ts';
 import { useStorefrontTheme } from '../../store/useStorefrontTheme.ts';
 import { useCartStore } from '../../store/useCartStore.ts';
@@ -72,7 +78,14 @@ const STOREFRONT_LANGUAGES = [
 ];
 
 export function StorefrontPage() {
-  const { branchSlug } = useParams<{ branchSlug: string }>();
+  const { branchSlug: paramBranchSlug, qrToken } = useParams<{
+    branchSlug?: string;
+    qrToken?: string;
+  }>();
+  const [resolvedBranchSlug, setResolvedBranchSlug] = useState<string | undefined>(paramBranchSlug);
+  const [qrLockedTable, setQrLockedTable] = useState<string>('');
+  const [storefrontToken, setStorefrontToken] = useState<string | null>(null);
+  const branchSlug = paramBranchSlug || resolvedBranchSlug;
   const navigate = useNavigate();
   const { isInstallable, installApp } = usePWAInstall();
 
@@ -216,7 +229,7 @@ export function StorefrontPage() {
   // Checkout order form state
   const [searchParams] = useSearchParams();
   const rawTableParam = searchParams.get('table') || searchParams.get('t') || '';
-  const isTableFromQr = Boolean(rawTableParam.trim());
+  const isTableFromQr = Boolean(rawTableParam.trim() || qrLockedTable.trim());
 
   const [orderType, setOrderType] = useState<'DINE_IN' | 'TAKEAWAY'>(
     isTableFromQr ? 'DINE_IN' : 'DINE_IN',
@@ -317,24 +330,67 @@ export function StorefrontPage() {
     }
   }, [activeOrder?.id, activeOrder?.status]);
 
-  // Load menu data
+  // Load menu data (supporting both legacy /r/:branchSlug and encrypted /s/:qrToken)
   useEffect(() => {
-    if (!branchSlug) return;
+    if (!qrToken && !paramBranchSlug) return;
+    let cancelled = false;
     setLoading(true);
     setError(null);
 
-    fetchStorefrontBySlug(branchSlug)
-      .then((data) => {
-        setMenuData(data);
-      })
-      .catch((err) => {
-        console.error(err);
-        setError(err.message || 'Unable to load menu.');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [branchSlug]);
+    if (qrToken) {
+      resolveQrToken(qrToken)
+        .then(async (resolved) => {
+          if (cancelled) return;
+          setResolvedBranchSlug(resolved.branchSlug);
+          setStorefrontToken(resolved.storefrontToken);
+          if (resolved.tableNumber) {
+            setQrLockedTable(resolved.tableNumber);
+            setTableNumber(resolved.tableNumber);
+            setOrderType('DINE_IN');
+          } else {
+            setQrLockedTable('');
+          }
+          const data = await fetchStorefrontBySlug(resolved.branchSlug);
+          if (!cancelled) {
+            setMenuData(data);
+          }
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            console.error(err);
+            setError(err.message || 'Unable to load menu.');
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    } else if (paramBranchSlug) {
+      setResolvedBranchSlug(paramBranchSlug);
+      setQrLockedTable('');
+      fetchStorefrontBySlug(paramBranchSlug)
+        .then((data) => {
+          if (!cancelled) {
+            setMenuData(data);
+            if (data.storefrontToken) {
+              setStorefrontToken(data.storefrontToken);
+            }
+          }
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            console.error(err);
+            setError(err.message || 'Unable to load menu.');
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [paramBranchSlug, qrToken]);
 
   // Dynamic Theme
   const { isDarkMode, toggleDarkMode } = useStorefrontTheme(menuData?.restaurant?.themeConfig);
@@ -1985,23 +2041,43 @@ export function StorefrontPage() {
                 setIsPlacingOrder(true);
                 setCheckoutError(null);
 
+                const orderPayload = {
+                  branchSlug: branch.slug,
+                  customerName: customerName.trim(),
+                  customerPhone: customerPhone.trim(),
+                  tableNumber: orderType === 'DINE_IN' ? tableNumber.trim() : null,
+                  orderType,
+                  orderNotes: cookingInstructions.trim() || undefined,
+                  paymentMethod: selectedPaymentMethod,
+                  turnstileToken: turnstileToken || undefined,
+                  language: selectedLanguage,
+                  items: cartItems.map((ci) => ({
+                    productId: ci.item.id,
+                    quantity: ci.quantity,
+                    notes: ci.notes,
+                  })),
+                };
+
                 try {
-                  const res = await placeCashOrder({
-                    branchSlug: branch.slug,
-                    customerName: customerName.trim(),
-                    customerPhone: customerPhone.trim(),
-                    tableNumber: orderType === 'DINE_IN' ? tableNumber.trim() : null,
-                    orderType,
-                    orderNotes: cookingInstructions.trim() || undefined,
-                    paymentMethod: selectedPaymentMethod,
-                    turnstileToken: turnstileToken || undefined,
-                    language: selectedLanguage,
-                    items: cartItems.map((ci) => ({
-                      productId: ci.item.id,
-                      quantity: ci.quantity,
-                      notes: ci.notes,
-                    })),
-                  });
+                  let res;
+                  try {
+                    res = await placeCashOrder(orderPayload, storefrontToken);
+                  } catch (firstErr: any) {
+                    const msg = String(firstErr?.message || '').toLowerCase();
+                    if (
+                      msg.includes('session has expired') ||
+                      msg.includes('missing storefront ordering session')
+                    ) {
+                      const freshToken = qrToken
+                        ? (await resolveQrToken(qrToken)).storefrontToken
+                        : (await fetchBranchBySlug(branch.slug)).storefrontToken;
+                      if (!freshToken) throw firstErr;
+                      setStorefrontToken(freshToken);
+                      res = await placeCashOrder(orderPayload, freshToken);
+                    } else {
+                      throw firstErr;
+                    }
+                  }
 
                   // Persist customer profile for seamless PWA experience
                   try {

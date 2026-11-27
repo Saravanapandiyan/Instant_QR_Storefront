@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BranchesController = void 0;
 const common_1 = require("@nestjs/common");
+const rate_limit_guard_1 = require("../common/guards/rate-limit.guard");
 const swagger_1 = require("@nestjs/swagger");
 const branches_service_1 = require("./branches.service");
 const create_branch_dto_1 = require("./dto/create-branch.dto");
@@ -33,6 +34,12 @@ let BranchesController = class BranchesController {
     }
     findByRestaurant(restaurantId) {
         return this.branchesService.findByRestaurant(restaurantId);
+    }
+    resolveQrToken(token) {
+        return this.branchesService.resolveQrToken(token);
+    }
+    generateQrTokens(body) {
+        return this.branchesService.generateQrTokens(body.branchSlug, body.tableNumbers);
     }
     findBySlug(slug) {
         return this.branchesService.findBySlug(slug);
@@ -96,6 +103,26 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], BranchesController.prototype, "findByRestaurant", null);
+__decorate([
+    (0, common_1.Get)('resolve-qr'),
+    (0, common_1.UseGuards)(rate_limit_guard_1.RateLimitGuard),
+    (0, rate_limit_guard_1.RateLimit)({ limit: 60, windowMs: 60_000 }),
+    (0, swagger_1.ApiOperation)({ summary: 'Decrypt an encrypted QR storefront token into branchSlug, tableNumber, and session token' }),
+    __param(0, (0, common_1.Query)('token')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], BranchesController.prototype, "resolveQrToken", null);
+__decorate([
+    (0, common_1.Post)('qr-tokens'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Generate encrypted AES-256-GCM QR tokens for a branch and its tables (Owner only)' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], BranchesController.prototype, "generateQrTokens", null);
 __decorate([
     (0, common_1.Get)('slug/:slug'),
     (0, swagger_1.ApiOperation)({ summary: 'Public storefront lookup by QR code slug (e.g. /r/:slug)' }),

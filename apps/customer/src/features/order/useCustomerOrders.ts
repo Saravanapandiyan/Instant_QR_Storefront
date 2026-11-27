@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { PlacedOrder } from '../../api/ordersApi';
 import { fetchOrderDetails } from '../../api/ordersApi';
 import { notifyCustomerOrderReady } from '../../utils/customerAudio';
+import { getCustomerSocket } from '../../lib/socket';
 
 const STORAGE_KEY = 'iqr_customer_orders_v1';
 
@@ -127,41 +128,58 @@ export function useCustomerOrders(branchSlug?: string) {
       (o) => o.status === 'PENDING' || o.status === 'CONFIRMED' || o.status === 'PREPARING' || o.status === 'READY',
     ) || null;
 
-  // Background polling to keep active order status fresh in localStorage
+  // Real-time Socket.IO subscription to keep active order status fresh in localStorage
   useEffect(() => {
     if (!activeOrder) return;
 
     let isMounted = true;
-    const checkActive = async () => {
-      try {
-        const fresh = await fetchOrderDetails(activeOrder.id);
-        if (isMounted && fresh) {
-          updateOrderStatus(fresh.id, fresh.status, fresh.paymentStatus);
+    const orderId = activeOrder.id;
 
-          // Trigger audible chime and vibration if order is READY
-          if (fresh.status === 'READY') {
-            notifyCustomerOrderReady({
-              orderId: fresh.id,
-              orderNumber: fresh.orderNumber,
-              orderType: fresh.orderType,
-              tableNumber: fresh.tableNumber,
-              restaurantName: fresh.restaurant?.name,
-            });
-          }
-        }
-      } catch (err) {
-        // quiet error on polling
+    const handleFreshOrder = (fresh: PlacedOrder) => {
+      if (!isMounted || !fresh || fresh.id !== orderId) return;
+      updateOrderStatus(fresh.id, fresh.status, fresh.paymentStatus);
+
+      if (fresh.status === 'READY') {
+        notifyCustomerOrderReady({
+          orderId: fresh.id,
+          orderNumber: fresh.orderNumber,
+          orderType: fresh.orderType,
+          tableNumber: fresh.tableNumber,
+          restaurantName: fresh.restaurant?.name,
+        });
       }
     };
 
-    // Initial check
+    const checkActive = async () => {
+      try {
+        const fresh = await fetchOrderDetails(orderId);
+        handleFreshOrder(fresh);
+      } catch {
+        // quiet error on sync
+      }
+    };
+
+    // Initial sync
     checkActive();
 
-    // Poll every 5s for active orders
-    const timer = setInterval(checkActive, 5000);
+    const socket = getCustomerSocket();
+    const joinRoom = () => {
+      socket.emit('join:order', { orderId });
+    };
+    const handleReconnect = () => {
+      joinRoom();
+      checkActive();
+    };
+
+    joinRoom();
+    socket.on('order:updated', handleFreshOrder);
+    socket.on('connect', handleReconnect);
+
     return () => {
       isMounted = false;
-      clearInterval(timer);
+      socket.off('order:updated', handleFreshOrder);
+      socket.off('connect', handleReconnect);
+      socket.emit('leave:order', { orderId });
     };
   }, [activeOrder?.id, updateOrderStatus]);
 

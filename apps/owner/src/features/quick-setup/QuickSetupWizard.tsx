@@ -1242,11 +1242,6 @@ export const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onComplete, 
                             <p className="text-[9px] text-white/80 font-medium">
                               Point phone camera • Instant live ordering
                             </p>
-                            <div className="pt-1">
-                              <span className="font-mono text-[8px] text-white/70 bg-black/20 px-2 py-0.5 rounded-md truncate inline-block max-w-[220px]">
-                                /r/{cleanSlug}
-                              </span>
-                            </div>
                           </div>
                         </div>
                       )}

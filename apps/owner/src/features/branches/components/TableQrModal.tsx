@@ -29,7 +29,11 @@ import {
 import { branchesApi } from '../api/branchesApi';
 import type { Branch, RestaurantTable } from '@instant-qr/shared-types';
 import { toast } from '../../../components/ui';
-import { getCustomerStorefrontUrl } from '../../../lib/urls';
+import {
+  getCustomerStorefrontUrl,
+  getEncryptedStorefrontUrl,
+  fetchEncryptedQrTokens,
+} from '../../../lib/urls';
 import {
   StylizedQRCode,
   type QRDotPattern,
@@ -146,11 +150,29 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
 
   // Bulk Downloading state
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const [encryptedTableTokens, setEncryptedTableTokens] = useState<Record<string, string>>({});
 
-  const fetchTables = async () => {
+  const fetchTables = async (isCancelled?: () => boolean) => {
     setIsLoading(true);
     try {
       const data = await branchesApi.getBranchTables(branch.id);
+      if (isCancelled?.()) return;
+
+      let tokens: Record<string, string> = {};
+      if (branch?.slug && data.length > 0) {
+        try {
+          const res = await fetchEncryptedQrTokens(
+            branch.slug,
+            data.map((t) => t.tableNumber),
+          );
+          tokens = res.tableTokens || {};
+        } catch {
+          // fallback to legacy URLs if token endpoint fails
+        }
+      }
+      if (isCancelled?.()) return;
+
+      setEncryptedTableTokens(tokens);
       setTables(data);
       // Select all tables by default
       setSelectedIds(data.map((t) => t.id));
@@ -158,16 +180,23 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
         setPreviewTableId(data[0].id);
       }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to load branch tables');
+      if (!isCancelled?.()) {
+        toast.error(err.message || 'Failed to load branch tables');
+      }
     } finally {
-      setIsLoading(false);
+      if (!isCancelled?.()) {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    if (isOpen && branch?.id) {
-      fetchTables();
-    }
+    if (!isOpen || !branch?.id) return;
+    let cancelled = false;
+    fetchTables(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, branch?.id]);
 
   if (!isOpen) return null;
@@ -205,6 +234,10 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
   };
 
   const getTableUrl = (tableNumber: string) => {
+    const token = encryptedTableTokens[tableNumber];
+    if (token) {
+      return getEncryptedStorefrontUrl(token);
+    }
     return getCustomerStorefrontUrl(branch.slug, tableNumber);
   };
 

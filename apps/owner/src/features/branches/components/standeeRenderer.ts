@@ -319,10 +319,6 @@ export function renderStandeeToCanvas(
     ctx.font = '28px "Times New Roman", Georgia, serif';
     ctx.fillText('Point your phone camera directly at the code', width / 2, 1315);
 
-    ctx.fillStyle = 'rgba(217, 119, 6, 0.9)';
-    ctx.font = 'bold 26px monospace';
-    ctx.fillText(customerUrl, width / 2, 1420);
-
     if (showPoweredBy) {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
       ctx.font = '22px sans-serif';
@@ -384,12 +380,8 @@ export function renderStandeeToCanvas(
     ctx.fillText('2. Select Dishes & Customize', 160, stepsY + 115);
     ctx.fillText('3. Direct Kitchen Order Dispatch', 160, stepsY + 165);
 
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#64748b';
-    ctx.font = '500 24px monospace';
-    ctx.fillText(customerUrl, width / 2, 1470);
-
     if (showPoweredBy) {
+      ctx.textAlign = 'center';
       ctx.fillStyle = '#94a3b8';
       ctx.font = 'normal 20px sans-serif';
       ctx.fillText(poweredByText, width / 2, 1530);
@@ -431,10 +423,6 @@ export function renderStandeeToCanvas(
     ctx.fillStyle = '#0f172a';
     ctx.font = 'bold 34px -apple-system, BlinkMacSystemFont, sans-serif';
     ctx.fillText('TOUCHLESS ORDERING', width / 2, height / 2 + 370);
-
-    ctx.fillStyle = '#64748b';
-    ctx.font = '600 22px monospace';
-    ctx.fillText(customerUrl, width / 2, height / 2 + 420);
   } else {
     // --- DEFAULT: SIGNATURE RESTAURANT STANDEE (MATCHING IMAGE 3) ---
     const grad = ctx.createLinearGradient(0, 0, width, height);
@@ -495,14 +483,6 @@ export function renderStandeeToCanvas(
     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
     ctx.font = 'normal 26px -apple-system, BlinkMacSystemFont, sans-serif';
     ctx.fillText('Point your phone camera • No app download required', width / 2, 1255);
-
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-    drawRoundRect(width / 2 - 380, 1330, 760, 72, 24);
-    ctx.fill();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '600 24px monospace';
-    ctx.fillText(customerUrl, width / 2, 1375);
 
     if (showPoweredBy) {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';

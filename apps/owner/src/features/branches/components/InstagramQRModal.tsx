@@ -19,7 +19,11 @@ import {
   Wine,
 } from 'lucide-react';
 import { Button, toast } from '../../../components/ui';
-import { getCustomerStorefrontUrl } from '../../../lib/urls';
+import {
+  getCustomerStorefrontUrl,
+  getEncryptedStorefrontUrl,
+  fetchEncryptedQrTokens,
+} from '../../../lib/urls';
 import { getMediaUrl } from '../../../lib/utils';
 import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 import {
@@ -131,6 +135,9 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
     }
   }, [initialTableNumber]);
 
+  const [encryptedBaseToken, setEncryptedBaseToken] = useState<string>('');
+  const [encryptedTableTokens, setEncryptedTableTokens] = useState<Record<string, string>>({});
+
   // Sync / fetch tables
   useEffect(() => {
     if (tables && tables.length > 0) {
@@ -139,6 +146,20 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
       branchesApi.getBranchTables(branch.id).then(setAllTables).catch(() => {});
     }
   }, [branch?.id, tables, isOpen]);
+
+  // Fetch encrypted QR tokens for branch & tables
+  useEffect(() => {
+    if (!isOpen || !branch?.slug) return;
+    fetchEncryptedQrTokens(
+      branch.slug,
+      allTables.map((t) => t.tableNumber),
+    )
+      .then((res) => {
+        setEncryptedBaseToken(res.baseToken || '');
+        setEncryptedTableTokens(res.tableTokens || {});
+      })
+      .catch(() => {});
+  }, [isOpen, branch?.slug, allTables]);
 
   // Reference directly to our live SVG element
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -150,9 +171,13 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
   const currentTheme = THEME_CONFIGS[selectedTheme];
   const restaurantName = restaurant?.name || branch.restaurant?.name || 'Restaurant';
   const logoUrl = getMediaUrl(restaurant?.logoUrl || branch.restaurant?.logoUrl);
-  const baseCustomerUrl = getCustomerStorefrontUrl(branch.slug);
+  const baseCustomerUrl = encryptedBaseToken
+    ? getEncryptedStorefrontUrl(encryptedBaseToken)
+    : getCustomerStorefrontUrl(branch.slug);
   const customerUrl = selectedTableNumber
-    ? `${baseCustomerUrl}?table=${encodeURIComponent(selectedTableNumber)}`
+    ? encryptedTableTokens[selectedTableNumber]
+      ? getEncryptedStorefrontUrl(encryptedTableTokens[selectedTableNumber])
+      : `${getCustomerStorefrontUrl(branch.slug)}?table=${encodeURIComponent(selectedTableNumber)}`
     : baseCustomerUrl;
 
   // Convert the rendered SVG element into an HTMLImageElement at high resolution
@@ -919,11 +944,6 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                 <p className="text-[10px] text-white/80 font-medium">
                   Point phone camera • Instant live ordering
                 </p>
-                <div className="pt-2">
-                  <span className="font-mono text-[9px] text-white/70 bg-black/20 px-2 py-0.5 rounded-md truncate inline-block max-w-[240px]">
-                    {customerUrl.replace('http://', '').replace('https://', '')}
-                  </span>
-                </div>
               </div>
             </div>
           )}

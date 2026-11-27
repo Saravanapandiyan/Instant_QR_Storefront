@@ -14,15 +14,39 @@ exports.OrdersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
+const qr_token_util_1 = require("../common/crypto/qr-token.util");
+const orders_gateway_1 = require("./orders.gateway");
 let OrdersService = OrdersService_1 = class OrdersService {
     prisma;
+    ordersGateway;
     logger = new common_1.Logger(OrdersService_1.name);
-    constructor(prisma) {
+    constructor(prisma, ordersGateway) {
         this.prisma = prisma;
+        this.ordersGateway = ordersGateway;
     }
-    async createOrder(dto) {
+    async createOrder(dto, storefrontToken) {
         if (!dto.items || dto.items.length === 0) {
             throw new common_1.BadRequestException('Order must contain at least one item.');
+        }
+        if (storefrontToken) {
+            const session = (0, qr_token_util_1.verifyStorefrontSession)(storefrontToken);
+            if (!session) {
+                throw new common_1.BadRequestException('Your ordering session has expired. Please refresh or re-scan the QR code.');
+            }
+            if (session.s !== dto.branchSlug) {
+                throw new common_1.BadRequestException('Storefront session does not match the selected branch.');
+            }
+            if (session.t && dto.orderType === client_1.OrderType.DINE_IN) {
+                dto.tableNumber = session.t;
+            }
+        }
+        else if (process.env.ENFORCE_STOREFRONT_TOKEN === 'true') {
+            throw new common_1.BadRequestException('Missing storefront ordering session. Please open the menu from the QR code.');
+        }
+        const hasConfiguredTurnstile = Boolean(process.env.TURNSTILE_SECRET_KEY &&
+            process.env.TURNSTILE_SECRET_KEY !== '1x0000000000000000000000000000000AA');
+        if (hasConfiguredTurnstile && !dto.turnstileToken) {
+            throw new common_1.BadRequestException('Human verification is required. Please wait a moment and try again.');
         }
         if (dto.turnstileToken) {
             const isHuman = await this.verifyTurnstile(dto.turnstileToken);
@@ -166,6 +190,7 @@ let OrdersService = OrdersService_1 = class OrdersService {
                 },
             },
         });
+        this.ordersGateway?.emitOrderCreated(order);
         return {
             message: order.paymentMethod === client_1.PaymentMethod.UPI
                 ? 'Order placed with UPI. Please complete payment using your UPI app or scan the QR code.'
@@ -507,6 +532,7 @@ let OrdersService = OrdersService_1 = class OrdersService {
                 },
             });
         });
+        this.ordersGateway?.emitOrderUpdated(updated);
         return {
             message: `Order #${updated.orderNumber} status updated to ${dto.status}.`,
             order: updated,
@@ -550,6 +576,7 @@ let OrdersService = OrdersService_1 = class OrdersService {
                 branch: { select: { id: true, name: true } },
             },
         });
+        this.ordersGateway?.emitOrderUpdated(updated);
         return {
             message: `Payment status for Order #${updated.orderNumber} updated to ${dto.paymentStatus}.`,
             order: updated,
@@ -656,6 +683,7 @@ let OrdersService = OrdersService_1 = class OrdersService {
 exports.OrdersService = OrdersService;
 exports.OrdersService = OrdersService = OrdersService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        orders_gateway_1.OrdersGateway])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

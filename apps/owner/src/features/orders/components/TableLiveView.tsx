@@ -19,6 +19,7 @@ import type { Branch, RestaurantTable } from '@instant-qr/shared-types';
 import { TableQrModal } from '../../branches/components/TableQrModal';
 import { InstagramQRModal } from '../../branches/components/InstagramQRModal';
 import { useCurrencyStore } from '../../../store/useCurrencyStore';
+import { getOwnerSocket } from '../../../lib/socket';
 
 interface TableLiveViewProps {
   branch: Branch;
@@ -52,11 +53,30 @@ export const TableLiveView: React.FC<TableLiveViewProps> = ({
 
   useEffect(() => {
     fetchTables(true);
-    // Poll every 6 seconds for live floor updates
-    const interval = setInterval(() => {
+
+    const socket = getOwnerSocket();
+    const joinRoom = () => {
+      socket.emit('join:branch', { branchId: branch.id });
+    };
+    const handleSocketOrder = () => {
       fetchTables(false);
-    }, 6000);
-    return () => clearInterval(interval);
+    };
+    const handleReconnect = () => {
+      joinRoom();
+      fetchTables(false);
+    };
+
+    joinRoom();
+    socket.on('order:created', handleSocketOrder);
+    socket.on('order:updated', handleSocketOrder);
+    socket.on('connect', handleReconnect);
+
+    return () => {
+      socket.off('order:created', handleSocketOrder);
+      socket.off('order:updated', handleSocketOrder);
+      socket.off('connect', handleReconnect);
+      socket.emit('leave:branch', { branchId: branch.id });
+    };
   }, [branch.id]);
 
   // Second-by-second ticker for live duration timers

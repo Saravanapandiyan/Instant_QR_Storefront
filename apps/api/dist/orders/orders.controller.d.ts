@@ -3,7 +3,7 @@ import { CreateOrderDto, UpdateOrderStatusDto, UpdatePaymentStatusDto, UpdatePay
 export declare class OrdersController {
     private readonly ordersService;
     constructor(ordersService: OrdersService);
-    createOrder(dto: CreateOrderDto): Promise<{
+    createOrder(dto: CreateOrderDto, storefrontToken?: string): Promise<{
         message: string;
         order: {
             restaurant: {

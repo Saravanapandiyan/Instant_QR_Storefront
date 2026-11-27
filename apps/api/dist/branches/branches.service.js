@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BranchesService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const qr_token_util_1 = require("../common/crypto/qr-token.util");
 let BranchesService = class BranchesService {
     prisma;
     constructor(prisma) {
@@ -174,7 +175,45 @@ let BranchesService = class BranchesService {
         if (!branch || branch.isDeleted) {
             throw new common_1.NotFoundException(`Storefront "${slug}" not found`);
         }
-        return branch;
+        return {
+            ...branch,
+            storefrontToken: (0, qr_token_util_1.signStorefrontSession)(branch.slug),
+        };
+    }
+    async resolveQrToken(token) {
+        if (!token || !token.trim()) {
+            throw new common_1.BadRequestException('QR token is required.');
+        }
+        const decoded = (0, qr_token_util_1.decryptQrToken)(token.trim());
+        if (!decoded) {
+            throw new common_1.BadRequestException('Invalid or tampered QR code.');
+        }
+        const branch = await this.findBySlug(decoded.s);
+        return {
+            branchSlug: branch.slug,
+            tableNumber: decoded.t || null,
+            storefrontToken: (0, qr_token_util_1.signStorefrontSession)(branch.slug, decoded.t),
+        };
+    }
+    generateQrTokens(branchSlug, tableNumbers) {
+        if (!branchSlug || !branchSlug.trim()) {
+            throw new common_1.BadRequestException('branchSlug is required.');
+        }
+        const cleanSlug = branchSlug.trim();
+        const baseToken = (0, qr_token_util_1.encryptQrToken)(cleanSlug);
+        const tableTokens = {};
+        if (Array.isArray(tableNumbers)) {
+            for (const t of tableNumbers) {
+                const key = String(t).trim();
+                if (key) {
+                    tableTokens[key] = (0, qr_token_util_1.encryptQrToken)(cleanSlug, key);
+                }
+            }
+        }
+        return {
+            baseToken,
+            tableTokens,
+        };
     }
     async findOne(id) {
         const branch = await this.prisma.branch.findUnique({

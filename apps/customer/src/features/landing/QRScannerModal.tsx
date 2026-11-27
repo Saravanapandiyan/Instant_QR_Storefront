@@ -88,11 +88,11 @@ export function QRScannerModal({ isOpen, onClose }: QRScannerModalProps) {
     stopCamera();
     onClose();
 
-    // Check if it's a full URL containing /r/:slug
+    // Check if it's a full URL containing /r/:slug or /s/:token
     try {
       if (value.startsWith('http://') || value.startsWith('https://')) {
         const url = new URL(value);
-        if (url.pathname.startsWith('/r/')) {
+        if (url.pathname.startsWith('/r/') || url.pathname.startsWith('/s/')) {
           navigate(url.pathname + url.search);
           return;
         }
@@ -101,8 +101,14 @@ export function QRScannerModal({ isOpen, onClose }: QRScannerModalProps) {
       // not a url
     }
 
+    const trimmed = value.trim();
+    if (trimmed.startsWith('/s/') || trimmed.startsWith('/r/')) {
+      navigate(trimmed);
+      return;
+    }
+
     // Otherwise treat raw text as slug or path
-    const cleanSlug = value.replace('/r/', '').trim();
+    const cleanSlug = trimmed.replace('/r/', '');
     navigate(`/r/${cleanSlug}`);
   };
 

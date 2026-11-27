@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { fetchOrderDetails } from '../../api/ordersApi';
 import type { PlacedOrder } from '../../api/ordersApi';
+import { getCustomerSocket } from '../../lib/socket';
 import { CustomerReceiptModal } from './CustomerReceiptModal';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import {
@@ -81,12 +82,41 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
 
   useEffect(() => {
     loadStatus(true);
-    // Poll every 3.5 seconds to track kitchen progress live
-    const interval = setInterval(() => {
-      loadStatus(false);
-    }, 3500);
 
-    return () => clearInterval(interval);
+    const socket = getCustomerSocket();
+    const joinRoom = () => {
+      socket.emit('join:order', { orderId });
+    };
+
+    const handleOrderUpdated = (updated: PlacedOrder) => {
+      if (!updated || updated.id !== orderId) return;
+      setOrder(updated);
+      onStatusUpdate?.(updated);
+      if (updated.status === 'READY') {
+        notifyCustomerOrderReady({
+          orderId: updated.id,
+          orderNumber: updated.orderNumber,
+          orderType: updated.orderType,
+          tableNumber: updated.tableNumber,
+          restaurantName: updated.restaurant?.name,
+        });
+      }
+    };
+
+    const handleReconnect = () => {
+      joinRoom();
+      loadStatus(false);
+    };
+
+    joinRoom();
+    socket.on('order:updated', handleOrderUpdated);
+    socket.on('connect', handleReconnect);
+
+    return () => {
+      socket.off('order:updated', handleOrderUpdated);
+      socket.off('connect', handleReconnect);
+      socket.emit('leave:order', { orderId });
+    };
   }, [orderId]);
 
   if (loading && !order) {

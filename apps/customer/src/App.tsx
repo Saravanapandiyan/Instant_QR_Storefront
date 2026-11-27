@@ -9,6 +9,8 @@ export default function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/r/:branchSlug" element={<StorefrontPage />} />
       <Route path="/r/:branchSlug/help" element={<CustomerHelpPage />} />
+      <Route path="/s/:qrToken" element={<StorefrontPage />} />
+      <Route path="/s/:qrToken/help" element={<CustomerHelpPage />} />
     </Routes>
   );
 }

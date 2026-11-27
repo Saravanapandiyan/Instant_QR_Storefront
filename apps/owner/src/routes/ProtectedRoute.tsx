@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { authApi } from '../features/auth/api/authApi';
 import { GlobalOrderAlertManager } from '../features/orders/components/GlobalOrderAlertManager';
 import { ROUTES } from '../constants/routes';
+import { isStandalonePwa } from '../lib/pwa';
 
 export const ProtectedRoute: React.FC = () => {
+  const location = useLocation();
   const { isAuthenticated, token, user, setUser, logout } = useAuthStore();
 
   useEffect(() => {
@@ -31,6 +33,9 @@ export const ProtectedRoute: React.FC = () => {
   }, [isAuthenticated, token, setUser, logout]);
 
   if (!isAuthenticated || !token || !user) {
+    if (!isStandalonePwa() && location.pathname === ROUTES.DASHBOARD) {
+      return <Navigate to={`${ROUTES.AUTH.WELCOME}${location.search}`} replace />;
+    }
     return <Navigate to={ROUTES.AUTH.LOGIN} replace />;
   }
 

@@ -27,6 +27,8 @@ export function getCustomerBaseUrl(): string {
 
 export const CUSTOMER_APP_URL: string = getCustomerBaseUrl();
 
+import { apiClient } from './api-client';
+
 export function getCustomerStorefrontUrl(
   branchSlug: string,
   tableNumber?: string | number
@@ -38,4 +40,19 @@ export function getCustomerStorefrontUrl(
     return `${url}?table=${encodeURIComponent(String(tableNumber).trim())}`;
   }
   return url;
+}
+
+export function getEncryptedStorefrontUrl(token: string): string {
+  const baseUrl = getCustomerBaseUrl();
+  return `${baseUrl}/s/${encodeURIComponent(token)}`;
+}
+
+export async function fetchEncryptedQrTokens(
+  branchSlug: string,
+  tableNumbers?: string[],
+): Promise<{ baseToken: string; tableTokens: Record<string, string> }> {
+  return apiClient.post<{ baseToken: string; tableTokens: Record<string, string> }>(
+    '/branches/qr-tokens',
+    { branchSlug, tableNumbers },
+  );
 }

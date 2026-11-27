@@ -6,9 +6,11 @@ import {
   Body,
   Param,
   Query,
+  Headers,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { RateLimit, RateLimitGuard } from '../common/guards/rate-limit.guard';
 import { OrdersService } from './orders.service';
 import {
   CreateOrderDto,
@@ -26,9 +28,14 @@ export class OrdersController {
 
   // 1. Customer: Place new order (Cash payment)
   @Post()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ limit: 8, windowMs: 60_000 })
   @ApiOperation({ summary: 'Place a new dine-in or takeaway order' })
-  async createOrder(@Body() dto: CreateOrderDto) {
-    return this.ordersService.createOrder(dto);
+  async createOrder(
+    @Body() dto: CreateOrderDto,
+    @Headers('x-storefront-token') storefrontToken?: string,
+  ) {
+    return this.ordersService.createOrder(dto, storefrontToken);
   }
 
   // 2. TV Order Ready Board: Wall displays & pickup screens
@@ -40,6 +47,8 @@ export class OrdersController {
 
   // 3. Customer: Live order status tracking
   @Get(':id')
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ limit: 60, windowMs: 60_000 })
   @ApiOperation({ summary: 'Get order details and status for tracking' })
   async getOrderById(@Param('id') id: string) {
     return this.ordersService.getOrderById(id);

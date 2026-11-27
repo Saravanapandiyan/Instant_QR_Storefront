@@ -78,6 +78,7 @@ export declare class BranchesService {
         currency: string;
     })[]>;
     findBySlug(slug: string): Promise<{
+        storefrontToken: string;
         restaurant: {
             description: string | null;
             name: string;
@@ -96,7 +97,6 @@ export declare class BranchesService {
             deletedAt: Date | null;
             deletedBy: string | null;
         };
-    } & {
         name: string;
         slug: string;
         id: string;
@@ -112,6 +112,15 @@ export declare class BranchesService {
         countryCode: string | null;
         currency: string;
     }>;
+    resolveQrToken(token: string): Promise<{
+        branchSlug: string;
+        tableNumber: string | null;
+        storefrontToken: string;
+    }>;
+    generateQrTokens(branchSlug: string, tableNumbers?: (string | number)[]): {
+        baseToken: string;
+        tableTokens: Record<string, string>;
+    };
     findOne(id: string): Promise<{
         restaurant: {
             description: string | null;

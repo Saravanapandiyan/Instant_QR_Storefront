@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrdersController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
+const rate_limit_guard_1 = require("../common/guards/rate-limit.guard");
 const orders_service_1 = require("./orders.service");
 const order_dto_1 = require("./dto/order.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
@@ -24,8 +25,8 @@ let OrdersController = class OrdersController {
     constructor(ordersService) {
         this.ordersService = ordersService;
     }
-    async createOrder(dto) {
-        return this.ordersService.createOrder(dto);
+    async createOrder(dto, storefrontToken) {
+        return this.ordersService.createOrder(dto, storefrontToken);
     }
     async getTvBoardOrders(targetId) {
         return this.ordersService.getTvBoardOrders(targetId);
@@ -57,10 +58,13 @@ let OrdersController = class OrdersController {
 exports.OrdersController = OrdersController;
 __decorate([
     (0, common_1.Post)(),
+    (0, common_1.UseGuards)(rate_limit_guard_1.RateLimitGuard),
+    (0, rate_limit_guard_1.RateLimit)({ limit: 8, windowMs: 60_000 }),
     (0, swagger_1.ApiOperation)({ summary: 'Place a new dine-in or takeaway order' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Headers)('x-storefront-token')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [order_dto_1.CreateOrderDto]),
+    __metadata("design:paramtypes", [order_dto_1.CreateOrderDto, String]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "createOrder", null);
 __decorate([
@@ -73,6 +77,8 @@ __decorate([
 ], OrdersController.prototype, "getTvBoardOrders", null);
 __decorate([
     (0, common_1.Get)(':id'),
+    (0, common_1.UseGuards)(rate_limit_guard_1.RateLimitGuard),
+    (0, rate_limit_guard_1.RateLimit)({ limit: 60, windowMs: 60_000 }),
     (0, swagger_1.ApiOperation)({ summary: 'Get order details and status for tracking' }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),

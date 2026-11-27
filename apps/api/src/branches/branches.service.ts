@@ -3,10 +3,16 @@ import {
   NotFoundException,
   ConflictException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
+import {
+  encryptQrToken,
+  decryptQrToken,
+  signStorefrontSession,
+} from '../common/crypto/qr-token.util';
 
 @Injectable()
 export class BranchesService {
@@ -204,7 +210,53 @@ export class BranchesService {
       throw new NotFoundException(`Storefront "${slug}" not found`);
     }
 
-    return branch;
+    return {
+      ...branch,
+      storefrontToken: signStorefrontSession(branch.slug),
+    };
+  }
+
+  // 4b. Decrypt QR token and return branchSlug, locked tableNumber, and signed storefront session token
+  async resolveQrToken(token: string) {
+    if (!token || !token.trim()) {
+      throw new BadRequestException('QR token is required.');
+    }
+
+    const decoded = decryptQrToken(token.trim());
+    if (!decoded) {
+      throw new BadRequestException('Invalid or tampered QR code.');
+    }
+
+    const branch = await this.findBySlug(decoded.s);
+    return {
+      branchSlug: branch.slug,
+      tableNumber: decoded.t || null,
+      storefrontToken: signStorefrontSession(branch.slug, decoded.t),
+    };
+  }
+
+  // 4c. Generate encrypted QR tokens for Owner portal (base branch + optional table numbers)
+  generateQrTokens(branchSlug: string, tableNumbers?: (string | number)[]) {
+    if (!branchSlug || !branchSlug.trim()) {
+      throw new BadRequestException('branchSlug is required.');
+    }
+    const cleanSlug = branchSlug.trim();
+    const baseToken = encryptQrToken(cleanSlug);
+    const tableTokens: Record<string, string> = {};
+
+    if (Array.isArray(tableNumbers)) {
+      for (const t of tableNumbers) {
+        const key = String(t).trim();
+        if (key) {
+          tableTokens[key] = encryptQrToken(cleanSlug, key);
+        }
+      }
+    }
+
+    return {
+      baseToken,
+      tableTokens,
+    };
   }
 
   // 5. Find branch by ID

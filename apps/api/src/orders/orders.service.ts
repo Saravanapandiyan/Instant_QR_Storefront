@@ -13,20 +13,49 @@ import {
   UpdatePaymentSettingsDto,
 } from './dto/order.dto';
 import { OrderStatus, PaymentMethod, PaymentStatus, OrderType } from '@prisma/client';
+import { verifyStorefrontSession } from '../common/crypto/qr-token.util';
+import { OrdersGateway } from './orders.gateway';
 
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly ordersGateway?: OrdersGateway,
+  ) {}
 
   // 1. Customer: Place new order with Cash
-  async createOrder(dto: CreateOrderDto) {
+  async createOrder(dto: CreateOrderDto, storefrontToken?: string) {
     if (!dto.items || dto.items.length === 0) {
       throw new BadRequestException('Order must contain at least one item.');
     }
 
-    // Verify Cloudflare Turnstile invisible CAPTCHA to stop bot orders
+    // Verify signed storefront session token if provided (or required via env)
+    if (storefrontToken) {
+      const session = verifyStorefrontSession(storefrontToken);
+      if (!session) {
+        throw new BadRequestException('Your ordering session has expired. Please refresh or re-scan the QR code.');
+      }
+      if (session.s !== dto.branchSlug) {
+        throw new BadRequestException('Storefront session does not match the selected branch.');
+      }
+      // Lock tableNumber server-side if the session came from a table QR code
+      if (session.t && dto.orderType === OrderType.DINE_IN) {
+        dto.tableNumber = session.t;
+      }
+    } else if (process.env.ENFORCE_STOREFRONT_TOKEN === 'true') {
+      throw new BadRequestException('Missing storefront ordering session. Please open the menu from the QR code.');
+    }
+
+    // Verify Cloudflare Turnstile invisible CAPTCHA to stop bot/script orders
+    const hasConfiguredTurnstile = Boolean(
+      process.env.TURNSTILE_SECRET_KEY &&
+        process.env.TURNSTILE_SECRET_KEY !== '1x0000000000000000000000000000000AA',
+    );
+    if (hasConfiguredTurnstile && !dto.turnstileToken) {
+      throw new BadRequestException('Human verification is required. Please wait a moment and try again.');
+    }
     if (dto.turnstileToken) {
       const isHuman = await this.verifyTurnstile(dto.turnstileToken);
       if (!isHuman) {
@@ -196,6 +225,8 @@ export class OrdersService {
         },
       },
     });
+
+    this.ordersGateway?.emitOrderCreated(order);
 
     return {
       message:
@@ -600,6 +631,8 @@ export class OrdersService {
       });
     });
 
+    this.ordersGateway?.emitOrderUpdated(updated);
+
     return {
       message: `Order #${updated.orderNumber} status updated to ${dto.status}.`,
       order: updated,
@@ -652,6 +685,8 @@ export class OrdersService {
         branch: { select: { id: true, name: true } },
       },
     });
+
+    this.ordersGateway?.emitOrderUpdated(updated);
 
     return {
       message: `Payment status for Order #${updated.orderNumber} updated to ${dto.paymentStatus}.`,

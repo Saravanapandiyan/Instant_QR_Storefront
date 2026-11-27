@@ -1,10 +1,12 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto, UpdateOrderStatusDto, UpdatePaymentStatusDto, UpdatePaymentSettingsDto } from './dto/order.dto';
+import { OrdersGateway } from './orders.gateway';
 export declare class OrdersService {
     private readonly prisma;
+    private readonly ordersGateway?;
     private readonly logger;
-    constructor(prisma: PrismaService);
-    createOrder(dto: CreateOrderDto): Promise<{
+    constructor(prisma: PrismaService, ordersGateway?: OrdersGateway | undefined);
+    createOrder(dto: CreateOrderDto, storefrontToken?: string): Promise<{
         message: string;
         order: {
             restaurant: {

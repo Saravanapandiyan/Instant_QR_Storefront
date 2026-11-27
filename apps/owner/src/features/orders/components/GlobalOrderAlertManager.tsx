@@ -6,6 +6,7 @@ import { NewOrderAlertModal } from './NewOrderAlertModal';
 import { PrepTimeModal } from './PrepTimeModal';
 import { startContinuousAlarm, stopContinuousAlarm, isSoundMuted } from '../../../lib/audioAlert';
 import { toast } from '../../../components/ui';
+import { getOwnerSocket } from '../../../lib/socket';
 
 const SILENCED_KEY = 'instadine_silenced_orders';
 
@@ -118,11 +119,29 @@ export const GlobalOrderAlertManager: React.FC = () => {
     if (!restaurantId) return;
 
     checkPendingOrders();
-    // Poll every 3 seconds for instant detection anywhere in portal
-    const interval = setInterval(checkPendingOrders, 3000);
+
+    const socket = getOwnerSocket();
+    const joinRoom = () => {
+      socket.emit('join:restaurant', { restaurantId });
+    };
+    const handleSocketOrder = () => {
+      void checkPendingOrders();
+    };
+    const handleReconnect = () => {
+      joinRoom();
+      void checkPendingOrders();
+    };
+
+    joinRoom();
+    socket.on('order:created', handleSocketOrder);
+    socket.on('order:updated', handleSocketOrder);
+    socket.on('connect', handleReconnect);
 
     return () => {
-      clearInterval(interval);
+      socket.off('order:created', handleSocketOrder);
+      socket.off('order:updated', handleSocketOrder);
+      socket.off('connect', handleReconnect);
+      socket.emit('leave:restaurant', { restaurantId });
       stopContinuousAlarm();
       incomingOrderRef.current = null;
     };

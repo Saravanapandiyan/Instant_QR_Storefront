@@ -28,6 +28,7 @@ import type { Order } from '../orders/api/ordersApi';
 import { KitchenTicketPrintModal } from './components/KitchenTicketPrintModal';
 import { toast } from '../../components/ui';
 import { ROUTES } from '../../constants/routes';
+import { getOwnerSocket } from '../../lib/socket';
 import {
   startContinuousAlarm,
   stopContinuousAlarm,
@@ -97,10 +98,6 @@ export const KdsPage: React.FC = () => {
 
   useEffect(() => {
     fetchKitchenOrders(true);
-    // Poll every 4 seconds for instant kitchen updates
-    const interval = setInterval(() => {
-      fetchKitchenOrders(false);
-    }, 4000);
 
     const handleOrdersUpdated = () => {
       fetchKitchenOrders(false);
@@ -108,12 +105,33 @@ export const KdsPage: React.FC = () => {
     window.addEventListener('instadine:orders_updated', handleOrdersUpdated);
     window.addEventListener('instadine:new_order', handleOrdersUpdated);
 
+    const socket = getOwnerSocket();
+    const joinRoom = () => {
+      if (selectedRestaurantId) {
+        socket.emit('join:restaurant', { restaurantId: selectedRestaurantId });
+      }
+    };
+    const handleReconnect = () => {
+      joinRoom();
+      fetchKitchenOrders(false);
+    };
+
+    joinRoom();
+    socket.on('order:created', handleOrdersUpdated);
+    socket.on('order:updated', handleOrdersUpdated);
+    socket.on('connect', handleReconnect);
+
     return () => {
-      clearInterval(interval);
       window.removeEventListener('instadine:orders_updated', handleOrdersUpdated);
       window.removeEventListener('instadine:new_order', handleOrdersUpdated);
+      socket.off('order:created', handleOrdersUpdated);
+      socket.off('order:updated', handleOrdersUpdated);
+      socket.off('connect', handleReconnect);
+      if (selectedRestaurantId) {
+        socket.emit('leave:restaurant', { restaurantId: selectedRestaurantId });
+      }
     };
-  }, [fetchKitchenOrders]);
+  }, [fetchKitchenOrders, selectedRestaurantId]);
 
   // Status transitions
   const handleMarkReady = async (orderId: string, orderNumber: number) => {

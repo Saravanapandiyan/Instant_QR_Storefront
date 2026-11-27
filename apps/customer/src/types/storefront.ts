@@ -9,6 +9,7 @@ export interface StorefrontBranch {
   phone: string | null;
   countryCode: string | null;
   currency: string;
+  storefrontToken?: string;
 }
 
 export interface StorefrontRestaurant {
@@ -63,6 +64,7 @@ export interface StorefrontMenuData {
   categories: StorefrontCategory[];
   items: StorefrontItem[];
   isCrossCurrency: boolean;
+  storefrontToken?: string;
 }
 
 export interface CartItem {

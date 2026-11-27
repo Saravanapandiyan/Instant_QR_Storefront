@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { getOwnerSocket } from '../../lib/socket';
 import {
   ClipboardList,
   CheckCircle2,
@@ -206,10 +207,6 @@ export const OrdersPage: React.FC = () => {
 
   useEffect(() => {
     fetchOrders(true);
-    // Polling every 5 seconds for live kitchen updates
-    const interval = setInterval(() => {
-      fetchOrders(false);
-    }, 5000);
 
     const handleOrdersUpdated = () => {
       fetchOrders(false);
@@ -217,12 +214,33 @@ export const OrdersPage: React.FC = () => {
     window.addEventListener('instadine:orders_updated', handleOrdersUpdated);
     window.addEventListener('instadine:new_order', handleOrdersUpdated);
 
+    const socket = getOwnerSocket();
+    const joinRoom = () => {
+      if (selectedRestaurantId) {
+        socket.emit('join:restaurant', { restaurantId: selectedRestaurantId });
+      }
+    };
+    const handleReconnect = () => {
+      joinRoom();
+      fetchOrders(false);
+    };
+
+    joinRoom();
+    socket.on('order:created', handleOrdersUpdated);
+    socket.on('order:updated', handleOrdersUpdated);
+    socket.on('connect', handleReconnect);
+
     return () => {
-      clearInterval(interval);
       window.removeEventListener('instadine:orders_updated', handleOrdersUpdated);
       window.removeEventListener('instadine:new_order', handleOrdersUpdated);
+      socket.off('order:created', handleOrdersUpdated);
+      socket.off('order:updated', handleOrdersUpdated);
+      socket.off('connect', handleReconnect);
+      if (selectedRestaurantId) {
+        socket.emit('leave:restaurant', { restaurantId: selectedRestaurantId });
+      }
     };
-  }, [fetchOrders]);
+  }, [fetchOrders, selectedRestaurantId]);
 
   // Status transitions
   const handleUpdateStatus = async (orderId: string, nextStatus: string) => {

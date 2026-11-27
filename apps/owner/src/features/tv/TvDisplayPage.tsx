@@ -20,6 +20,7 @@ import {
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useAuthStore } from '../../store/useAuthStore';
+import { getOwnerSocket } from '../../lib/socket';
 import { useRestaurants } from '../restaurants/hooks/useRestaurants';
 import { useBranches } from '../branches/hooks/useBranches';
 import { ordersApi, type TvBoardOrder } from '../orders/api/ordersApi';
@@ -172,17 +173,49 @@ export const TvDisplayPage: React.FC = () => {
     }
   }, [selectedRestaurantId, selectedBranchId]);
 
-  // Initial fetch and 3.5s polling for ultra-responsive TV pickup updates
+  // Initial fetch and Socket.IO subscription for instant TV pickup updates
   useEffect(() => {
-    const hasTarget = selectedRestaurantId || paramBranchId || searchParams.get('branchId');
-    if (hasTarget) {
-      fetchBoardOrders(true);
-      const interval = setInterval(() => {
-        fetchBoardOrders(false);
-      }, 3500);
-      return () => clearInterval(interval);
-    }
-  }, [fetchBoardOrders, selectedRestaurantId, paramBranchId, searchParams]);
+    const queryBranchId = searchParams.get('branchId');
+    const targetBranchId = paramBranchId || queryBranchId || (selectedBranchId !== 'ALL' ? selectedBranchId : null);
+    const hasTarget = selectedRestaurantId || targetBranchId;
+    if (!hasTarget) return;
+
+    fetchBoardOrders(true);
+
+    const socket = getOwnerSocket();
+    const joinRooms = () => {
+      if (selectedRestaurantId) {
+        socket.emit('join:restaurant', { restaurantId: selectedRestaurantId });
+      }
+      if (targetBranchId) {
+        socket.emit('join:branch', { branchId: targetBranchId });
+      }
+    };
+    const handleSocketOrder = () => {
+      fetchBoardOrders(false);
+    };
+    const handleReconnect = () => {
+      joinRooms();
+      fetchBoardOrders(false);
+    };
+
+    joinRooms();
+    socket.on('order:created', handleSocketOrder);
+    socket.on('order:updated', handleSocketOrder);
+    socket.on('connect', handleReconnect);
+
+    return () => {
+      socket.off('order:created', handleSocketOrder);
+      socket.off('order:updated', handleSocketOrder);
+      socket.off('connect', handleReconnect);
+      if (selectedRestaurantId) {
+        socket.emit('leave:restaurant', { restaurantId: selectedRestaurantId });
+      }
+      if (targetBranchId) {
+        socket.emit('leave:branch', { branchId: targetBranchId });
+      }
+    };
+  }, [fetchBoardOrders, selectedRestaurantId, selectedBranchId, paramBranchId, searchParams]);
 
   // Split into Cooking vs Ready
   const cookingOrders = useMemo(() => {

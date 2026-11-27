@@ -1,4 +1,4 @@
-const API_BASE = '/api/v1';
+const API_BASE = (import.meta.env as any).VITE_API_BASE_URL || '/api/v1';
 
 export interface CreateOrderItemInput {
   productId: string;
@@ -69,10 +69,17 @@ export interface PlacedOrder {
   };
 }
 
-export async function placeCashOrder(input: CreateOrderInput): Promise<{ message: string; order: PlacedOrder }> {
+export async function placeCashOrder(
+  input: CreateOrderInput,
+  storefrontToken?: string | null,
+): Promise<{ message: string; order: PlacedOrder }> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (storefrontToken) {
+    headers['X-Storefront-Token'] = storefrontToken;
+  }
   const res = await fetch(`${API_BASE}/orders`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(input),
   });
 
