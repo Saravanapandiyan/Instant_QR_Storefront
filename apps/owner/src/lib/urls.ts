@@ -27,6 +27,7 @@ export function getCustomerBaseUrl(): string {
 
 export const CUSTOMER_APP_URL: string = getCustomerBaseUrl();
 
+import { useEffect, useState } from 'react';
 import { apiClient } from './api-client';
 
 export function getCustomerStorefrontUrl(
@@ -55,4 +56,58 @@ export async function fetchEncryptedQrTokens(
     '/branches/qr-tokens',
     { branchSlug, tableNumbers },
   );
+}
+
+export function getCustomerDisplayHost(): string {
+  return getCustomerBaseUrl().replace(/^https?:\/\//, '');
+}
+
+/**
+ * Fetches encrypted /s/:token storefront paths for a list of branch slugs.
+ */
+export function useEncryptedBranchTokens(slugs: string[]) {
+  const [tokens, setTokens] = useState<Record<string, string>>({});
+  const slugKey = slugs.filter(Boolean).sort().join('|');
+
+  useEffect(() => {
+    const uniqueSlugs = Array.from(new Set(slugs.filter(Boolean)));
+    if (uniqueSlugs.length === 0) return;
+
+    let cancelled = false;
+    Promise.all(
+      uniqueSlugs.map(async (slug) => {
+        try {
+          const res = await fetchEncryptedQrTokens(slug);
+          return [slug, res.baseToken] as const;
+        } catch {
+          return null;
+        }
+      }),
+    ).then((entries) => {
+      if (cancelled) return;
+      const map: Record<string, string> = {};
+      for (const entry of entries) {
+        if (entry && entry[1]) {
+          map[entry[0]] = entry[1];
+        }
+      }
+      setTokens(map);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slugKey]);
+
+  const getBranchStorefrontHref = (slug: string) => {
+    const token = tokens[slug];
+    return token ? getEncryptedStorefrontUrl(token) : getCustomerStorefrontUrl(slug);
+  };
+
+  const getBranchDisplayPath = (slug: string) => {
+    const token = tokens[slug];
+    return token ? `/s/${token}` : `/r/${slug}`;
+  };
+
+  return { getBranchStorefrontHref, getBranchDisplayPath };
 }

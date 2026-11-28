@@ -20,10 +20,10 @@ export declare class ProductsController {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
         imageUrl: string | null;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     findAllByRestaurant(restaurantId: string, categoryId?: string, search?: string, page?: number, limit?: number): Promise<({
         category: {
@@ -48,10 +48,10 @@ export declare class ProductsController {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
         imageUrl: string | null;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     })[] | {
         data: ({
             category: {
@@ -76,10 +76,10 @@ export declare class ProductsController {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
-            translations: import("@prisma/client/runtime/library").JsonValue | null;
             categoryId: string;
             basePrice: import("@prisma/client/runtime/library").Decimal;
             imageUrl: string | null;
+            translations: import("@prisma/client/runtime/library").JsonValue | null;
         })[];
         meta: {
             total: number;
@@ -111,10 +111,10 @@ export declare class ProductsController {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
         imageUrl: string | null;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     update(id: string, updateProductDto: UpdateProductDto, file?: Express.Multer.File): Promise<{
         category: {
@@ -139,10 +139,10 @@ export declare class ProductsController {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
         imageUrl: string | null;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     remove(id: string, user: any): Promise<{
         description: string | null;
@@ -154,9 +154,9 @@ export declare class ProductsController {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
         imageUrl: string | null;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
 }

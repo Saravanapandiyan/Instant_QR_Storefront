@@ -428,13 +428,13 @@ export const StaffPage: React.FC = () => {
         </div>
 
         {/* Restaurant Brand Selector & Add Button */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full sm:w-auto shrink-0">
           {restaurants.length > 1 && (
-            <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-muted" />
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Building2 className="w-4 h-4 text-muted shrink-0" />
               <select
                 aria-label="Select Restaurant Brand"
-                className="bg-surface border border-border text-text rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+                className="bg-surface border border-border text-text rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs w-full sm:w-auto"
                 value={selectedRestaurantId}
                 onChange={(e) => setSelectedRestaurantId(e.target.value)}
               >
@@ -451,9 +451,9 @@ export const StaffPage: React.FC = () => {
             <button
               type="button"
               onClick={handleOpenCreateModal}
-              className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-bold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+              className="w-full sm:w-auto justify-center px-4 py-2.5 sm:py-2 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-bold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
             >
-              <UserPlus size={16} />
+              <UserPlus size={16} className="shrink-0" />
               <span>Add Team Member</span>
             </button>
           )}
@@ -484,9 +484,9 @@ export const StaffPage: React.FC = () => {
 
       {/* Staff Members List */}
       <div className="bg-surface border border-border rounded-2xl shadow-xs overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
-          <div className="font-bold text-text text-base">Active Team Members</div>
-          <span className="text-xs text-muted">
+        <div className="p-4 sm:p-5 border-b border-border flex flex-wrap items-center justify-between gap-2">
+          <div className="font-bold text-text text-sm sm:text-base">Active Team Members</div>
+          <span className="text-xs text-muted whitespace-nowrap">
             {staffList.filter((s) => s.isActive).length} active,{' '}
             {staffList.filter((s) => !s.isActive).length} inactive
           </span>
@@ -519,18 +519,145 @@ export const StaffPage: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-surface-2 border-b border-border text-muted font-bold text-[11px] uppercase tracking-wider">
-                  <th className="py-3 px-4">Member</th>
-                  <th className="py-3 px-4">Role</th>
-                  <th className="py-3 px-4">Branch Access</th>
-                  <th className="py-3 px-4">Quick PIN</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
+          <>
+            {/* Mobile (<768px): Clean Stacked Staff Cards */}
+            <div className="md:hidden divide-y divide-border">
+              {staffList.map((staff) => {
+                const assigned = Array.isArray(staff.assignedBranches) ? staff.assignedBranches : [];
+                const isAll = assigned.includes('ALL') || assigned.length === 0;
+
+                return (
+                  <div
+                    key={staff.id}
+                    className={`p-4 space-y-3 ${
+                      !staff.isActive ? 'opacity-60 bg-surface-2/30' : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-full bg-primary-soft text-primary-soft-text flex items-center justify-center font-bold text-xs shrink-0">
+                          {staff.user?.name ? staff.user.name.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-text text-sm truncate">
+                            {staff.user?.name || 'Unnamed Staff'}
+                          </div>
+                          <div className="text-muted text-[11px] truncate">
+                            {staff.user?.email}
+                          </div>
+                        </div>
+                      </div>
+
+                      {isOwner || can('staff', 'manage') ? (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActive(staff)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+                            staff.isActive
+                              ? 'bg-success/10 text-success border border-success/20'
+                              : 'bg-danger/10 text-danger border border-danger/20'
+                          }`}
+                        >
+                          {staff.isActive ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
+                          <span>{staff.isActive ? 'Active' : 'Suspended'}</span>
+                        </button>
+                      ) : (
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 whitespace-nowrap ${
+                            staff.isActive
+                              ? 'bg-success/10 text-success border border-success/20'
+                              : 'bg-danger/10 text-danger border border-danger/20'
+                          }`}
+                        >
+                          {staff.isActive ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
+                          <span>{staff.isActive ? 'Active' : 'Suspended'}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${
+                          staff.role === 'MANAGER'
+                            ? 'bg-primary/10 text-primary border border-primary/20'
+                            : staff.role === 'CASHIER'
+                            ? 'bg-success/10 text-success border border-success/20'
+                            : staff.role === 'KITCHEN'
+                            ? 'bg-warning/10 text-warning border border-warning/20'
+                            : 'bg-surface-2 text-text border border-border'
+                        }`}
+                      >
+                        {staff.role === 'MANAGER' && <Shield size={11} />}
+                        {staff.role === 'CASHIER' && <CreditCard size={11} />}
+                        {staff.role === 'KITCHEN' && <ChefHat size={11} />}
+                        <span>{staff.role}</span>
+                      </span>
+
+                      {isAll ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-2 text-text text-[11px] font-semibold border border-border whitespace-nowrap">
+                          <Store size={11} className="text-primary" />
+                          All Outlets
+                        </span>
+                      ) : (
+                        assigned.map((bId) => {
+                          const match = branches.find((b) => b.id === bId);
+                          return (
+                            <span
+                              key={bId}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-2 text-muted text-[11px] font-medium border border-border whitespace-nowrap"
+                            >
+                              {match?.name || 'Branch'}
+                            </span>
+                          );
+                        })
+                      )}
+
+                      {staff.pinCode && (
+                        <span className="font-mono text-[11px] font-semibold px-2 py-0.5 rounded bg-surface-2 text-text border border-border whitespace-nowrap">
+                          PIN: •••• ({staff.pinCode})
+                        </span>
+                      )}
+                    </div>
+
+                    {(isOwner || can('staff', 'manage')) && (
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditModal(staff)}
+                          className="px-3 py-1.5 rounded-lg border border-border bg-surface-2 text-text hover:bg-surface text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Edit2 size={13} />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemove(staff)}
+                          className="px-3 py-1.5 rounded-lg border border-danger/25 bg-danger/10 text-danger hover:bg-danger/15 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Trash2 size={13} />
+                          <span>Remove</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Tablet & Desktop (>=768px): Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-surface-2 border-b border-border text-muted font-bold text-[11px] uppercase tracking-wider whitespace-nowrap">
+                    <th className="py-3 px-3">Member</th>
+                    <th className="py-3 px-3">Email</th>
+                    <th className="py-3 px-3">Role</th>
+                    <th className="py-3 px-3">Branch Access</th>
+                    <th className="py-3 px-3">Quick PIN</th>
+                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
               <tbody className="divide-y divide-border">
                 {staffList.map((staff) => {
                   const assigned = Array.isArray(staff.assignedBranches) ? staff.assignedBranches : [];
@@ -543,26 +670,25 @@ export const StaffPage: React.FC = () => {
                         !staff.isActive ? 'opacity-60 bg-surface-2/30' : ''
                       }`}
                     >
-                      {/* Name & Email */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
+                      {/* Member Name */}
+                      <td className="py-3 px-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-full bg-primary-soft text-primary-soft-text flex items-center justify-center font-bold text-xs shrink-0">
                             {staff.user?.name ? staff.user.name.charAt(0).toUpperCase() : 'U'}
                           </div>
-                          <div>
-                            <div className="font-bold text-text text-sm">
-                              {staff.user?.name || 'Unnamed Staff'}
-                            </div>
-                            <div className="text-muted text-[11px]">
-                              {staff.user?.email}
-                              {staff.user?.phone && ` • ${staff.user?.countryCode || '+91'} ${staff.user?.phone}`}
-                            </div>
+                          <div className="font-bold text-text text-sm">
+                            {staff.user?.name || 'Unnamed Staff'}
                           </div>
                         </div>
                       </td>
 
+                      {/* Email */}
+                      <td className="py-3 px-3 text-muted text-xs whitespace-nowrap">
+                        {staff.user?.email || '-'}
+                      </td>
+
                       {/* Role Preset Badge */}
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-3 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
                             staff.role === 'MANAGER'
@@ -584,9 +710,9 @@ export const StaffPage: React.FC = () => {
                       {/* Branch Access */}
                       <td className="py-3 px-4">
                         {isAll ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-surface-2 text-text text-xs font-semibold border border-border">
-                            <Store size={12} className="text-primary" />
-                            All Outlets
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-surface-2 text-text text-xs font-semibold border border-border whitespace-nowrap">
+                            <Store size={12} className="text-primary shrink-0" />
+                            <span>All Outlets</span>
                           </span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
@@ -606,9 +732,9 @@ export const StaffPage: React.FC = () => {
                       </td>
 
                       {/* Quick PIN */}
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         {staff.pinCode ? (
-                          <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-surface-2 text-text border border-border">
+                          <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-surface-2 text-text border border-border whitespace-nowrap">
                             •••• ({staff.pinCode})
                           </span>
                         ) : (
@@ -694,6 +820,7 @@ export const StaffPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 
@@ -994,22 +1121,17 @@ export const StaffPage: React.FC = () => {
                         : 'bg-surface border-border opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
                           <ChefHat size={16} />
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-text flex items-center gap-2">
-                            <span>Kitchen (KDS)</span>
-                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/kds</span>
-                          </div>
-                          <p className="text-[11px] text-muted mt-0.5">
-                            Cooking queue display for kitchen chefs to view tickets and mark dishes ready
-                          </p>
+                        <div className="font-bold text-xs text-text flex items-center flex-wrap gap-1.5 min-w-0">
+                          <span>Kitchen (KDS)</span>
+                          <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/kds</span>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                           type="checkbox"
                           checked={permissions.pages?.kds ?? false}
@@ -1029,22 +1151,17 @@ export const StaffPage: React.FC = () => {
                         : 'bg-surface border-border opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
                           <ClipboardList size={16} />
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-text flex items-center gap-2">
-                            <span>Live Orders</span>
-                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/orders</span>
-                          </div>
-                          <p className="text-[11px] text-muted mt-0.5">
-                            Cashier desk queue to accept incoming orders, print bills, and collect payments
-                          </p>
+                        <div className="font-bold text-xs text-text flex items-center flex-wrap gap-1.5 min-w-0">
+                          <span>Live Orders</span>
+                          <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/orders</span>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                           type="checkbox"
                           checked={permissions.pages?.orders ?? false}
@@ -1097,22 +1214,17 @@ export const StaffPage: React.FC = () => {
                         : 'bg-surface border-border opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 flex items-center justify-center shrink-0">
                           <Tv size={16} />
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-text flex items-center gap-2">
-                            <span>TV Order Board</span>
-                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/tv</span>
-                          </div>
-                          <p className="text-[11px] text-muted mt-0.5">
-                            Fullscreen customer queue status display for kitchen pickup counters
-                          </p>
+                        <div className="font-bold text-xs text-text flex items-center flex-wrap gap-1.5 min-w-0">
+                          <span>TV Order Board</span>
+                          <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/tv</span>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                           type="checkbox"
                           checked={permissions.pages?.tv ?? false}
@@ -1132,22 +1244,17 @@ export const StaffPage: React.FC = () => {
                         : 'bg-surface border-border opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
                           <LayoutDashboard size={16} />
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-text flex items-center gap-2">
-                            <span>Overview</span>
-                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/</span>
-                          </div>
-                          <p className="text-[11px] text-muted mt-0.5">
-                            Main store dashboard with live daily summaries, order counters, and setup checklists
-                          </p>
+                        <div className="font-bold text-xs text-text flex items-center flex-wrap gap-1.5 min-w-0">
+                          <span>Overview</span>
+                          <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/</span>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                           type="checkbox"
                           checked={permissions.pages?.overview ?? false}
@@ -1167,22 +1274,17 @@ export const StaffPage: React.FC = () => {
                         : 'bg-surface border-border opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 flex items-center justify-center shrink-0">
                           <BarChart3 size={16} />
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-text flex items-center gap-2">
-                            <span>Sales & Analytics</span>
-                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/analytics</span>
-                          </div>
-                          <p className="text-[11px] text-muted mt-0.5">
-                            Financial reports, revenue trends, top-selling items, and outlet volume metrics
-                          </p>
+                        <div className="font-bold text-xs text-text flex items-center flex-wrap gap-1.5 min-w-0">
+                          <span>Sales & Analytics</span>
+                          <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/analytics</span>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                           type="checkbox"
                           checked={permissions.pages?.analytics ?? false}
@@ -1210,22 +1312,17 @@ export const StaffPage: React.FC = () => {
                         : 'bg-surface border-border opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-7 h-7 rounded-lg bg-orange-500/10 text-orange-600 flex items-center justify-center shrink-0">
                           <Store size={16} />
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-text flex items-center gap-2">
-                            <span>Branches</span>
-                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/branches</span>
-                          </div>
-                          <p className="text-[11px] text-muted mt-0.5">
-                            Branch outlets, Dine-in QR standees, and physical table management
-                          </p>
+                        <div className="font-bold text-xs text-text flex items-center flex-wrap gap-1.5 min-w-0">
+                          <span>Branches</span>
+                          <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/branches</span>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                           type="checkbox"
                           checked={permissions.pages?.branches ?? false}
@@ -1277,22 +1374,17 @@ export const StaffPage: React.FC = () => {
                         : 'bg-surface border-border opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
                           <UtensilsCrossed size={16} />
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-text flex items-center gap-2">
-                            <span>Digital Menu</span>
-                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/menu</span>
-                          </div>
-                          <p className="text-[11px] text-muted mt-0.5">
-                            Food catalog, dishes, pricing, AI translation, and 86 stock toggles
-                          </p>
+                        <div className="font-bold text-xs text-text flex items-center flex-wrap gap-1.5 min-w-0">
+                          <span>Digital Menu</span>
+                          <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/menu</span>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                           type="checkbox"
                           checked={permissions.pages?.menu ?? false}
@@ -1304,7 +1396,7 @@ export const StaffPage: React.FC = () => {
                     </div>
 
                     {permissions.pages?.menu && (
-                      <div className="pt-2 border-t border-border/60 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div className="pt-2 border-t border-border/60 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                         <label className="flex items-center gap-2 text-xs text-muted cursor-pointer hover:text-text">
                           <input
                             type="checkbox"
@@ -1353,22 +1445,17 @@ export const StaffPage: React.FC = () => {
                         : 'bg-surface border-border opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0">
                           <Users size={16} />
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-text flex items-center gap-2">
-                            <span>Staff & Roles</span>
-                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/staff</span>
-                          </div>
-                          <p className="text-[11px] text-muted mt-0.5">
-                            Invite team members, assign POS PINs, and configure permissions
-                          </p>
+                        <div className="font-bold text-xs text-text flex items-center flex-wrap gap-1.5 min-w-0">
+                          <span>Staff & Roles</span>
+                          <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/staff</span>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                           type="checkbox"
                           checked={permissions.pages?.staff ?? false}
@@ -1410,22 +1497,17 @@ export const StaffPage: React.FC = () => {
                         : 'bg-surface border-border opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-7 h-7 rounded-lg bg-yellow-500/10 text-yellow-600 flex items-center justify-center shrink-0">
                           <Coins size={16} />
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-text flex items-center gap-2">
-                            <span>Plans & Credits</span>
-                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/billing</span>
-                          </div>
-                          <p className="text-[11px] text-muted mt-0.5">
-                            Storefront subscription tier, AI import credits, and payment transaction history
-                          </p>
+                        <div className="font-bold text-xs text-text flex items-center flex-wrap gap-1.5 min-w-0">
+                          <span>Plans & Credits</span>
+                          <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/billing</span>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                           type="checkbox"
                           checked={permissions.pages?.billing ?? false}
@@ -1445,22 +1527,17 @@ export const StaffPage: React.FC = () => {
                         : 'bg-surface border-border opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-7 h-7 rounded-lg bg-cyan-500/10 text-cyan-600 flex items-center justify-center shrink-0">
                           <CreditCard size={16} />
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-text flex items-center gap-2">
-                            <span>Payment Settings</span>
-                            <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/payments</span>
-                          </div>
-                          <p className="text-[11px] text-muted mt-0.5">
-                            UPI IDs, QR payment codes, Cash on Counter toggles, and online gateways
-                          </p>
+                        <div className="font-bold text-xs text-text flex items-center flex-wrap gap-1.5 min-w-0">
+                          <span>Payment Settings</span>
+                          <span className="text-[10px] font-mono text-muted bg-surface-2 px-1.5 py-0.2 rounded border border-border">/payments</span>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                           type="checkbox"
                           checked={permissions.pages?.payments ?? false}

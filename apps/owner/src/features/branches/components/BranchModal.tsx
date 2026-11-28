@@ -6,6 +6,7 @@ import { Store, MapPin, Phone, ArrowRight, X, AlertCircle, Coins } from 'lucide-
 import { Button, Input } from '../../../components/ui';
 import { useRestaurants } from '../../restaurants/hooks/useRestaurants';
 import { SUPPORTED_CURRENCIES } from '../../../config/currencies.config';
+import { getCustomerDisplayHost, useEncryptedBranchTokens } from '../../../lib/urls';
 import type { Branch, CreateBranchInput } from '@instant-qr/shared-types';
 
 const branchSchema = z.object({
@@ -79,6 +80,13 @@ export const BranchModal: React.FC<BranchModalProps> = ({
     (branchName
       ? `${activeRestaurant?.slug || 'store'}-${branchName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`
       : 'your-branch');
+  const { getBranchDisplayPath } = useEncryptedBranchTokens(
+    isEditing && initialData?.slug ? [initialData.slug] : [],
+  );
+  const previewPath =
+    isEditing && initialData?.slug
+      ? getBranchDisplayPath(initialData.slug)
+      : `/r/${computedSlug}`;
 
   useEffect(() => {
     if (initialData) {
@@ -145,19 +153,22 @@ export const BranchModal: React.FC<BranchModalProps> = ({
       {/* Modal Dialog Card */}
       <div className="relative w-full max-w-lg max-h-[90vh] bg-surface rounded-[12px] border border-border shadow-2xl flex flex-col z-10 overflow-hidden my-auto animate-in fade-in zoom-in-95">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border shrink-0">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-start sm:items-center justify-between gap-2 p-4 sm:p-5 border-b border-border shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-[8px] bg-primary-soft text-primary-soft-text flex items-center justify-center shrink-0">
               <Store size={17} />
             </div>
-            <div>
-              <h2 className="text-base font-semibold text-text">
-                {isEditing ? 'Edit Restaurant Branch' : 'Add New Restaurant Branch'}
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-base font-semibold text-text truncate">
+                <span className="sm:hidden">{isEditing ? 'Edit Branch' : 'Add Branch'}</span>
+                <span className="hidden sm:inline">
+                  {isEditing ? 'Edit Restaurant Branch' : 'Add New Restaurant Branch'}
+                </span>
               </h2>
-              <p className="text-xs text-muted">
+              <p className="text-[11px] sm:text-xs text-muted leading-snug">
                 {isEditing
-                  ? 'Update physical branch details and storefront slug.'
-                  : 'Add a physical location with its own QR table storefront.'}
+                  ? 'Update branch details and storefront slug.'
+                  : 'Add a location with its own QR table storefront.'}
               </p>
             </div>
           </div>
@@ -165,7 +176,7 @@ export const BranchModal: React.FC<BranchModalProps> = ({
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="p-1.5 rounded-[6px] text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
+            className="p-1.5 rounded-[6px] text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer shrink-0"
           >
             <X size={17} />
           </button>
@@ -249,7 +260,8 @@ export const BranchModal: React.FC<BranchModalProps> = ({
               Customer Storefront QR Link Preview:
             </span>
             <span className="font-mono text-primary font-semibold truncate block">
-              ordzo.com/r/{computedSlug}
+              {getCustomerDisplayHost()}
+              {previewPath}
             </span>
           </div>
 
@@ -266,10 +278,10 @@ export const BranchModal: React.FC<BranchModalProps> = ({
             <label className="text-xs font-medium text-text">
               Branch Contact Phone (Optional)
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <select
                 {...register('countryCode')}
-                className="h-[44px] px-2.5 rounded-[8px] border border-border bg-surface text-text text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors cursor-pointer shrink-0"
+                className="h-[44px] w-full sm:w-auto px-2.5 rounded-[8px] border border-border bg-surface text-text text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors cursor-pointer shrink-0"
               >
                 {COUNTRY_CODES.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -278,7 +290,7 @@ export const BranchModal: React.FC<BranchModalProps> = ({
                 ))}
               </select>
 
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <Input
                   placeholder="9876543210"
                   type="tel"

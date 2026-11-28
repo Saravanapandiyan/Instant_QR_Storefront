@@ -57,12 +57,7 @@ import type {
   StorefrontCategory,
 } from '../../types/storefront.ts';
 
-function getAssetUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  const clean = url.replace(/^\/?(uploads\/)?/, '');
-  return `/uploads/${clean}`;
-}
+import { getAssetUrl } from '../../lib/assets.ts';
 
 const STOREFRONT_LANGUAGES = [
   { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧' },
@@ -537,19 +532,19 @@ export function StorefrontPage() {
             )}
           </div>
 
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-xs sm:text-sm font-bold tracking-tight leading-tight" style={{ color: 'var(--sf-text)' }}>
+              <h1 className="text-xs sm:text-sm font-bold tracking-tight leading-tight truncate" style={{ color: 'var(--sf-text)' }}>
                 {restaurant.name}
               </h1>
               {tableNumber && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-primary/10 text-primary border border-primary/20">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-primary/10 text-primary border border-primary/20 whitespace-nowrap shrink-0">
                   🍽️ {tableNumber.startsWith('Table') ? tableNumber : `Table ${tableNumber}`}
                 </span>
               )}
             </div>
             {branch.address && (
-              <p className="text-[10px] sm:text-[11px] mt-0.5 leading-none" style={{ color: 'var(--sf-muted)' }}>
+              <p className="text-[10px] sm:text-[11px] mt-0.5 leading-none truncate" style={{ color: 'var(--sf-muted)' }}>
                 {branch.address}
               </p>
             )}
@@ -557,8 +552,8 @@ export function StorefrontPage() {
         </div>
 
         {/* Right: Search Input + Mode Toggle */}
-        <div className="flex items-center gap-2.5">
-          <div className="relative w-56 lg:w-64">
+        <div className="flex items-center gap-1.5 lg:gap-2.5 shrink-0">
+          <div className="relative w-36 lg:w-56 xl:w-64">
             <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 opacity-50" />
             <input
               type="text"
@@ -577,7 +572,7 @@ export function StorefrontPage() {
           {/* My Orders Button */}
           <button
             onClick={() => setIsMyOrdersOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all relative cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all relative cursor-pointer whitespace-nowrap shrink-0"
             style={{
               backgroundColor: activeOrder ? 'var(--sf-primary)' : 'var(--sf-surface)',
               borderColor: activeOrder ? 'var(--sf-primary)' : 'var(--sf-border)',
@@ -585,7 +580,7 @@ export function StorefrontPage() {
             }}
             title="View my placed orders"
           >
-            <Receipt className="w-3.5 h-3.5" />
+            <Receipt className="w-3.5 h-3.5 shrink-0" />
             <span>My Orders</span>
             {customerOrders.length > 0 && (
               <span
@@ -687,12 +682,12 @@ export function StorefrontPage() {
       {/* =========================================================================
           MOBILE TOP HEADER (< 768px)
          ========================================================================= */}
-      <div className="md:hidden px-4 pt-3 pb-2">
+      <div className="md:hidden px-3 sm:px-4 pt-3 pb-2">
         {/* Brand Row */}
-        <div className="flex items-center justify-between gap-3 mb-2.5">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between gap-2 mb-2.5">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold shadow-sm shrink-0 overflow-hidden"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-base font-bold shadow-sm shrink-0 overflow-hidden"
               style={{
                 backgroundColor: 'var(--sf-primary)',
                 color: 'var(--sf-primary-contrast)',
@@ -709,30 +704,30 @@ export function StorefrontPage() {
               )}
             </div>
 
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <h1 className="text-sm font-bold tracking-tight leading-tight" style={{ color: 'var(--sf-text)' }}>
+                <h1 className="text-xs sm:text-sm font-bold tracking-tight leading-tight truncate" style={{ color: 'var(--sf-text)' }}>
                   {restaurant.name}
                 </h1>
                 {tableNumber && (
-                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-primary/10 text-primary border border-primary/20">
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-primary/10 text-primary border border-primary/20 whitespace-nowrap shrink-0">
                     🍽️ {tableNumber.startsWith('Table') ? tableNumber : `Table ${tableNumber}`}
                   </span>
                 )}
               </div>
               {branch.address && (
-                <p className="text-[10px] mt-0.5" style={{ color: 'var(--sf-muted)' }}>
+                <p className="text-[10px] mt-0.5 truncate" style={{ color: 'var(--sf-muted)' }}>
                   {branch.address}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 shrink-0">
             {/* Mobile Scan QR Button */}
             <button
               onClick={() => setIsScannerOpen(true)}
-              className="p-1.5 rounded-lg border flex items-center justify-center transition-all cursor-pointer hover:border-orange-500/40"
+              className="p-1.5 rounded-lg border flex items-center justify-center transition-all cursor-pointer hover:border-orange-500/40 shrink-0"
               style={{
                 backgroundColor: 'var(--sf-surface)',
                 borderColor: 'var(--sf-border)',
@@ -740,12 +735,12 @@ export function StorefrontPage() {
               }}
               title="Scan another table or restaurant QR"
             >
-              <QrCode className="w-4 h-4 text-orange-500" />
+              <QrCode className="w-3.5 h-3.5 text-orange-500" />
             </button>
 
             <button
               onClick={() => setIsMyOrdersOpen(true)}
-              className="p-1.5 rounded-lg border relative flex items-center justify-center transition-all cursor-pointer"
+              className="p-1.5 rounded-lg border relative flex items-center justify-center transition-all cursor-pointer shrink-0"
               style={{
                 backgroundColor: activeOrder ? 'var(--sf-primary)' : 'var(--sf-surface)',
                 borderColor: activeOrder ? 'var(--sf-primary)' : 'var(--sf-border)',
@@ -753,7 +748,7 @@ export function StorefrontPage() {
               }}
               title="My Orders"
             >
-              <Receipt className="w-4 h-4" />
+              <Receipt className="w-3.5 h-3.5" />
               {customerOrders.length > 0 && (
                 <span
                   className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full text-[9px] font-black flex items-center justify-center shadow-xs"
@@ -768,7 +763,7 @@ export function StorefrontPage() {
             </button>
 
             {/* Mobile Language Selector */}
-            <div className="relative flex items-center">
+            <div className="relative flex items-center shrink-0">
               <select
                 aria-label="Select Menu Language"
                 value={selectedLanguage}
@@ -776,7 +771,7 @@ export function StorefrontPage() {
                   setSelectedLanguage(e.target.value);
                   localStorage.setItem('instadine_customer_lang', e.target.value);
                 }}
-                className="appearance-none pl-2 pr-5 py-1 rounded-lg border text-[11px] font-bold transition-all cursor-pointer focus:outline-none"
+                className="appearance-none pl-1.5 pr-4 py-1 rounded-lg border text-[11px] font-bold transition-all cursor-pointer focus:outline-none max-w-[72px] min-[380px]:max-w-none truncate"
                 style={{
                   backgroundColor: 'var(--sf-surface)',
                   borderColor: 'var(--sf-border)',
@@ -790,14 +785,14 @@ export function StorefrontPage() {
                 ))}
               </select>
               <Globe
-                className="w-2.5 h-2.5 absolute right-1.5 pointer-events-none opacity-60"
+                className="w-2.5 h-2.5 absolute right-1 pointer-events-none opacity-60"
                 style={{ color: 'var(--sf-text)' }}
               />
             </div>
 
             <button
               onClick={() => setIsHelpOpen(true)}
-              className="p-1.5 rounded-lg opacity-70"
+              className="p-1 rounded-lg opacity-70 shrink-0"
               title="Help & FAQs"
             >
               <HelpCircle className="w-4 h-4" />
@@ -805,7 +800,7 @@ export function StorefrontPage() {
 
             <button
               onClick={toggleDarkMode}
-              className="p-1.5 rounded-lg opacity-70"
+              className="p-1 rounded-lg opacity-70 shrink-0"
             >
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
@@ -978,7 +973,7 @@ export function StorefrontPage() {
           {/* -------------------------------------------------------------
               MOBILE DISH CARDS (< 768px)
              ------------------------------------------------------------- */}
-          <div className="md:hidden space-y-2.5 pb-24">
+          <div className={`md:hidden space-y-2.5 ${cartItems.length > 0 ? 'pb-20' : 'pb-4'}`}>
             {filteredItems.map((item) => {
               const qty = getItemQuantity(item.id);
               const isSoldOut = !item.isAvailable;
@@ -989,7 +984,7 @@ export function StorefrontPage() {
                 <div
                   key={item.id}
                   onClick={() => setSelectedDishForModal(item)}
-                  className={`rounded-xl border p-3 flex items-center justify-between gap-2.5 shadow-xs transition-all cursor-pointer hover:border-[var(--sf-primary)]/50 active:scale-[0.99] ${
+                  className={`rounded-xl border p-3 flex items-start justify-between gap-2.5 shadow-xs transition-all cursor-pointer hover:border-[var(--sf-primary)]/50 active:scale-[0.99] ${
                     isSoldOut ? 'opacity-70' : ''
                   }`}
                   style={{
@@ -1401,24 +1396,24 @@ export function StorefrontPage() {
           STOREFRONT COMPACT BRANDED FOOTER
          ========================================================================= */}
       <footer
-        className="mt-6 mb-16 py-4 px-4 text-center border-t transition-colors"
+        className={`mt-4 py-4 px-4 text-center border-t transition-colors ${cartItems.length > 0 ? 'mb-20 md:mb-6' : 'mb-4'}`}
         style={{
           borderColor: 'var(--sf-border)',
           color: 'var(--sf-text)',
         }}
       >
-        <div className="max-w-lg mx-auto flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs opacity-75">
-          <span className="font-bold tracking-tight">
+        <div className="max-w-lg mx-auto flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs">
+          <span className="font-bold tracking-tight" style={{ color: 'var(--sf-text)' }}>
             {restaurant?.name || branch?.name || 'Restaurant'}
           </span>
-          <span className="opacity-40">•</span>
-          <span className="inline-flex items-center gap-1 opacity-80">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+          <span style={{ color: 'var(--sf-muted)' }}>•</span>
+          <span className="inline-flex items-center gap-1" style={{ color: 'var(--sf-muted)' }}>
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
             <span>Touchless Menu</span>
           </span>
           {branding?.showPoweredByBadge !== false && (
             <>
-              <span className="opacity-40">•</span>
+              <span style={{ color: 'var(--sf-muted)' }}>•</span>
               <a
                 href={
                   branding?.poweredByLink || (
@@ -1430,10 +1425,11 @@ export function StorefrontPage() {
                 }
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 hover:opacity-100 hover:underline transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 hover:underline transition-all cursor-pointer"
+                style={{ color: 'var(--sf-muted)' }}
                 title={branding?.siteTagline || "Touchless QR storefront"}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                 <span>
                   {branding?.poweredByText ? (
                     <span>{branding.poweredByText}</span>
@@ -1446,8 +1442,8 @@ export function StorefrontPage() {
           )}
           {branding?.customFooterNote && (
             <>
-              <span className="opacity-40">•</span>
-              <span className="opacity-75">{branding.customFooterNote}</span>
+              <span style={{ color: 'var(--sf-muted)' }}>•</span>
+              <span style={{ color: 'var(--sf-muted)' }}>{branding.customFooterNote}</span>
             </>
           )}
         </div>

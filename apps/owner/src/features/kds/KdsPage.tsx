@@ -224,45 +224,42 @@ export const KdsPage: React.FC = () => {
         isFullscreen ? 'p-4 sm:p-6 min-h-screen bg-bg text-text' : ''
       }`}
     >
-      {/* Top Bar for Kitchen Display */}
-      <div className="px-4 sm:px-6 py-3.5 rounded-2xl bg-surface border border-border flex flex-wrap items-center justify-between gap-4 shadow-xs transition-colors">
-        {/* Left: Brand & Back to Dashboard */}
-        <div className="flex items-center gap-3">
+      {/* Clean KDS Page Header (matching Overview & Live Orders) */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-border pb-4">
+        <div className="flex items-start sm:items-center gap-3 min-w-0">
           {isFullscreen && (
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="p-2 rounded-xl bg-surface-2 text-muted hover:text-text transition-colors cursor-pointer"
+              className="p-2 rounded-xl bg-surface border border-border text-muted hover:text-text transition-colors cursor-pointer shrink-0"
               title="Exit Fullscreen"
             >
-              <Minimize2 className="w-5 h-5" />
+              <Minimize2 className="w-4 h-4" />
             </button>
           )}
-
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shadow-xs">
-              <ChefHat className="w-6 h-6" />
+          <div className="hidden sm:flex w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-primary/10 text-primary items-center justify-center font-bold shadow-xs shrink-0">
+            <ChefHat className="w-5 h-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-base sm:text-lg font-bold tracking-tight text-text whitespace-nowrap">
+                Kitchen Display System
+              </h1>
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 whitespace-nowrap shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                KDS LIVE
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-bold tracking-tight text-text uppercase">
-                  Kitchen Display System
-                </h1>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
-                  KDS LIVE
-                </span>
-              </div>
-              <p className="text-[11px] font-medium text-muted">
-                Real-time duration tracking & ticket expediting
-              </p>
-            </div>
+            <p className="text-xs text-muted mt-0.5">
+              Real-time duration tracking &amp; ticket expediting
+            </p>
           </div>
         </div>
 
-        {/* Center: Live Clock & Queue Pill Stats */}
-        <div className="flex items-center gap-3">
-          <div className="px-3.5 py-1.5 rounded-xl border border-border bg-surface-2 font-mono text-sm font-bold text-primary flex items-center gap-2">
-            <Clock className="w-4 h-4 text-muted" />
+        {/* Right: Clock + Quick Actions */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="px-3 py-1.5 rounded-xl border border-border bg-surface font-mono text-xs font-bold text-primary flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs">
+            <Clock className="w-3.5 h-3.5 text-muted shrink-0" />
             <span>
               {new Date(now).toLocaleTimeString([], {
                 hour: '2-digit',
@@ -272,44 +269,58 @@ export const KdsPage: React.FC = () => {
             </span>
           </div>
 
-          {/* Quick tab counters for mobile/small displays */}
-          <div className="inline-flex p-1 rounded-xl border border-border bg-surface-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab('COOKING')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'COOKING'
-                  ? 'bg-primary text-on-primary shadow-xs'
-                  : 'text-muted hover:text-text'
-              }`}
-            >
-              <Flame className="w-3.5 h-3.5" />
-              <span>Cooking ({cookingOrders.length})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('READY')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'READY'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-muted hover:text-text'
-              }`}
-            >
-              <Bell className="w-3.5 h-3.5" />
-              <span>Ready ({readyOrders.length})</span>
-            </button>
-          </div>
-        </div>
+          <button
+            type="button"
+            onClick={() => fetchKitchenOrders(true)}
+            className="p-2 rounded-xl border border-border bg-surface text-muted hover:text-text transition-colors cursor-pointer shrink-0 shadow-2xs"
+            title="Refresh tickets"
+          >
+            <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
 
-        {/* Right: Controls & Branch Selector (Clean toolbar without redundant theme toggle) */}
-        <div className="flex items-center gap-2">
-          {/* Branch Filter */}
+          <button
+            type="button"
+            onClick={toggleSound}
+            className={`p-2 rounded-xl transition-colors cursor-pointer border shrink-0 shadow-2xs ${
+              isMuted
+                ? 'bg-surface border-border text-muted hover:text-text'
+                : 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
+            }`}
+            title={isMuted ? 'Unmute alerts' : 'Mute alerts'}
+          >
+            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate(ROUTES.TV_DISPLAY)}
+            className="p-2 xl:px-3 xl:py-1.5 rounded-xl transition-colors cursor-pointer border border-border bg-surface text-muted hover:text-primary hidden sm:flex items-center gap-1.5 text-xs font-bold whitespace-nowrap shrink-0 shadow-2xs"
+            title="Open Customer Pickup TV Display"
+          >
+            <Tv className="w-4 h-4 xl:w-3.5 xl:h-3.5 text-primary shrink-0" />
+            <span className="hidden xl:inline">TV Board</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="p-2 rounded-xl transition-colors cursor-pointer border border-border bg-surface text-muted hover:text-text hidden sm:flex shrink-0 shadow-2xs"
+            title="Toggle Kitchen Fullscreen"
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Slim Filter & View Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full sm:w-auto">
           {filteredBranches.length > 0 && (
-            <div className="flex items-center gap-1.5 border border-border bg-surface-2 rounded-xl px-2.5 py-1 text-xs">
-              <Store className="w-3.5 h-3.5 text-muted" />
+            <div className="flex items-center gap-1.5 border border-border bg-surface rounded-xl px-3 py-1.5 text-xs w-full sm:w-auto sm:min-w-[180px] shadow-2xs">
+              <Store className="w-3.5 h-3.5 text-muted shrink-0" />
               <select
                 aria-label="Filter Outlet"
-                className="bg-transparent border-none font-bold text-xs focus:outline-none cursor-pointer text-text"
+                className="bg-transparent border-none font-bold text-xs focus:outline-none cursor-pointer text-text w-full sm:w-auto truncate"
                 value={selectedBranchId}
                 onChange={(e) => setSelectedBranchId(e.target.value)}
               >
@@ -325,79 +336,62 @@ export const KdsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Refresh */}
-          <button
-            type="button"
-            onClick={() => fetchKitchenOrders(true)}
-            className="p-2 rounded-xl border border-border bg-surface-2 text-muted hover:text-text transition-colors cursor-pointer"
-            title="Refresh tickets"
-          >
-            <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </button>
-
-          {/* Audio Chime Toggle */}
-          <button
-            type="button"
-            onClick={toggleSound}
-            className={`p-2 rounded-xl transition-colors cursor-pointer border ${
-              isMuted
-                ? 'bg-surface-2 border-border text-muted hover:text-text'
-                : 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
-            }`}
-            title={isMuted ? 'Unmute alerts' : 'Mute alerts'}
-          >
-            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-          </button>
-
-          {/* TV Board Link */}
-          <button
-            type="button"
-            onClick={() => navigate(ROUTES.TV_DISPLAY)}
-            className="p-2 rounded-xl transition-colors cursor-pointer border border-border bg-surface-2 text-muted hover:text-primary hidden sm:flex items-center gap-1.5 text-xs font-bold"
-            title="Open Customer Pickup TV Display"
-          >
-            <Tv className="w-4 h-4 text-primary" />
-            <span className="hidden md:inline">TV Board</span>
-          </button>
-
-          {/* View Mode Toggle: Rows vs Cards */}
-          <div className="hidden sm:flex items-center bg-surface-2 border border-border rounded-xl p-0.5">
+          {/* Mobile/Tablet only: Cooking vs Ready tab switcher (desktop shows both columns side-by-side) */}
+          <div className="inline-flex lg:hidden p-1 rounded-xl border border-border bg-surface-2 w-full sm:w-auto shrink-0">
             <button
               type="button"
-              onClick={() => setViewMode('rows')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                viewMode === 'rows'
+              onClick={() => setActiveTab('COOKING')}
+              className={`flex-1 sm:flex-initial justify-center px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                activeTab === 'COOKING'
                   ? 'bg-primary text-on-primary shadow-xs'
                   : 'text-muted hover:text-text'
               }`}
-              title="Row View (Expanded)"
             >
-              <LayoutList className="w-3.5 h-3.5" />
-              <span>Rows</span>
+              <Flame className="w-3.5 h-3.5 shrink-0" />
+              <span>Cooking ({cookingOrders.length})</span>
             </button>
             <button
               type="button"
-              onClick={() => setViewMode('cards')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                viewMode === 'cards'
-                  ? 'bg-primary text-on-primary shadow-xs'
+              onClick={() => setActiveTab('READY')}
+              className={`flex-1 sm:flex-initial justify-center px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                activeTab === 'READY'
+                  ? 'bg-emerald-600 text-white shadow-xs'
                   : 'text-muted hover:text-text'
               }`}
-              title="Card View (Compact)"
             >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Cards</span>
+              <Bell className="w-3.5 h-3.5 shrink-0" />
+              <span>Ready ({readyOrders.length})</span>
             </button>
           </div>
+        </div>
 
-          {/* Fullscreen Button */}
+        {/* View Mode Toggle: Rows vs Cards */}
+        <div className="hidden sm:flex items-center bg-surface-2 border border-border rounded-xl p-0.5 shrink-0 self-end sm:self-auto">
           <button
             type="button"
-            onClick={toggleFullscreen}
-            className="p-2 rounded-xl transition-colors cursor-pointer border border-border bg-surface-2 text-muted hover:text-text hidden sm:block"
-            title="Toggle Kitchen Fullscreen"
+            onClick={() => setViewMode('rows')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+              viewMode === 'rows'
+                ? 'bg-primary text-on-primary shadow-xs'
+                : 'text-muted hover:text-text'
+            }`}
+            title="Row View (Expanded)"
           >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            <LayoutList className="w-3.5 h-3.5" />
+            <span>Rows</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('cards')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+              viewMode === 'cards'
+                ? 'bg-primary text-on-primary shadow-xs'
+                : 'text-muted hover:text-text'
+            }`}
+            title="Card View (Compact)"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span>Cards</span>
           </button>
         </div>
       </div>
@@ -408,14 +402,14 @@ export const KdsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* COLUMN 1: In Kitchen / Preparing */}
           <section className={`space-y-4 ${activeTab !== 'COOKING' ? 'hidden lg:block' : 'block'}`}>
-            <div className="flex items-center justify-between pb-2 border-b border-border">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+            <div className="flex flex-wrap items-center justify-between gap-1.5 pb-2 border-b border-border">
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shrink-0" />
                 <h2 className="text-xs font-bold uppercase tracking-wider text-primary">
                   Kitchen Queue ({cookingOrders.length})
                 </h2>
               </div>
-              <span className="text-xs font-mono text-muted">
+              <span className="text-[11px] sm:text-xs font-mono text-muted whitespace-nowrap">
                 Live Duration Tracking
               </span>
             </div>

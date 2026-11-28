@@ -186,7 +186,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
                       <div className="flex items-center gap-1 text-[11px] text-muted mt-0.5 truncate">
                         <Mail size={11} className="shrink-0" />
-                        <span className="truncate">{user?.email || 'owner@ordzo.com'}</span>
+                        <span className="truncate">{user?.email || 'owner@instadine.app'}</span>
                       </div>
 
                       {/* Phone Number Display */}

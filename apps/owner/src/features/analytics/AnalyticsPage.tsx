@@ -20,6 +20,7 @@ import {
   Banknote,
   Smartphone,
   UtensilsCrossed,
+  X,
 } from 'lucide-react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useRestaurants } from '../restaurants/hooks/useRestaurants';
@@ -45,6 +46,9 @@ export const AnalyticsPage: React.FC = () => {
   const [period, setPeriod] = useState<'today' | '7d' | '30d' | 'all' | 'custom'>('today');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [isCustomRangeOpen, setIsCustomRangeOpen] = useState<boolean>(false);
+  const [draftStartDate, setDraftStartDate] = useState<string>('');
+  const [draftEndDate, setDraftEndDate] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [data, setData] = useState<AnalyticsResponse | null>(null);
@@ -229,29 +233,31 @@ export const AnalyticsPage: React.FC = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans">
         {/* Header Toolbar (Admin-inspired 2-row layout) */}
-        <div className="p-5 rounded-2xl bg-surface border border-border shadow-xs space-y-4">
+        <div className="p-4 sm:p-5 rounded-2xl bg-surface border border-border shadow-xs space-y-4">
           {/* Row 1: Title & Concept / Branch Dropdowns */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-bold shrink-0">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-bold shrink-0">
                 <BarChart3 className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-lg sm:text-xl font-bold text-text">
-                  Sales Analytics & Reports
+                <h1 className="text-base sm:text-xl font-bold text-text">
+                  Sales Analytics &amp; Reports
                 </h1>
-                <p className="text-xs text-muted">
-                  Daily revenue velocity, top dishes, peak hours & operational reports
+                <p className="text-xs text-muted mt-0.5">
+                  Daily revenue velocity, top dishes, peak hours &amp; operational reports
                 </p>
               </div>
             </div>
 
             {/* Concept & Branch Dropdowns */}
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:flex xl:items-center gap-2.5 w-full xl:w-auto shrink-0">
               {/* Restaurant Concept Dropdown */}
-              <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-1.5 shadow-2xs">
+              <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-2 shadow-2xs w-full xl:w-[230px] min-w-0">
                 <UtensilsCrossed className="w-3.5 h-3.5 text-primary shrink-0" />
-                <span className="text-[11px] font-bold text-muted uppercase">Concept:</span>
+                <span className="text-[11px] font-bold text-muted uppercase whitespace-nowrap shrink-0">
+                  Concept:
+                </span>
                 <select
                   aria-label="Select Restaurant Concept"
                   value={selectedRestaurantId}
@@ -259,7 +265,7 @@ export const AnalyticsPage: React.FC = () => {
                     setSelectedRestaurantId(e.target.value);
                     setSelectedBranchId('ALL');
                   }}
-                  className="bg-transparent text-xs font-bold text-text focus:outline-none cursor-pointer"
+                  className="bg-transparent text-xs font-bold text-text focus:outline-none cursor-pointer w-full min-w-0 truncate"
                 >
                   {restaurants.map((r) => (
                     <option key={r.id} value={r.id} className="bg-surface text-text">
@@ -270,14 +276,16 @@ export const AnalyticsPage: React.FC = () => {
               </div>
 
               {/* Branch Outlet Dropdown */}
-              <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-1.5 shadow-2xs">
+              <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-2 shadow-2xs w-full xl:w-[230px] min-w-0">
                 <Store className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                <span className="text-[11px] font-bold text-muted uppercase">Branch:</span>
+                <span className="text-[11px] font-bold text-muted uppercase whitespace-nowrap shrink-0">
+                  Branch:
+                </span>
                 <select
                   aria-label="Select Outlet"
                   value={selectedBranchId}
                   onChange={(e) => setSelectedBranchId(e.target.value)}
-                  className="bg-transparent border-none font-bold text-xs focus:outline-none cursor-pointer text-text"
+                  className="bg-transparent border-none font-bold text-xs focus:outline-none cursor-pointer text-text w-full min-w-0 truncate"
                 >
                   <option value="ALL" className="bg-surface text-text">
                     All Outlets ({filteredBranches.length})
@@ -293,83 +301,116 @@ export const AnalyticsPage: React.FC = () => {
           </div>
 
           {/* Row 2: Date Range Filters & Export */}
-          <div className="pt-3.5 border-t border-border/60 flex flex-wrap xl:flex-nowrap items-center justify-between gap-2.5">
-            <div className="flex flex-wrap items-center gap-2 min-w-0">
-              <span className="text-[11px] font-bold text-muted uppercase tracking-wider flex items-center gap-1.5 mr-1">
-                <Calendar className="w-3.5 h-3.5 text-primary" />
-                <span>Date Range:</span>
-              </span>
+          {(() => {
+            const periodOptions: { id: 'today' | '7d' | '30d' | 'all' | 'custom'; label: string }[] = [
+              { id: 'today', label: 'Today' },
+              { id: '7d', label: '7 Days' },
+              { id: '30d', label: '30 Days' },
+              { id: 'all', label: 'All' },
+              { id: 'custom', label: 'Custom' },
+            ];
+            const openCustomModal = () => {
+              const todayStr = getLocalDateInputString(new Date());
+              setDraftStartDate(startDate || todayStr);
+              setDraftEndDate(endDate || todayStr);
+              setIsCustomRangeOpen(true);
+            };
 
-              {/* Period Pills */}
-              <div className="inline-flex p-1 rounded-xl border border-border bg-surface-2">
-                {(['today', '7d', '30d', 'all', 'custom'] as const).map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPeriod(p)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer whitespace-nowrap ${
-                      period === p
-                        ? 'bg-primary text-on-primary shadow-xs'
-                        : 'text-muted hover:text-text'
-                    }`}
-                  >
-                    {p === 'today'
-                      ? 'Today'
-                      : p === '7d'
-                      ? '7 Days'
-                      : p === '30d'
-                      ? '30 Days'
-                      : p === 'all'
-                      ? 'All'
-                      : 'Custom'}
-                  </button>
-                ))}
-              </div>
+            return (
+              <div className="pt-3.5 border-t border-border/60 flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-2.5">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 min-w-0 w-full sm:w-auto">
+                  {/* Mobile (<640px): Clean Date Dropdown */}
+                  <div className="flex sm:hidden items-center gap-2 bg-surface-2 border border-border rounded-xl px-3 py-2 text-xs font-semibold w-full">
+                    <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="text-muted font-bold uppercase text-[11px] shrink-0">
+                      Date:
+                    </span>
+                    <select
+                      aria-label="Filter analytics by date range"
+                      value={period}
+                      onChange={(e) => {
+                        const next = e.target.value as typeof period;
+                        if (next === 'custom') {
+                          openCustomModal();
+                        } else {
+                          setPeriod(next);
+                        }
+                      }}
+                      className="bg-transparent border-none text-text font-bold focus:outline-none text-xs cursor-pointer w-full min-w-0"
+                    >
+                      {periodOptions.map((opt) => (
+                        <option key={opt.id} value={opt.id} className="bg-surface text-text">
+                          {opt.label === 'All' ? 'All Time' : opt.label === 'Custom' ? 'Custom Range' : opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              {/* Themed Custom Date Pickers (manual selection, no auto-dates) */}
-              {period === 'custom' && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-semibold text-muted">From:</span>
-                    <DatePicker
-                      ariaLabel="Start Date"
-                      placeholder="Start date"
-                      value={startDate}
-                      max={endDate || getLocalDateInputString(new Date())}
-                      onChange={setStartDate}
-                    />
+                  {/* Tablet & Desktop (>=640px): Date Range Label + Period Pills */}
+                  <div className="hidden sm:flex flex-wrap items-center gap-2 min-w-0">
+                    <span className="text-[11px] font-bold text-muted uppercase tracking-wider flex items-center gap-1.5 mr-1 whitespace-nowrap shrink-0">
+                      <Calendar className="w-3.5 h-3.5 text-primary" />
+                      <span>Date Range:</span>
+                    </span>
+
+                    <div className="inline-flex p-1 rounded-xl border border-border bg-surface-2 shrink-0">
+                      {periodOptions.map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            if (opt.id === 'custom') {
+                              openCustomModal();
+                            } else {
+                              setPeriod(opt.id);
+                            }
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer whitespace-nowrap ${
+                            period === opt.id
+                              ? 'bg-primary text-on-primary shadow-xs'
+                              : 'text-muted hover:text-text'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-semibold text-muted">To:</span>
-                    <DatePicker
-                      ariaLabel="End Date"
-                      placeholder="End date"
-                      value={endDate}
-                      min={startDate || undefined}
-                      max={getLocalDateInputString(new Date())}
-                      onChange={setEndDate}
-                    />
-                  </div>
+
+                  {/* Active Custom Range Summary Chip */}
+                  {period === 'custom' && (
+                    <button
+                      type="button"
+                      onClick={openCustomModal}
+                      className="inline-flex items-center justify-between sm:justify-start gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/25 text-xs font-semibold text-primary hover:bg-primary/15 transition-colors cursor-pointer w-full sm:w-auto"
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          {startDate || 'Start'} &rarr; {endDate || 'End'}
+                        </span>
+                      </span>
+                      <span className="text-[11px] underline font-bold">Change</span>
+                    </button>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Export Dropdown (Excel, CSV) */}
-            <div className="relative" ref={exportDropdownRef}>
-              <button
-                type="button"
-                onClick={() => setIsExportOpen(!isExportOpen)}
-                className="px-3 py-1.5 rounded-xl border border-border bg-surface-2 text-text hover:border-primary/50 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-                title="Export Sales Data"
-              >
-                <Download className="w-3.5 h-3.5 text-primary" />
-                <span>Export</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 text-muted transition-transform duration-200 ${
-                    isExportOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
+                {/* Export Dropdown (Excel, CSV) */}
+                <div className="relative w-full sm:w-auto sm:ml-auto" ref={exportDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsExportOpen(!isExportOpen)}
+                    className="w-full sm:w-auto justify-center px-3.5 py-2 sm:py-1.5 rounded-xl border border-border bg-surface-2 text-text hover:border-primary/50 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    title="Export Sales Data"
+                  >
+                    <Download className="w-3.5 h-3.5 text-primary" />
+                    <span>Export</span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-muted transition-transform duration-200 ${
+                        isExportOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
 
               {isExportOpen && (
                 <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-surface border border-border shadow-xl py-1.5 z-30 animate-fadeIn text-xs">
@@ -404,7 +445,84 @@ export const AnalyticsPage: React.FC = () => {
               )}
             </div>
           </div>
+            );
+          })()}
         </div>
+
+        {/* Custom Date Range Popup Modal (all screen sizes) */}
+        {isCustomRangeOpen && (
+          <div
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+            onClick={() => setIsCustomRangeOpen(false)}
+          >
+            <div
+              className="w-full max-w-sm bg-surface border border-border rounded-2xl shadow-2xl p-5 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-bold text-text">Select Custom Date Range</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCustomRangeOpen(false)}
+                  aria-label="Close date range modal"
+                  className="p-1 rounded-lg text-muted hover:text-text hover:bg-surface-2 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-muted">From Date</label>
+                  <DatePicker
+                    ariaLabel="Start Date"
+                    placeholder="Start date"
+                    value={draftStartDate}
+                    max={draftEndDate || getLocalDateInputString(new Date())}
+                    onChange={setDraftStartDate}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-muted">To Date</label>
+                  <DatePicker
+                    ariaLabel="End Date"
+                    placeholder="End date"
+                    value={draftEndDate}
+                    min={draftStartDate || undefined}
+                    max={getLocalDateInputString(new Date())}
+                    onChange={setDraftEndDate}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setIsCustomRangeOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    setStartDate(draftStartDate);
+                    setEndDate(draftEndDate);
+                    setPeriod('custom');
+                    setIsCustomRangeOpen(false);
+                  }}
+                >
+                  Apply Range
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 4 Core KPI Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -439,7 +557,7 @@ export const AnalyticsPage: React.FC = () => {
                 {summary?.totalOrders || 0}
               </span>
               <p className="text-[11px] text-muted mt-1">
-                Dine-in: {summary?.dineInOrders || 0} • Takeaway: {summary?.takeawayOrders || 0}
+                Orders placed in selected period
               </p>
             </div>
           </div>
@@ -559,22 +677,22 @@ export const AnalyticsPage: React.FC = () => {
         {/* 2-Column Analytical Breakdown: Peak Hours & Top Selling Dishes */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Hourly Order Velocity & Peak Rush */}
-          <div className="p-6 rounded-2xl bg-surface border border-border shadow-xs flex flex-col justify-between">
-            <div className="flex items-center justify-between pb-4 border-b border-border">
-              <div>
+          <div className="p-4 sm:p-6 rounded-2xl bg-surface border border-border shadow-xs flex flex-col justify-between min-w-0">
+            <div className="flex items-start sm:items-center justify-between gap-2 pb-4 border-b border-border">
+              <div className="min-w-0">
                 <h2 className="text-sm font-bold text-text">Peak Ordering Rush Hours</h2>
                 <p className="text-xs text-muted">Distribution of tickets across 24-hour cycle</p>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 whitespace-nowrap shrink-0">
                 Peak Velocity
               </span>
             </div>
 
             {/* Horizontal timeline bar graph */}
             <div className="pt-6 pb-2">
-              <div className="grid grid-cols-12 gap-1.5 sm:gap-2 items-end h-44">
+              <div className="flex items-end gap-1 sm:gap-1.5 h-44">
                 {hourlyPeak
-                  // Show daytime hours 10 AM to 10 PM in primary preview
+                  // Show daytime hours 8 AM to 10 PM in primary preview
                   .filter((h) => h.hour >= 8 && h.hour <= 22)
                   .map((h) => {
                     const heightPercent =
@@ -585,7 +703,7 @@ export const AnalyticsPage: React.FC = () => {
                     return (
                       <div
                         key={h.hour}
-                        className="flex flex-col items-center justify-end h-full group relative"
+                        className="flex-1 min-w-0 flex flex-col items-center justify-end h-full group relative"
                       >
                         {/* Tooltip */}
                         <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded shadow-md whitespace-nowrap z-20 pointer-events-none">
@@ -603,17 +721,17 @@ export const AnalyticsPage: React.FC = () => {
                         />
 
                         {/* Label */}
-                        <span className="text-[9px] font-semibold text-muted mt-2 rotate-45 sm:rotate-0 origin-left">
+                        <span className="text-[8px] sm:text-[9px] font-semibold text-muted mt-2">
                           {h.hour}h
                         </span>
                       </div>
                     );
                   })}
               </div>
-              <div className="flex items-center justify-between pt-4 text-[11px] text-muted border-t border-border mt-3">
-                <span>Morning Rush (8:00 AM)</span>
-                <span>Lunch (1:00 PM)</span>
-                <span>Dinner Rush (8:00 PM)</span>
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-4 text-[10px] sm:text-[11px] text-muted border-t border-border mt-3">
+                <span className="whitespace-nowrap">Morning (8 AM)</span>
+                <span className="whitespace-nowrap">Lunch (1 PM)</span>
+                <span className="whitespace-nowrap">Dinner (8 PM)</span>
               </div>
             </div>
           </div>

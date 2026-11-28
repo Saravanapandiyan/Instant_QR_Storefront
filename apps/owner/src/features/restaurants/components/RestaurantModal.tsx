@@ -151,19 +151,22 @@ export const RestaurantModal: React.FC<RestaurantModalProps> = ({
       {/* Modal Dialog Card */}
       <div className="relative w-full max-w-lg max-h-[90vh] bg-surface rounded-[12px] border border-border shadow-2xl flex flex-col z-10 overflow-hidden my-auto animate-in fade-in zoom-in-95">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-[8px] bg-primary-soft text-primary-soft-text flex items-center justify-center shrink-0">
-              <Utensils size={18} />
+        <div className="flex items-start sm:items-center justify-between gap-2 p-4 sm:p-5 border-b border-border shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-[8px] bg-primary-soft text-primary-soft-text flex items-center justify-center shrink-0">
+              <Utensils size={17} />
             </div>
-            <div>
-              <h2 className="text-base font-semibold text-text">
-                {isEditMode ? 'Edit Restaurant Concept' : 'New Restaurant Concept'}
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-base font-semibold text-text truncate">
+                <span className="sm:hidden">{isEditMode ? 'Edit Concept' : 'New Concept'}</span>
+                <span className="hidden sm:inline">
+                  {isEditMode ? 'Edit Restaurant Concept' : 'New Restaurant Concept'}
+                </span>
               </h2>
-              <p className="text-xs text-muted">
+              <p className="text-[11px] sm:text-xs text-muted leading-snug">
                 {isEditMode
-                  ? 'Update brand concept details and brand logo.'
-                  : 'Define a food concept (e.g. Pure Veg, BBQ) with its brand identity.'}
+                  ? 'Update brand concept details and logo.'
+                  : 'Define a food concept with its brand identity.'}
               </p>
             </div>
           </div>
@@ -173,7 +176,7 @@ export const RestaurantModal: React.FC<RestaurantModalProps> = ({
             onClick={onClose}
             disabled={isSubmitting}
             aria-label="Close modal"
-            className="p-1.5 rounded-[6px] text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
+            className="p-1.5 rounded-[6px] text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer shrink-0"
           >
             <X size={18} />
           </button>
@@ -207,7 +210,7 @@ export const RestaurantModal: React.FC<RestaurantModalProps> = ({
 
           {/* Master Catalog Default Currency */}
           <div className="flex flex-col gap-1.5 w-full text-left">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5">
               <label className="text-xs font-medium text-text">
                 Master Catalog Default Currency
               </label>
@@ -329,6 +332,7 @@ export const RestaurantModal: React.FC<RestaurantModalProps> = ({
               size="md"
               isLoading={isSubmitting}
               icon={<ArrowRight size={15} />}
+              className="whitespace-nowrap shrink-0"
             >
               {isEditMode ? 'Save Changes' : 'Create Concept'}
             </Button>

@@ -105,7 +105,7 @@ export const CustomerHelpDrawer: React.FC<CustomerHelpDrawerProps> = ({
       />
 
       {/* Slide-over Right Drawer */}
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10 pointer-events-none">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10 pointer-events-none">
         <div
           className="w-screen max-w-sm sm:max-w-md pointer-events-auto flex flex-col shadow-2xl overflow-hidden border-l animate-in slide-in-from-right duration-200"
           style={{
@@ -156,9 +156,9 @@ export const CustomerHelpDrawer: React.FC<CustomerHelpDrawerProps> = ({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-2.5 rounded-xl border text-xs sm:text-sm focus:outline-none transition-all shadow-2xs"
                 style={{
-                  backgroundColor: 'var(--sf-surface-alt, #f4f4f5)',
+                  backgroundColor: 'var(--sf-bg, #f4f4f5)',
                   borderColor: 'var(--sf-border, #e4e4e7)',
-                  color: 'inherit',
+                  color: 'var(--sf-text, #18181b)',
                 }}
               />
             </div>
@@ -169,13 +169,14 @@ export const CustomerHelpDrawer: React.FC<CustomerHelpDrawerProps> = ({
               onClick={() => goToHelpPage()}
               className="w-full p-3.5 rounded-xl border flex items-center justify-between gap-3 text-left transition-all hover:shadow-xs group cursor-pointer"
               style={{
-                backgroundColor: 'var(--sf-surface-alt, #f4f4f5)',
+                backgroundColor: 'var(--sf-bg, #f4f4f5)',
                 borderColor: 'var(--sf-border, #e4e4e7)',
+                color: 'var(--sf-text, #18181b)',
               }}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
                   style={{
                     backgroundColor: 'var(--sf-primary, #ea580c)',
                     color: 'var(--sf-primary-contrast, #ffffff)',
@@ -227,21 +228,23 @@ export const CustomerHelpDrawer: React.FC<CustomerHelpDrawerProps> = ({
                           onClick={() => goToHelpPage(cat)}
                           className="w-full p-3 rounded-xl border flex items-center justify-between gap-3 text-left transition-all hover:scale-[1.01] cursor-pointer"
                           style={{
-                            backgroundColor: 'var(--sf-surface-alt, #f4f4f5)',
+                            backgroundColor: 'var(--sf-bg, #f4f4f5)',
                             borderColor: 'var(--sf-border, #e4e4e7)',
+                            color: 'var(--sf-text, #18181b)',
                           }}
                         >
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-base">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="text-base shrink-0">
                               {CATEGORY_ICONS[cat] || '📋'}
                             </span>
-                            <span className="text-xs sm:text-sm font-semibold">{cat}</span>
+                            <span className="text-xs sm:text-sm font-semibold truncate">{cat}</span>
                           </div>
                           <span
-                            className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                            className="px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap shrink-0"
                             style={{
-                              backgroundColor: 'rgba(0,0,0,0.06)',
-                              color: 'inherit',
+                              backgroundColor: 'var(--sf-surface, #ffffff)',
+                              borderColor: 'var(--sf-border, #e4e4e7)',
+                              color: 'var(--sf-muted, #64748b)',
                             }}
                           >
                             {count} {count === 1 ? 'guide' : 'guides'}
@@ -292,10 +295,11 @@ export const CustomerHelpDrawer: React.FC<CustomerHelpDrawerProps> = ({
 
           {/* Footer Note */}
           <div
-            className="p-4 border-t text-center text-[11px] opacity-70"
+            className="p-4 border-t text-center text-[11px]"
             style={{
               borderColor: 'var(--sf-border, #e4e4e7)',
-              backgroundColor: 'var(--sf-surface-alt, #f4f4f5)',
+              backgroundColor: 'var(--sf-bg, #f4f4f5)',
+              color: 'var(--sf-muted, #64748b)',
             }}
           >
             Need immediate table assistance? Please inform your waiter or cashier desk.

@@ -65,7 +65,7 @@ export const StylizedQRCode: React.FC<StylizedQRCodeProps> = ({
 
   const { count, modules } = useMemo(() => {
     const qr = qrcode(0, 'H');
-    qr.addData(value || 'https://ordzo.com');
+    qr.addData(value || 'https://instadine.app');
     qr.make();
 
     const n = qr.getModuleCount();

@@ -6,6 +6,7 @@ import { X, Store, AlertCircle, MapPin, Phone, ArrowRight } from 'lucide-react';
 import { Button, Input } from '../../../components/ui';
 import { branchesApi } from '../api/branchesApi';
 import { useActiveStore } from '../../../store/useActiveStore';
+import { getCustomerDisplayHost } from '../../../lib/urls';
 
 const COUNTRY_CODES = [
   { code: '+91', label: '🇮🇳 +91 (India)' },
@@ -110,16 +111,17 @@ export const CreateBranchModal: React.FC<CreateBranchModalProps> = ({
       {/* Modal Dialog Card (12px radius, surface bg) */}
       <div className="relative w-full max-w-lg bg-surface rounded-[12px] border border-border shadow-xl overflow-hidden z-10">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-border">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-start sm:items-center justify-between gap-2 p-4 sm:p-5 border-b border-border">
+          <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-[8px] bg-primary-soft text-primary-soft-text flex items-center justify-center shrink-0">
               <Store size={17} />
             </div>
-            <div>
-              <h2 className="text-base font-semibold text-text">
-                Add New Restaurant Branch
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-base font-semibold text-text truncate">
+                <span className="sm:hidden">Add Branch</span>
+                <span className="hidden sm:inline">Add New Restaurant Branch</span>
               </h2>
-              <p className="text-xs text-muted">
+              <p className="text-[11px] sm:text-xs text-muted leading-snug">
                 Create a branch location with its own QR table stands.
               </p>
             </div>
@@ -128,7 +130,7 @@ export const CreateBranchModal: React.FC<CreateBranchModalProps> = ({
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="p-1.5 rounded-[6px] text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
+            className="p-1.5 rounded-[6px] text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer shrink-0"
           >
             <X size={17} />
           </button>
@@ -155,7 +157,7 @@ export const CreateBranchModal: React.FC<CreateBranchModalProps> = ({
           <div className="p-2.5 rounded-[8px] bg-surface-2 border border-border text-xs">
             <span className="text-muted block text-[11px] mb-0.5">Customer Storefront URL Preview:</span>
             <span className="font-mono text-primary font-semibold truncate block">
-              ordzo.com/r/{computedSlug}
+              {getCustomerDisplayHost()}/r/{computedSlug}
             </span>
           </div>
 
@@ -173,10 +175,10 @@ export const CreateBranchModal: React.FC<CreateBranchModalProps> = ({
             <label className="text-xs font-medium text-text">
               Branch Contact Phone (Optional)
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <select
                 {...register('countryCode')}
-                className="h-[44px] px-2.5 rounded-[8px] border border-border bg-surface text-text text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors cursor-pointer shrink-0"
+                className="h-[44px] w-full sm:w-auto px-2.5 rounded-[8px] border border-border bg-surface text-text text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors cursor-pointer shrink-0"
               >
                 {COUNTRY_CODES.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -185,7 +187,7 @@ export const CreateBranchModal: React.FC<CreateBranchModalProps> = ({
                 ))}
               </select>
 
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <Input
                   placeholder="9876543210"
                   type="tel"

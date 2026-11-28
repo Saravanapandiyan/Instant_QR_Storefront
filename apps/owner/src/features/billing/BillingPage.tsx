@@ -41,6 +41,19 @@ const PACK_DESCRIPTIONS: Record<string, string> = {
   CHAIN: 'For multi-outlet franchises & restaurant chains',
 };
 
+const LEDGER_REASON_LABELS: Record<string, string> = {
+  FREE_SIGNUP: '🎁 Signup Welcome Gift (100 Free Credits)',
+  SIGNUP_BONUS: '🎁 Storefront Welcome Bonus',
+  ORDER_CONFIRMED: '🛒 Order Confirmed & Deducted',
+  PACK_PURCHASE: '⚡ Credit Pack Recharge',
+  GRACE_RECOVERY: '🛡️ Grace Buffer Recovery',
+  ADMIN_ADJUSTMENT: '🔧 System Adjustment',
+};
+
+function getLedgerReasonLabel(reason: string): string {
+  return LEDGER_REASON_LABELS[reason] ?? reason;
+}
+
 function getCurrencySymbol(currency: string): string {
   switch (currency?.toUpperCase()) {
     case 'USD':
@@ -247,10 +260,10 @@ export const BillingPage: React.FC = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-6xl mx-auto pb-16">
         {/* Top Header & Store Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
+        <div className="flex items-start sm:items-center justify-between gap-3">
+          <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold text-text tracking-tight flex items-center gap-2">
-              <Coins className="w-6 h-6 text-primary" />
+              <Coins className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" />
               <span>Plans & Order Credits</span>
             </h1>
             <p className="text-xs text-muted mt-0.5">
@@ -258,14 +271,14 @@ export const BillingPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Restaurant Selector */}
             {restaurants.length > 1 && (
               <div className="relative">
                 <select
                   value={selectedRestaurant?.id || ''}
                   onChange={(e) => setActiveRestaurantId(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-surface border border-border text-text appearance-none pr-7 cursor-pointer hover:bg-surface-2 transition-colors"
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium bg-surface border border-border text-text appearance-none pr-7 cursor-pointer hover:bg-surface-2 transition-colors max-w-[130px] sm:max-w-none truncate"
                 >
                   {restaurants.map((r) => (
                     <option key={r.id} value={r.id}>
@@ -282,7 +295,7 @@ export const BillingPage: React.FC = () => {
               type="button"
               onClick={() => loadData(true)}
               disabled={isRefreshing}
-              className="p-1.5 rounded-lg border border-border bg-surface text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg border border-border bg-surface text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer shrink-0"
               title="Refresh"
             >
               <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -291,58 +304,60 @@ export const BillingPage: React.FC = () => {
         </div>
 
         {/* Standard Web Underline Tab Navigation */}
-        <div className="border-b border-border">
-          <nav className="flex items-center gap-6 sm:gap-8 -mb-px" aria-label="Billing Tabs">
+        <div className="border-b border-border overflow-x-auto scrollbar-none">
+          <nav className="flex items-center gap-4 sm:gap-8 -mb-px min-w-max" aria-label="Billing Tabs">
             <button
               type="button"
               onClick={() => handleSwitchTab('plans')}
-              className={`group relative flex items-center gap-2 py-3 text-xs sm:text-sm font-semibold transition-all cursor-pointer border-b-2 ${
+              className={`group relative flex items-center gap-1.5 sm:gap-2 py-3 text-xs sm:text-sm font-semibold transition-all cursor-pointer border-b-2 whitespace-nowrap shrink-0 ${
                 activeMainTab === 'plans'
                   ? 'border-primary text-primary font-bold'
                   : 'border-transparent text-muted hover:text-text hover:border-border'
               }`}
             >
               <Sparkles
-                className={`w-4 h-4 ${
+                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${
                   activeMainTab === 'plans' ? 'text-primary' : 'text-muted group-hover:text-text'
                 }`}
               />
-              <span>Credit Plans</span>
+              <span className="sm:hidden">Plans</span>
+              <span className="hidden sm:inline">Credit Plans</span>
               <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
                   activeMainTab === 'plans'
                     ? 'bg-primary/10 text-primary'
                     : 'bg-surface-2 text-muted'
                 }`}
               >
-                {displayPacks.length} {displayPacks.length === 1 ? 'Pack' : 'Packs'}
+                {displayPacks.length} <span className="hidden sm:inline">{displayPacks.length === 1 ? 'Pack' : 'Packs'}</span>
               </span>
             </button>
 
             <button
               type="button"
               onClick={() => handleSwitchTab('history')}
-              className={`group relative flex items-center gap-2 py-3 text-xs sm:text-sm font-semibold transition-all cursor-pointer border-b-2 ${
+              className={`group relative flex items-center gap-1.5 sm:gap-2 py-3 text-xs sm:text-sm font-semibold transition-all cursor-pointer border-b-2 whitespace-nowrap shrink-0 ${
                 activeMainTab === 'history'
                   ? 'border-primary text-primary font-bold'
                   : 'border-transparent text-muted hover:text-text hover:border-border'
               }`}
             >
               <History
-                className={`w-4 h-4 ${
+                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${
                   activeMainTab === 'history' ? 'text-primary' : 'text-muted group-hover:text-text'
                 }`}
               />
-              <span>Remaining Credits & History</span>
+              <span className="sm:hidden">Credits & History</span>
+              <span className="hidden sm:inline">Remaining Credits & History</span>
               {balanceInfo && (
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
                     activeMainTab === 'history'
                       ? 'bg-primary/10 text-primary'
                       : 'bg-surface-2 text-muted group-hover:text-text'
                   }`}
                 >
-                  {balanceInfo.creditBalance.toLocaleString()} Credits
+                  {balanceInfo.creditBalance.toLocaleString()} <span className="hidden sm:inline">Credits</span>
                 </span>
               )}
             </button>
@@ -526,15 +541,15 @@ export const BillingPage: React.FC = () => {
             )}
 
             {/* Quick Link to Tab 2 */}
-            <div className="p-4 rounded-xl bg-surface border border-border flex items-center justify-between text-xs text-muted">
+            <div className="p-4 rounded-xl bg-surface border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 text-xs text-muted">
               <span>Need to check past order deductions or balance logs?</span>
               <button
                 type="button"
                 onClick={() => handleSwitchTab('history')}
-                className="font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                className="font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0 self-start sm:self-auto"
               >
                 <span>View Balance & Usage History</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 shrink-0" />
               </button>
             </div>
           </div>
@@ -547,19 +562,19 @@ export const BillingPage: React.FC = () => {
           <div className="space-y-6 animate-in fade-in duration-150">
             {/* Live Balance & Grace Buffer Overview Card */}
             {balanceInfo ? (
-              <div className="p-5 rounded-2xl bg-surface border border-border shadow-xs space-y-4">
+              <div className="p-4 sm:p-5 rounded-2xl bg-surface border border-border shadow-xs space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <Coins className="w-6 h-6" />
+                  <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Coins className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
-                    <div>
-                      <span className="text-[11px] font-semibold text-muted uppercase tracking-wider block">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[11px] font-semibold text-muted uppercase tracking-wider block truncate">
                         {balanceInfo.restaurantName} • Live Available Balance
                       </span>
-                      <div className="flex items-baseline gap-2.5 mt-0.5">
+                      <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 mt-0.5">
                         <span
-                          className={`text-3xl font-bold tracking-tight ${
+                          className={`text-2xl sm:text-3xl font-bold tracking-tight ${
                             balanceInfo.creditBalance < 0
                               ? 'text-rose-600 dark:text-rose-400'
                               : balanceInfo.creditBalance < 20
@@ -569,20 +584,20 @@ export const BillingPage: React.FC = () => {
                         >
                           {balanceInfo.creditBalance.toLocaleString()} Credits Remaining
                         </span>
-                        <span className="text-xs text-muted">
+                        <span className="text-xs text-muted whitespace-nowrap">
                           (~{Math.max(0, balanceInfo.creditBalance)} orders ready to confirm)
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => handleSwitchTab('plans')}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold bg-primary hover:bg-primary-hover text-on-primary shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                      className="w-full sm:w-auto justify-center px-4 py-2 rounded-xl text-xs font-semibold bg-primary hover:bg-primary-hover text-on-primary shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
                     >
-                      <Zap className="w-3.5 h-3.5" />
+                      <Zap className="w-3.5 h-3.5 shrink-0" />
                       <span>Top Up Credits</span>
                     </button>
                   </div>
@@ -645,11 +660,12 @@ export const BillingPage: React.FC = () => {
 
             {/* Append-Only Transaction Ledger History */}
             <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h3 className="text-base font-bold text-text tracking-tight flex items-center gap-1.5">
-                    <Receipt className="w-4 h-4 text-primary" />
-                    <span>Transaction Ledger (Append-Only Audit Trail)</span>
+              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-bold text-text tracking-tight flex items-center gap-1.5">
+                    <Receipt className="w-4 h-4 text-primary shrink-0" />
+                    <span className="sm:hidden">Transaction Ledger</span>
+                    <span className="hidden sm:inline">Transaction Ledger (Append-Only Audit Trail)</span>
                   </h3>
                   <p className="text-xs text-muted mt-0.5">
                     Immutable log of all order credits deducted (-1) and recharge top-ups (+).
@@ -657,11 +673,11 @@ export const BillingPage: React.FC = () => {
                 </div>
 
                 {/* Filter Tabs */}
-                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-surface-2 border border-border text-xs">
+                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-surface-2 border border-border text-xs overflow-x-auto scrollbar-none w-fit max-w-full shrink-0">
                   <button
                     type="button"
                     onClick={() => setLedgerFilter('ALL')}
-                    className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                    className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                       ledgerFilter === 'ALL'
                         ? 'bg-surface text-text shadow-2xs font-semibold'
                         : 'text-muted hover:text-text'
@@ -672,7 +688,7 @@ export const BillingPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setLedgerFilter('ORDER_CONFIRMED')}
-                    className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                    className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                       ledgerFilter === 'ORDER_CONFIRMED'
                         ? 'bg-surface text-text shadow-2xs font-semibold'
                         : 'text-muted hover:text-text'
@@ -683,7 +699,7 @@ export const BillingPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setLedgerFilter('PACK_PURCHASE')}
-                    className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                    className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                       ledgerFilter === 'PACK_PURCHASE'
                         ? 'bg-surface text-text shadow-2xs font-semibold'
                         : 'text-muted hover:text-text'
@@ -694,7 +710,7 @@ export const BillingPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setLedgerFilter('SIGNUP_BONUS')}
-                    className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                    className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                       ledgerFilter === 'SIGNUP_BONUS'
                         ? 'bg-surface text-text shadow-2xs font-semibold'
                         : 'text-muted hover:text-text'
@@ -705,7 +721,7 @@ export const BillingPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Ledger Table */}
+              {/* Ledger Table & Mobile Cards */}
               <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-2xs">
                 {filteredEntries.length === 0 ? (
                   <div className="p-8 text-center text-muted text-xs">
@@ -713,72 +729,109 @@ export const BillingPage: React.FC = () => {
                     <span>No transaction events found for this filter.</span>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="border-b border-border bg-surface-2/50 text-muted uppercase font-semibold text-[10px] tracking-wider">
-                        <tr>
-                          <th className="py-2.5 px-3.5">Date & Time</th>
-                          <th className="py-2.5 px-3.5">Reason / Activity</th>
-                          <th className="py-2.5 px-3.5 text-center">Change</th>
-                          <th className="py-2.5 px-3.5 text-right">Balance After</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/50">
-                        {filteredEntries.map((entry) => {
-                          const isPositive = entry.delta > 0;
-                          return (
-                            <tr key={entry.id} className="hover:bg-surface-2/30 transition-colors">
-                              <td className="py-2.5 px-3.5 text-muted whitespace-nowrap">
-                                {new Date(entry.createdAt).toLocaleDateString([], {
+                  <>
+                    {/* Mobile Card List */}
+                    <div className="md:hidden divide-y divide-border/50">
+                      {filteredEntries.map((entry) => {
+                        const isPositive = entry.delta > 0;
+                        const createdDate = new Date(entry.createdAt);
+                        return (
+                          <div key={entry.id} className="p-3.5 space-y-1.5">
+                            <div className="flex items-start justify-between gap-3">
+                              <span className="font-medium text-text text-xs leading-snug">
+                                {getLedgerReasonLabel(entry.reason)}
+                              </span>
+                              <span
+                                className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold shrink-0 ${
+                                  isPositive
+                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                                }`}
+                              >
+                                {isPositive ? `+${entry.delta}` : entry.delta}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
+                              <span>
+                                {createdDate.toLocaleDateString([], {
                                   month: 'short',
                                   day: 'numeric',
                                   year: 'numeric',
                                 })}{' '}
-                                <span className="opacity-75">
-                                  {new Date(entry.createdAt).toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
+                                •{' '}
+                                {createdDate.toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                              <span className="shrink-0">
+                                Bal:{' '}
+                                <span className="font-mono font-semibold text-text">
+                                  {entry.balanceAfter.toLocaleString()}
                                 </span>
-                              </td>
-                              <td className="py-2.5 px-3.5">
-                                <span className="font-medium text-text">
-                                  {entry.reason === 'FREE_SIGNUP' && '🎁 Signup Welcome Gift (100 Free Credits)'}
-                                  {entry.reason === 'SIGNUP_BONUS' && '🎁 Storefront Welcome Bonus'}
-                                  {entry.reason === 'ORDER_CONFIRMED' && '🛒 Order Confirmed & Deducted'}
-                                  {entry.reason === 'PACK_PURCHASE' && '⚡ Credit Pack Recharge'}
-                                  {entry.reason === 'GRACE_RECOVERY' && '🛡️ Grace Buffer Recovery'}
-                                  {entry.reason === 'ADMIN_ADJUSTMENT' && '🔧 System Adjustment'}
-                                  {![
-                                    'FREE_SIGNUP',
-                                    'SIGNUP_BONUS',
-                                    'ORDER_CONFIRMED',
-                                    'PACK_PURCHASE',
-                                    'GRACE_RECOVERY',
-                                    'ADMIN_ADJUSTMENT',
-                                  ].includes(entry.reason) && entry.reason}
-                                </span>
-                              </td>
-                              <td className="py-2.5 px-3.5 text-center">
-                                <span
-                                  className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold ${
-                                    isPositive
-                                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                                  }`}
-                                >
-                                  {isPositive ? `+${entry.delta}` : entry.delta}
-                                </span>
-                              </td>
-                              <td className="py-2.5 px-3.5 text-right font-mono font-semibold text-text">
-                                {entry.balanceAfter.toLocaleString()}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Desktop / Tablet Table */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="border-b border-border bg-surface-2/50 text-muted uppercase font-semibold text-[10px] tracking-wider">
+                          <tr>
+                            <th className="py-2.5 px-3.5 whitespace-nowrap">Date & Time</th>
+                            <th className="py-2.5 px-3.5">Reason / Activity</th>
+                            <th className="py-2.5 px-3.5 text-center whitespace-nowrap">Change</th>
+                            <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Balance After</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/50">
+                          {filteredEntries.map((entry) => {
+                            const isPositive = entry.delta > 0;
+                            const createdDate = new Date(entry.createdAt);
+                            return (
+                              <tr key={entry.id} className="hover:bg-surface-2/30 transition-colors">
+                                <td className="py-2.5 px-3.5 text-muted whitespace-nowrap">
+                                  {createdDate.toLocaleDateString([], {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  })}{' '}
+                                  <span className="opacity-75">
+                                    {createdDate.toLocaleTimeString([], {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3.5">
+                                  <span className="font-medium text-text">
+                                    {getLedgerReasonLabel(entry.reason)}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3.5 text-center whitespace-nowrap">
+                                  <span
+                                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold ${
+                                      isPositive
+                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                                    }`}
+                                  >
+                                    {isPositive ? `+${entry.delta}` : entry.delta}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3.5 text-right font-mono font-semibold text-text whitespace-nowrap">
+                                  {entry.balanceAfter.toLocaleString()}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </div>
             </div>

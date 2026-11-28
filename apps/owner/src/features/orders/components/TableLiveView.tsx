@@ -110,13 +110,13 @@ export const TableLiveView: React.FC<TableLiveViewProps> = ({
   return (
     <div className="space-y-5 animate-in fade-in duration-150">
       {/* Floor Plan Header & KPI Stats */}
-      <div className="p-5 rounded-2xl bg-surface border border-border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
+      <div className="p-4 sm:p-5 rounded-2xl bg-surface border border-border shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-base sm:text-lg font-bold text-text">
               Floor Plan & Table Orders
             </h2>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap shrink-0">
               LIVE FLOOR
             </span>
           </div>
@@ -126,32 +126,33 @@ export const TableLiveView: React.FC<TableLiveViewProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
           <button
             type="button"
             onClick={() => {
               setSelectedTableForStudio(null);
               setIsStudioOpen(true);
             }}
-            className="px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            className="flex-1 sm:flex-none px-3 sm:px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5 shrink-0" />
             <span>QR Studio</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsQrModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-on-primary text-xs font-bold flex items-center gap-2 shadow-xs transition-transform active:scale-95 cursor-pointer"
+            className="flex-1 sm:flex-none px-3 sm:px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-on-primary text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-transform active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
           >
-            <QrCode className="w-4 h-4" />
-            <span>Tables Setup & List</span>
+            <QrCode className="w-4 h-4 shrink-0" />
+            <span className="sm:hidden">Tables</span>
+            <span className="hidden sm:inline">Tables Setup & List</span>
           </button>
 
           <button
             type="button"
             onClick={() => fetchTables(true)}
-            className="p-2 rounded-xl border border-border bg-surface-2 hover:bg-surface text-muted hover:text-text transition-colors cursor-pointer"
+            className="p-2 rounded-xl border border-border bg-surface-2 hover:bg-surface text-muted hover:text-text transition-colors cursor-pointer shrink-0"
             title="Refresh floor status"
           >
             <RotateCw className="w-4 h-4" />
@@ -202,37 +203,28 @@ export const TableLiveView: React.FC<TableLiveViewProps> = ({
         </div>
       </div>
 
-      {/* Sections Filter */}
+      {/* Sections Filter Dropdown */}
       {sections.length > 1 && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          <span className="text-xs font-bold text-muted uppercase tracking-wider mr-1">
-            Filter Section:
-          </span>
-          <button
-            type="button"
-            onClick={() => setFilterSection('ALL')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              filterSection === 'ALL'
-                ? 'bg-primary text-on-primary shadow-xs'
-                : 'border border-border bg-surface-2 text-muted hover:text-text'
-            }`}
+        <div className="flex items-center gap-2.5">
+          <label
+            htmlFor="floor-section-filter"
+            className="text-xs font-bold text-muted uppercase tracking-wider whitespace-nowrap shrink-0"
           >
-            All Areas ({tables.length})
-          </button>
-          {sections.map((sec) => (
-            <button
-              key={sec}
-              type="button"
-              onClick={() => setFilterSection(sec)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                filterSection === sec
-                  ? 'bg-primary text-on-primary shadow-xs'
-                  : 'border border-border bg-surface-2 text-muted hover:text-text'
-              }`}
-            >
-              {sec} ({tables.filter((t) => t.section === sec).length})
-            </button>
-          ))}
+            Filter Section:
+          </label>
+          <select
+            id="floor-section-filter"
+            value={filterSection}
+            onChange={(e) => setFilterSection(e.target.value)}
+            className="flex-1 sm:flex-none sm:min-w-[200px] px-3 py-2 rounded-xl border border-border bg-surface text-text text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+          >
+            <option value="ALL">All Areas ({tables.length})</option>
+            {sections.map((sec) => (
+              <option key={sec} value={sec}>
+                {sec} ({tables.filter((t) => t.section === sec).length})
+              </option>
+            ))}
+          </select>
         </div>
       )}
 

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { fetchStorefrontBySlug } from '../../api/storefrontApi.ts';
 import { useStorefrontTheme } from '../../store/useStorefrontTheme.ts';
+import { getAssetUrl } from '../../lib/assets.ts';
 import type { StorefrontMenuData } from '../../types/storefront.ts';
 
 interface HelpArticle {
@@ -162,7 +163,7 @@ export const CustomerHelpPage: React.FC = () => {
     >
       {/* Top Storefront Navigation Header */}
       <header
-        className="sticky top-0 z-40 border-b backdrop-blur-md px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-2xs"
+        className="sticky top-0 z-40 border-b backdrop-blur-md px-3 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between gap-2 shadow-2xs"
         style={{
           backgroundColor: 'var(--sf-surface, #ffffff)',
           borderColor: 'var(--sf-border, #e4e4e7)',
@@ -171,22 +172,23 @@ export const CustomerHelpPage: React.FC = () => {
         <button
           type="button"
           onClick={() => navigate(`/r/${branchSlug || ''}`)}
-          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+          className="inline-flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-bold opacity-80 hover:opacity-100 transition-opacity cursor-pointer whitespace-nowrap shrink-0"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Menu</span>
+          <ArrowLeft className="w-4 h-4 shrink-0" />
+          <span className="sm:hidden">Menu</span>
+          <span className="hidden sm:inline">Back to Menu</span>
         </button>
 
-        <div className="flex items-center gap-2">
-          {menuData?.restaurant?.logoUrl ? (
+        <div className="flex items-center justify-center gap-2 min-w-0 flex-1">
+          {getAssetUrl(menuData?.restaurant?.logoUrl) ? (
             <img
-              src={menuData.restaurant.logoUrl}
+              src={getAssetUrl(menuData?.restaurant?.logoUrl)!}
               alt={restaurantName}
-              className="w-7 h-7 rounded-lg object-cover"
+              className="w-7 h-7 rounded-lg object-cover shrink-0"
             />
           ) : (
             <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs"
+              className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
               style={{
                 backgroundColor: 'var(--sf-primary, #ea580c)',
                 color: 'var(--sf-primary-contrast, #ffffff)',
@@ -195,19 +197,20 @@ export const CustomerHelpPage: React.FC = () => {
               <UtensilsCrossed className="w-4 h-4" />
             </div>
           )}
-          <span className="font-bold text-xs sm:text-sm truncate max-w-[180px] sm:max-w-none">
+          <span className="font-bold text-xs sm:text-sm truncate">
             {restaurantName} {branchName ? `• ${branchName}` : ''}
           </span>
         </div>
 
         <span
-          className="px-2.5 py-1 rounded-full text-[11px] font-bold"
+          className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-[11px] font-bold whitespace-nowrap shrink-0"
           style={{
             backgroundColor: 'var(--sf-primary, #ea580c)',
             color: 'var(--sf-primary-contrast, #ffffff)',
           }}
         >
-          Help Wiki
+          <span className="sm:hidden">Help</span>
+          <span className="hidden sm:inline">Help Wiki</span>
         </span>
       </header>
 

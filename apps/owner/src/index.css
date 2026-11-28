@@ -377,3 +377,19 @@ h6 {
 :where(.dark) .rich-text-rendered td {
   border-color: rgba(255, 255, 255, 0.15);
 }
+
+/* Lock background page scrolling whenever any modal/drawer is open */
+html:has(.fixed.inset-0.z-50),
+html:has(.fixed.inset-0.z-\[60\]),
+body:has(.fixed.inset-0.z-50),
+body:has(.fixed.inset-0.z-\[60\]) {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+.fixed.inset-0.z-50,
+.fixed.inset-0.z-50 *,
+.fixed.inset-0.z-\[60\],
+.fixed.inset-0.z-\[60\] * {
+  overscroll-behavior: contain;
+}

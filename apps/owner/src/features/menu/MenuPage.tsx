@@ -285,12 +285,12 @@ export const MenuPage: React.FC = () => {
         </div>
 
         {/* Tab Switcher with Underline Indicator */}
-        <div className="flex items-center gap-6 border-b border-border text-sm font-semibold pt-1">
+        <div className="flex items-center gap-6 border-b border-border text-sm font-semibold pt-1 overflow-x-auto scrollbar-none whitespace-nowrap">
           <button
             type="button"
             onClick={() => handleSwitchMode('catalog')}
             className={cn(
-              'pb-2.5 flex items-center gap-2 cursor-pointer transition-colors relative',
+              'pb-2.5 flex items-center gap-2 cursor-pointer transition-colors relative shrink-0 whitespace-nowrap',
               viewMode === 'catalog'
                 ? 'text-primary font-bold border-b-2 border-primary'
                 : 'text-muted hover:text-text',
@@ -303,7 +303,7 @@ export const MenuPage: React.FC = () => {
             type="button"
             onClick={() => handleSwitchMode('branch')}
             className={cn(
-              'pb-2.5 flex items-center gap-2 cursor-pointer transition-colors relative',
+              'pb-2.5 flex items-center gap-2 cursor-pointer transition-colors relative shrink-0 whitespace-nowrap',
               viewMode === 'branch'
                 ? 'text-primary font-bold border-b-2 border-primary'
                 : 'text-muted hover:text-text',
@@ -321,30 +321,62 @@ export const MenuPage: React.FC = () => {
         {/* TAB 1: MASTER CATALOG VIEW */}
         {viewMode === 'catalog' && (
           <div className="space-y-4">
-            {/* Filter / Actions Bar from Sample Image 1 */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-[12px] bg-surface border border-border">
-              {/* Search */}
-              <div className="relative flex-1 max-w-sm">
-                <Search
-                  size={15}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Search dishes..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-surface-2 border border-border rounded-[8px] text-text placeholder:text-muted focus:outline-none focus:border-primary"
-                />
+            {/* Filter & Actions Bar */}
+            <div className="flex flex-col gap-3 p-3.5 rounded-[12px] bg-surface border border-border">
+              {/* Row 1: Search & Primary Actions */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+                {/* Search */}
+                <div className="relative w-full md:flex-1 md:max-w-[260px] lg:max-w-[300px] h-9">
+                  <Search
+                    size={15}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search dishes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-full pl-9 pr-3 text-xs bg-surface-2 border border-border rounded-[8px] text-text placeholder:text-muted focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                {can('menu', 'create') && (
+                  <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:justify-end shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setIsAiImportModalOpen(true)}
+                      className="flex-1 sm:flex-initial justify-center h-9 px-3 rounded-[8px] bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <Sparkles size={13} className="text-primary shrink-0" /> AI Menu Import
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsTranslateModalOpen(true)}
+                      className="flex-1 sm:flex-initial justify-center h-9 px-3 rounded-[8px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                      title="Translate Menu into Regional Languages"
+                    >
+                      <Globe size={13} className="shrink-0" /> Translate Menu
+                    </button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleOpenNewDish()}
+                      icon={<Plus size={14} />}
+                      className="w-full sm:w-auto justify-center h-9 whitespace-nowrap shrink-0"
+                    >
+                      Add Dish
+                    </Button>
+                  </div>
+                )}
               </div>
 
-              {/* Counters & Add Dish */}
-              <div className="flex items-center gap-2 shrink-0">
+              {/* Row 2: Stock Counter Pills */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-2.5 border-t border-border/60">
                 <button
                   type="button"
                   onClick={() => setStockFilter('all')}
                   className={cn(
-                    'px-2.5 py-1 rounded-[6px] text-[11px] font-semibold transition-all cursor-pointer',
+                    'px-2.5 py-1 rounded-[6px] text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0',
                     stockFilter === 'all'
                       ? 'bg-surface-2 border border-border text-text font-bold shadow-2xs'
                       : 'text-muted hover:text-text border border-transparent',
@@ -356,7 +388,7 @@ export const MenuPage: React.FC = () => {
                   type="button"
                   onClick={() => setStockFilter('available')}
                   className={cn(
-                    'px-2.5 py-1 rounded-[6px] text-[11px] font-bold transition-all cursor-pointer',
+                    'px-2.5 py-1 rounded-[6px] text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap shrink-0',
                     stockFilter === 'available'
                       ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 shadow-2xs'
                       : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/15',
@@ -368,7 +400,7 @@ export const MenuPage: React.FC = () => {
                   type="button"
                   onClick={() => setStockFilter('sold_out')}
                   className={cn(
-                    'px-2.5 py-1 rounded-[6px] text-[11px] font-bold transition-all cursor-pointer',
+                    'px-2.5 py-1 rounded-[6px] text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap shrink-0',
                     stockFilter === 'sold_out'
                       ? 'bg-red-500/20 border border-red-500/40 text-red-600 dark:text-red-400 shadow-2xs'
                       : 'bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/15',
@@ -376,34 +408,6 @@ export const MenuPage: React.FC = () => {
                 >
                   {soldOutDishesCount} sold out
                 </button>
-
-                {can('menu', 'create') && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setIsAiImportModalOpen(true)}
-                      className="px-3 py-1.5 rounded-[8px] bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
-                    >
-                      <Sparkles size={13} className="text-primary" /> AI Menu Import
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsTranslateModalOpen(true)}
-                      className="px-3 py-1.5 rounded-[8px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
-                      title="Translate Menu into Regional Languages"
-                    >
-                      <Globe size={13} /> Translate Menu
-                    </button>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => handleOpenNewDish()}
-                      icon={<Plus size={14} />}
-                    >
-                      Add Dish
-                    </Button>
-                  </>
-                )}
               </div>
             </div>
 

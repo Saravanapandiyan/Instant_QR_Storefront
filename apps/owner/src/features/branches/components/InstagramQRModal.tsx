@@ -83,10 +83,12 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
 
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const [mobileTab, setMobileTab] = useState<'customize' | 'preview'>('customize');
 
   // Synchronize state with saved design whenever modal opens or branch changes
   useEffect(() => {
     if (isOpen && branch?.id) {
+      setMobileTab('customize');
       const saved = getSavedStandeeDesign(branch.id);
       setTemplate(saved.template);
       setSelectedTheme(saved.selectedTheme);
@@ -388,11 +390,64 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
 
       {/* Main Container */}
       <div className="relative w-full max-w-5xl bg-surface border border-border rounded-2xl shadow-2xl z-10 flex flex-col lg:flex-row overflow-hidden my-4 sm:my-6 animate-in fade-in zoom-in-95 max-h-[92vh]">
+        {/* Mobile Header & Tab Switcher (< lg) */}
+        <div className="lg:hidden border-b border-border bg-surface shrink-0">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Sparkles size={16} />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-bold text-text truncate">Storefront QR Studio</h2>
+                <p className="text-[11px] text-muted truncate">{branch.name}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close modal"
+              className="p-1.5 rounded-lg text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer shrink-0"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="px-4 pb-3">
+            <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-surface-2 border border-border text-xs">
+              <button
+                type="button"
+                onClick={() => setMobileTab('customize')}
+                className={`py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
+                  mobileTab === 'customize'
+                    ? 'bg-surface text-text shadow-2xs'
+                    : 'text-muted hover:text-text'
+                }`}
+              >
+                Customize
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileTab('preview')}
+                className={`py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
+                  mobileTab === 'preview'
+                    ? 'bg-surface text-text shadow-2xs'
+                    : 'text-muted hover:text-text'
+                }`}
+              >
+                Live Preview
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Left Side: Modern Interactive Customization Controls */}
-        <div className="p-5 sm:p-6 lg:p-7 flex-1 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-border bg-surface overflow-y-auto">
+        <div
+          className={`${
+            mobileTab === 'customize' ? 'flex' : 'hidden'
+          } lg:flex p-4 sm:p-6 lg:p-7 flex-1 flex-col justify-between border-b lg:border-b-0 lg:border-r border-border bg-surface overflow-y-auto`}
+        >
           <div className="space-y-5">
-            {/* Top Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-border">
+            {/* Top Modal Header (Desktop lg+) */}
+            <div className="hidden lg:flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <Sparkles size={18} />
@@ -402,13 +457,6 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                   <p className="text-xs text-muted">Customize branded QR styles & print-ready dining stands</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="lg:hidden p-1.5 rounded-lg text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
-              >
-                <X size={18} />
-              </button>
             </div>
 
             {/* Branch & Brand Info Pill */}
@@ -451,7 +499,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
               <select
                 value={selectedTableNumber || ''}
                 onChange={(e) => setSelectedTableNumber(e.target.value || null)}
-                className="w-full px-3 py-1.5 rounded-lg border border-border bg-surface text-text text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                className="w-full px-3 pr-8 py-1.5 rounded-lg border border-border bg-surface text-text text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer truncate"
               >
                 <option value="">Main Storefront QR (All Tables / Walk-in)</option>
                 {allTables.map((t) => (
@@ -498,7 +546,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                 <Layers size={13} className="text-primary" />
                 <span>QR Module Pattern</span>
               </div>
-              <div className="grid grid-cols-5 gap-1.5">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
                 {[
                   { id: 'dots', label: '● Dots', sub: 'Circles' },
                   { id: 'tiles', label: '▢ Tiles', sub: 'Mosaic' },
@@ -530,7 +578,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
                   <Eye size={13} className="text-primary" />
                   <span>Corner Eye Shape</span>
                 </div>
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                   {[
                     { id: 'squircle', label: 'Squircle' },
                     { id: 'circle', label: 'Circle' },
@@ -731,7 +779,11 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
         </div>
 
         {/* Right Side: Live Interactive Template Stand Preview */}
-        <div className="p-6 lg:p-8 bg-surface-2/70 flex flex-col items-center justify-center min-w-[340px] lg:min-w-[440px] relative overflow-y-auto">
+        <div
+          className={`${
+            mobileTab === 'preview' ? 'flex' : 'hidden'
+          } lg:flex p-4 sm:p-6 lg:p-8 bg-surface-2/70 flex-1 lg:flex-none flex-col items-center justify-start lg:justify-center lg:min-w-[440px] relative overflow-y-auto`}
+        >
           <button
             type="button"
             onClick={onClose}
@@ -743,7 +795,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
 
           {/* DYNAMIC TEMPLATE RENDER */}
           {template === 'luxury' && (
-            <div className="w-[300px] sm:w-[330px] rounded-3xl p-6 bg-zinc-950 text-white flex flex-col items-center justify-between text-center border-2 border-amber-600/70 shadow-2xl relative overflow-hidden">
+            <div className="w-full max-w-[300px] sm:w-[330px] sm:max-w-none rounded-3xl p-5 sm:p-6 bg-zinc-950 text-white flex flex-col items-center justify-between text-center border-2 border-amber-600/70 shadow-2xl relative overflow-hidden">
               <div className="space-y-1 w-full relative z-10 pt-2">
                 <span className="text-[10px] tracking-widest uppercase text-amber-300/80 font-serif">
                   Carte du Jour  •  Fine Dining
@@ -790,7 +842,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
           )}
 
           {template === 'acrylic' && (
-            <div className="w-[300px] sm:w-[330px] rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-200 flex flex-col overflow-hidden">
+            <div className="w-full max-w-[300px] sm:w-[330px] sm:max-w-none rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-200 flex flex-col overflow-hidden">
               <div className={`p-4 ${currentTheme.cardBg} text-white text-center space-y-0.5`}>
                 <span className="text-[9px] uppercase font-bold tracking-wider opacity-90">
                   Dine-In Storefront
@@ -840,7 +892,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
 
           {template === 'badge' && (
             <div
-              className="w-[300px] h-[300px] sm:w-[320px] sm:h-[320px] rounded-full p-6 bg-white text-zinc-900 shadow-2xl border-8 flex flex-col items-center justify-between text-center relative overflow-hidden"
+              className="w-[260px] h-[260px] sm:w-[320px] sm:h-[320px] rounded-full p-5 sm:p-6 bg-white text-zinc-900 shadow-2xl border-8 flex flex-col items-center justify-between text-center relative overflow-hidden"
               style={{ borderColor: currentTheme.primaryColor }}
             >
               <div className="space-y-0.5 pt-1">
@@ -891,7 +943,7 @@ export const InstagramQRModal: React.FC<InstagramQRModalProps> = ({
 
           {template === 'brand' && (
             <div
-              className={`w-[300px] sm:w-[320px] rounded-3xl p-6 ${currentTheme.cardBg} ${currentTheme.borderGlow} text-white flex flex-col items-center justify-between text-center transition-all duration-300 relative overflow-hidden`}
+              className={`w-full max-w-[300px] sm:w-[320px] sm:max-w-none rounded-3xl p-5 sm:p-6 ${currentTheme.cardBg} ${currentTheme.borderGlow} text-white flex flex-col items-center justify-between text-center transition-all duration-300 relative overflow-hidden`}
             >
               <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-white/10 blur-xl pointer-events-none" />
               <div className="absolute -bottom-12 -left-12 w-36 h-36 rounded-full bg-black/20 blur-xl pointer-events-none" />

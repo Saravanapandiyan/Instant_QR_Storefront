@@ -331,26 +331,26 @@ export const DishModal: React.FC<DishModalProps> = ({
       {/* Modal Dialog Card */}
       <div className="relative w-full max-w-2xl bg-surface rounded-[14px] border border-border shadow-2xl overflow-hidden z-10 animate-in fade-in zoom-in-95 flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-surface shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[10px] bg-primary-soft text-primary-soft-text flex items-center justify-center shrink-0 shadow-xs">
-              <UtensilsCrossed size={19} />
+        <div className="flex items-start sm:items-center justify-between gap-2 px-4 sm:px-6 py-3.5 sm:py-4 border-b border-border bg-surface shrink-0">
+          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] bg-primary-soft text-primary-soft-text flex items-center justify-center shrink-0 shadow-xs">
+              <UtensilsCrossed size={18} />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-base font-bold text-text">
+                <h2 className="text-sm sm:text-base font-bold text-text whitespace-nowrap">
                   {isEditing ? 'Edit Dish Item' : 'New Dish Item'}
                 </h2>
                 {selectedRestaurant && (
-                  <span className="px-2 py-0.5 rounded-[6px] bg-surface-2 border border-border text-[11px] font-semibold text-text flex items-center gap-1">
-                    <span>{selectedRestaurant.name}</span>
-                    <span className="text-[10px] text-muted font-mono">
-                      ({brandCurrencyCode} - {brandCurrencyObj.symbol})
+                  <span className="px-2 py-0.5 rounded-[6px] bg-surface-2 border border-border text-[11px] font-semibold text-text inline-flex items-center gap-1 whitespace-nowrap max-w-full">
+                    <span className="truncate max-w-[130px] sm:max-w-none">{selectedRestaurant.name}</span>
+                    <span className="text-[10px] text-muted font-mono shrink-0">
+                      ({brandCurrencyCode} {brandCurrencyObj.symbol})
                     </span>
                   </span>
                 )}
               </div>
-              <p className="text-xs text-muted mt-0.5">
+              <p className="text-[11px] sm:text-xs text-muted mt-0.5 leading-snug">
                 {isEditing
                   ? 'Update dish details, catalog pricing, and branch stock'
                   : 'Add a new dish to your master menu catalog'}
@@ -363,7 +363,7 @@ export const DishModal: React.FC<DishModalProps> = ({
             onClick={onClose}
             disabled={isSubmitting}
             aria-label="Close modal"
-            className="p-1.5 rounded-[8px] text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
+            className="p-1.5 rounded-[8px] text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer shrink-0"
           >
             <X size={18} />
           </button>
@@ -572,12 +572,12 @@ export const DishModal: React.FC<DishModalProps> = ({
           {/* Section 3: Multi-Branch Stock & Availability Overview */}
           {isEditing && relevantBranches.length > 0 && (
             <div className="pt-2 border-t border-border space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-text">
-                  <Store size={15} className="text-primary" />
+                  <Store size={15} className="text-primary shrink-0" />
                   <span>Branch Availability & Custom Pricing</span>
                 </div>
-                <span className="text-[11px] text-muted">
+                <span className="text-[11px] text-muted whitespace-nowrap shrink-0">
                   {relevantBranches.length} Location{relevantBranches.length !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -712,6 +712,7 @@ export const DishModal: React.FC<DishModalProps> = ({
               size="md"
               isLoading={isSubmitting}
               icon={<ArrowRight size={15} />}
+              className="whitespace-nowrap shrink-0"
             >
               {isEditing ? 'Save Changes' : 'Add Dish'}
             </Button>

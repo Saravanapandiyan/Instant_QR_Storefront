@@ -129,6 +129,9 @@ export const OrdersPage: React.FC = () => {
   const [datePreset, setDatePreset] = useState<DatePreset>('TODAY');
   const [customStartDate, setCustomStartDate] = useState<string>(todayYMD);
   const [customEndDate, setCustomEndDate] = useState<string>(todayYMD);
+  const [isCustomRangeOpen, setIsCustomRangeOpen] = useState<boolean>(false);
+  const [draftStartDate, setDraftStartDate] = useState<string>(todayYMD);
+  const [draftEndDate, setDraftEndDate] = useState<string>(todayYMD);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [mainView, setMainView] = useState<'orders' | 'tables'>('orders');
@@ -391,11 +394,13 @@ export const OrdersPage: React.FC = () => {
     >
       <div className="space-y-6">
         {/* Header Controls */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-5">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-text">Live Orders</h1>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 border-b border-border pb-5">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text whitespace-nowrap">
+                Live Orders
+              </h1>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20 whitespace-nowrap shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                 Live Kitchen Queue
               </span>
@@ -405,14 +410,14 @@ export const OrdersPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
             {/* Restaurant Selector */}
             {restaurants.length > 1 && (
-              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-1.5 text-xs font-semibold shadow-xs hover:border-text/30 transition-colors">
-                <Building2 className="w-3.5 h-3.5 text-muted" />
+              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-1.5 text-xs font-semibold shadow-xs hover:border-text/30 transition-colors w-full sm:w-auto min-w-0">
+                <Building2 className="w-3.5 h-3.5 text-muted shrink-0" />
                 <select
                   aria-label="Select Restaurant"
-                  className="bg-transparent border-none text-text font-semibold focus:outline-none text-xs cursor-pointer"
+                  className="bg-transparent border-none text-text font-semibold focus:outline-none text-xs cursor-pointer w-full sm:w-auto truncate"
                   value={selectedRestaurantId}
                   onChange={(e) => {
                     setSelectedRestaurantId(e.target.value);
@@ -430,11 +435,11 @@ export const OrdersPage: React.FC = () => {
 
             {/* Branch Selector */}
             {filteredBranches.length > 0 && (
-              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-1.5 text-xs font-semibold shadow-xs hover:border-text/30 transition-colors">
-                <Store className="w-3.5 h-3.5 text-muted" />
+              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-1.5 text-xs font-semibold shadow-xs hover:border-text/30 transition-colors w-full sm:w-auto min-w-[160px]">
+                <Store className="w-3.5 h-3.5 text-muted shrink-0" />
                 <select
                   aria-label="Filter by Outlet"
-                  className="bg-transparent border-none text-text font-semibold focus:outline-none text-xs cursor-pointer"
+                  className="bg-transparent border-none text-text font-semibold focus:outline-none text-xs cursor-pointer w-full sm:w-auto truncate"
                   value={selectedBranchId}
                   onChange={(e) => setSelectedBranchId(e.target.value)}
                 >
@@ -462,7 +467,7 @@ export const OrdersPage: React.FC = () => {
                   toast.info('Audible order alerts muted.');
                 }
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer shadow-xs ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer shadow-xs whitespace-nowrap shrink-0 ${
                 isMuted
                   ? 'bg-surface border-border text-muted hover:text-text'
                   : 'bg-primary/10 border-primary/30 text-primary'
@@ -478,7 +483,7 @@ export const OrdersPage: React.FC = () => {
             </button>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center bg-surface-2 p-1 rounded-xl border border-border gap-0.5">
+            <div className="flex items-center bg-surface-2 p-1 rounded-xl border border-border gap-0.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
@@ -521,17 +526,20 @@ export const OrdersPage: React.FC = () => {
 
         {/* Main View Switcher: Authentic Tab Navigation Bar */}
         <div className="border-b border-border">
-          <nav className="flex items-center gap-2 sm:gap-6" aria-label="Order Views">
+          <nav
+            className="flex items-center gap-5 sm:gap-6 overflow-x-auto scrollbar-none whitespace-nowrap"
+            aria-label="Order Views"
+          >
             <button
               type="button"
               onClick={() => setMainView('orders')}
-              className={`relative pb-3.5 pt-1 px-1 font-bold text-sm flex items-center gap-2 transition-all cursor-pointer ${
+              className={`relative pb-3.5 pt-1 px-1 font-bold text-sm flex items-center gap-2 transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 mainView === 'orders'
                   ? 'text-primary'
                   : 'text-muted hover:text-text'
               }`}
             >
-              <ShoppingBag className="w-4 h-4" />
+              <ShoppingBag className="w-4 h-4 shrink-0" />
               <span>Orders Queue</span>
               <span
                 className={`px-2 py-0.5 rounded-full text-xs font-bold transition-colors ${
@@ -550,15 +558,16 @@ export const OrdersPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setMainView('tables')}
-              className={`relative pb-3.5 pt-1 px-1 font-bold text-sm flex items-center gap-2 transition-all cursor-pointer ${
+              className={`relative pb-3.5 pt-1 px-1 font-bold text-sm flex items-center gap-2 transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 mainView === 'tables'
                   ? 'text-primary'
                   : 'text-muted hover:text-text'
               }`}
             >
-              <Layers className="w-4 h-4" />
-              <span>Table View (Floor Plan)</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <Layers className="w-4 h-4 shrink-0" />
+              <span className="sm:hidden">Table View</span>
+              <span className="hidden sm:inline">Table View (Floor Plan)</span>
+              <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                 Live Open Orders
               </span>
               {mainView === 'tables' && (
@@ -585,66 +594,173 @@ export const OrdersPage: React.FC = () => {
         ) : (
           <>
             {/* Date Range Filter Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-muted mr-1">
-              <Calendar className="w-3.5 h-3.5 text-primary" />
-              <span>Date:</span>
-            </span>
-            {(
-              [
+            {(() => {
+              const datePresets: { id: DatePreset; label: string }[] = [
                 { id: 'TODAY', label: 'Today' },
                 { id: 'YESTERDAY', label: 'Yesterday' },
                 { id: 'THIS_WEEK', label: 'This Week' },
                 { id: 'THIS_MONTH', label: 'This Month' },
                 { id: 'CUSTOM', label: 'Custom Range' },
                 { id: 'ALL', label: 'All Time' },
-              ] as { id: DatePreset; label: string }[]
-            ).map((preset) => {
-              const isSelected = datePreset === preset.id;
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() => setDatePreset(preset.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-primary text-white border-primary shadow-xs'
-                      : 'bg-surface border-border text-muted hover:text-text hover:bg-surface-2'
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              );
-            })}
-          </div>
+              ];
+              const openCustomModal = () => {
+                setDraftStartDate(customStartDate);
+                setDraftEndDate(customEndDate);
+                setIsCustomRangeOpen(true);
+              };
 
-          {datePreset === 'CUSTOM' && (
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-semibold text-muted">From:</span>
-                <DatePicker
-                  ariaLabel="Custom start date"
-                  placeholder="Start date"
-                  value={customStartDate}
-                  max={customEndDate || todayYMD}
-                  onChange={setCustomStartDate}
-                />
+              return (
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-2.5">
+                  {/* Mobile (<640px): Clean Date Dropdown */}
+                  <div className="flex sm:hidden items-center gap-2 bg-surface border border-border rounded-xl px-3 py-2 text-xs font-semibold shadow-xs w-full">
+                    <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="text-muted font-bold shrink-0">Date:</span>
+                    <select
+                      aria-label="Filter orders by date"
+                      value={datePreset}
+                      onChange={(e) => {
+                        const next = e.target.value as DatePreset;
+                        if (next === 'CUSTOM') {
+                          openCustomModal();
+                        } else {
+                          setDatePreset(next);
+                        }
+                      }}
+                      className="bg-transparent border-none text-text font-semibold focus:outline-none text-xs cursor-pointer w-full min-w-0"
+                    >
+                      {datePresets.map((preset) => (
+                        <option key={preset.id} value={preset.id} className="bg-surface text-text">
+                          {preset.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Tablet & Desktop (>=640px): Date Preset Pills */}
+                  <div className="hidden sm:flex flex-wrap items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-muted mr-1 shrink-0 whitespace-nowrap">
+                      <Calendar className="w-3.5 h-3.5 text-primary" />
+                      <span>Date:</span>
+                    </span>
+                    {datePresets.map((preset) => {
+                      const isSelected = datePreset === preset.id;
+                      return (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => {
+                            if (preset.id === 'CUSTOM') {
+                              openCustomModal();
+                            } else {
+                              setDatePreset(preset.id);
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+                            isSelected
+                              ? 'bg-primary text-white border-primary shadow-xs'
+                              : 'bg-surface border-border text-muted hover:text-text hover:bg-surface-2'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Active Custom Range Summary Chip (click to edit in popup) */}
+                  {datePreset === 'CUSTOM' && (
+                    <button
+                      type="button"
+                      onClick={openCustomModal}
+                      className="inline-flex items-center justify-between sm:justify-start gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/25 text-xs font-semibold text-primary hover:bg-primary/15 transition-colors cursor-pointer w-full sm:w-auto"
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          {customStartDate || 'Start'} &rarr; {customEndDate || 'End'}
+                        </span>
+                      </span>
+                      <span className="text-[11px] underline font-bold">Change</span>
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Custom Date Range Popup Modal (all screen sizes) */}
+            {isCustomRangeOpen && (
+              <div
+                className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+                onClick={() => setIsCustomRangeOpen(false)}
+              >
+                <div
+                  className="w-full max-w-sm bg-surface border border-border rounded-2xl shadow-2xl p-5 space-y-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      <h3 className="text-sm font-bold text-text">Select Custom Date Range</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomRangeOpen(false)}
+                      aria-label="Close date range modal"
+                      className="p-1 rounded-lg text-muted hover:text-text hover:bg-surface-2 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-semibold text-muted">From Date</label>
+                      <DatePicker
+                        ariaLabel="Custom start date"
+                        placeholder="Start date"
+                        value={draftStartDate}
+                        max={draftEndDate || todayYMD}
+                        onChange={setDraftStartDate}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-semibold text-muted">To Date</label>
+                      <DatePicker
+                        ariaLabel="Custom end date"
+                        placeholder="End date"
+                        value={draftEndDate}
+                        min={draftStartDate}
+                        max={todayYMD}
+                        onChange={setDraftEndDate}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setIsCustomRangeOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        setCustomStartDate(draftStartDate);
+                        setCustomEndDate(draftEndDate);
+                        setDatePreset('CUSTOM');
+                        setIsCustomRangeOpen(false);
+                      }}
+                    >
+                      Apply Range
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-semibold text-muted">To:</span>
-                <DatePicker
-                  ariaLabel="Custom end date"
-                  placeholder="End date"
-                  value={customEndDate}
-                  min={customStartDate}
-                  max={todayYMD}
-                  onChange={setCustomEndDate}
-                />
-              </div>
-            </div>
-          )}
-        </div>
+            )}
 
         {/* Modern Segmented Tab Bar */}
         <div className="p-1 bg-surface-2 border border-border rounded-2xl flex items-center gap-1 overflow-x-auto scrollbar-none shadow-xs">
@@ -661,7 +777,7 @@ export const OrdersPage: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 lg:flex-1 px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
                   isActive
                     ? 'bg-surface text-text shadow-sm border border-border'
                     : 'text-muted hover:text-text hover:bg-surface/60 border border-transparent'

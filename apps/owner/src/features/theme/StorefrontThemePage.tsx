@@ -123,30 +123,30 @@ export const StorefrontThemePage: React.FC = () => {
       <div className="space-y-6">
         {/* Top Header & Breadcrumb Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs text-muted">
+          <div className="space-y-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted">
               <button
                 type="button"
                 onClick={() => navigate(ROUTES.RESTAURANTS)}
-                className="hover:text-text hover:underline flex items-center gap-1 cursor-pointer"
+                className="hover:text-text hover:underline flex items-center gap-1 cursor-pointer whitespace-nowrap"
               >
                 <ArrowLeft size={13} />
                 <span>Restaurants</span>
               </button>
               <span>/</span>
-              <span className="font-semibold text-text">{restaurant.name}</span>
+              <span className="font-semibold text-text whitespace-nowrap">{restaurant.name}</span>
               <span>/</span>
-              <span className="text-primary font-medium">Storefront Theme</span>
+              <span className="text-primary font-medium whitespace-nowrap">Storefront Theme</span>
             </div>
 
-            <div className="flex items-center gap-3 pt-1">
-              <div className="w-10 h-10 rounded-xl bg-primary-soft text-primary-soft-text flex items-center justify-center shrink-0 shadow-2xs">
-                <Palette size={20} />
+            <div className="flex items-start sm:items-center gap-3 pt-1">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary-soft text-primary-soft-text flex items-center justify-center shrink-0 shadow-2xs">
+                <Palette size={19} />
               </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-text tracking-tight flex items-center gap-2">
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-2xl font-bold text-text tracking-tight flex flex-wrap items-center gap-2">
                   <span>Storefront Theme Studio</span>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-surface-2 border border-border text-muted font-normal">
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-surface-2 border border-border text-muted font-normal whitespace-nowrap">
                     {restaurant.name}
                   </span>
                 </h1>
@@ -158,14 +158,16 @@ export const StorefrontThemePage: React.FC = () => {
           </div>
 
           {/* Top Actions: Reset & Save */}
-          <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto shrink-0">
             <Button
               variant="outline"
               size="sm"
               onClick={handleResetDefaults}
               icon={<RotateCcw size={14} />}
+              className="whitespace-nowrap justify-center"
             >
-              Reset Defaults
+              <span className="sm:hidden">Reset</span>
+              <span className="hidden sm:inline">Reset Defaults</span>
             </Button>
 
             <Button
@@ -174,8 +176,14 @@ export const StorefrontThemePage: React.FC = () => {
               onClick={handleSaveTheme}
               disabled={isSaving}
               icon={<Check size={15} />}
+              className="whitespace-nowrap justify-center"
             >
-              {isSaving ? 'Saving Theme...' : 'Save Theme Changes'}
+              {isSaving ? 'Saving...' : (
+                <>
+                  <span className="sm:hidden">Save Theme</span>
+                  <span className="hidden sm:inline">Save Theme Changes</span>
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -194,27 +202,29 @@ export const StorefrontThemePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setActiveMode('light')}
-                  className={`py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                  className={`py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all whitespace-nowrap ${
                     activeMode === 'light'
                       ? 'bg-surface text-text shadow-xs border border-border font-bold'
                       : 'text-muted hover:text-text'
                   }`}
                 >
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-2xs" />
-                  <span>Light Mode Palette</span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-2xs shrink-0" />
+                  <span className="sm:hidden">Light Mode</span>
+                  <span className="hidden sm:inline">Light Mode Palette</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setActiveMode('dark')}
-                  className={`py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                  className={`py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all whitespace-nowrap ${
                     activeMode === 'dark'
                       ? 'bg-surface text-text shadow-xs border border-border font-bold'
                       : 'text-muted hover:text-text'
                   }`}
                 >
-                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-2xs" />
-                  <span>Dark Mode Palette</span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-2xs shrink-0" />
+                  <span className="sm:hidden">Dark Mode</span>
+                  <span className="hidden sm:inline">Dark Mode Palette</span>
                 </button>
               </div>
             </div>

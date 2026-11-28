@@ -232,29 +232,30 @@ export const BranchMatrixTable: React.FC<BranchMatrixTableProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* 1. Filter Toolbar matching Sample Image 2 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-[12px] bg-surface border border-border text-xs">
-        <div className="flex items-center gap-2.5 flex-wrap flex-1">
+      {/* 1. Filter Toolbar */}
+      <div className="flex flex-col gap-2.5 p-3.5 rounded-[12px] bg-surface border border-border text-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           {/* Search */}
-          <div className="relative min-w-[200px] flex-1 max-w-xs">
+          <div className="relative w-full sm:flex-1 sm:min-w-0 shrink-0 h-9">
             <Search
               size={14}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
             />
             <input
               type="text"
               placeholder="Filter dishes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-surface-2 border border-border rounded-[8px] text-text placeholder:text-muted focus:outline-none focus:border-primary"
+              className="w-full h-full pl-8 pr-3 text-xs bg-surface-2 border border-border rounded-[8px] text-text placeholder:text-muted focus:outline-none focus:border-primary"
             />
           </div>
 
           {/* Category Dropdown */}
           <select
+            aria-label="Filter by category"
             value={selectedCategoryFilter}
             onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-            className="h-[32px] px-2.5 rounded-[8px] border border-border bg-surface text-text text-xs focus:outline-none focus:border-primary cursor-pointer"
+            className="h-9 px-3 rounded-[8px] border border-border bg-surface-2 text-text text-xs font-semibold focus:outline-none focus:border-primary cursor-pointer w-full sm:w-[170px]"
           >
             <option value="">All categories</option>
             {categories.map((c: any) => (
@@ -264,13 +265,30 @@ export const BranchMatrixTable: React.FC<BranchMatrixTableProps> = ({
             ))}
           </select>
 
-          {/* Stock Filter Pills */}
-          <div className="flex items-center p-0.5 rounded-[8px] bg-surface-2 border border-border">
+          {/* Branch Filter Dropdown */}
+          <select
+            aria-label="Filter by branch"
+            value={selectedBranchFilter}
+            onChange={(e) => setSelectedBranchFilter(e.target.value)}
+            className="h-9 px-3 rounded-[8px] border border-border bg-surface-2 text-text text-xs font-semibold focus:outline-none focus:border-primary cursor-pointer w-full sm:w-[190px]"
+          >
+            <option value="all">All branches ({branches.length})</option>
+            {branches.map((b: any) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Stock Filter Pills */}
+        <div className="flex items-center pt-2 border-t border-border/60">
+          <div className="inline-flex items-center p-0.5 rounded-[8px] bg-surface-2 border border-border h-9 overflow-x-auto scrollbar-none max-w-full">
             <button
               type="button"
               onClick={() => setStatusFilter('all')}
               className={cn(
-                'px-2.5 py-1 rounded-[6px] text-xs font-semibold transition-all cursor-pointer',
+                'h-full px-3 rounded-[6px] text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0',
                 statusFilter === 'all'
                   ? 'bg-surface text-text font-bold shadow-2xs border border-border'
                   : 'text-muted hover:text-text',
@@ -282,7 +300,7 @@ export const BranchMatrixTable: React.FC<BranchMatrixTableProps> = ({
               type="button"
               onClick={() => setStatusFilter('out_of_stock')}
               className={cn(
-                'px-2.5 py-1 rounded-[6px] text-xs font-semibold transition-all cursor-pointer',
+                'h-full px-3 rounded-[6px] text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0',
                 statusFilter === 'out_of_stock'
                   ? 'bg-surface text-text font-bold shadow-2xs border border-border'
                   : 'text-muted hover:text-text',
@@ -294,7 +312,7 @@ export const BranchMatrixTable: React.FC<BranchMatrixTableProps> = ({
               type="button"
               onClick={() => setStatusFilter('price_overrides')}
               className={cn(
-                'px-2.5 py-1 rounded-[6px] text-xs font-semibold transition-all cursor-pointer',
+                'h-full px-3 rounded-[6px] text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0',
                 statusFilter === 'price_overrides'
                   ? 'bg-surface text-text font-bold shadow-2xs border border-border'
                   : 'text-muted hover:text-text',
@@ -303,22 +321,6 @@ export const BranchMatrixTable: React.FC<BranchMatrixTableProps> = ({
               Price overrides
             </button>
           </div>
-        </div>
-
-        {/* Branch Filter Dropdown */}
-        <div className="flex items-center gap-2 shrink-0">
-          <select
-            value={selectedBranchFilter}
-            onChange={(e) => setSelectedBranchFilter(e.target.value)}
-            className="h-[32px] px-3 rounded-[8px] border border-border bg-surface text-text text-xs font-semibold focus:outline-none focus:border-primary cursor-pointer"
-          >
-            <option value="all">All branches ({branches.length})</option>
-            {branches.map((b: any) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 

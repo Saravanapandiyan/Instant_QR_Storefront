@@ -113,8 +113,8 @@ export declare class RestaurantsController {
             deletedAt: Date | null;
             deletedBy: string | null;
             restaurantId: string;
-            sortOrder: number;
             translations: import("@prisma/client/runtime/library").JsonValue | null;
+            sortOrder: number;
         }[];
         _count: {
             products: number;

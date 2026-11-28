@@ -316,54 +316,57 @@ export const TvDisplayPage: React.FC = () => {
       }`}
     >
       {/* Top TV Header Bar */}
-      <div className="px-5 py-3 rounded-2xl bg-surface border border-border flex items-center justify-between gap-4 shadow-xs select-none">
-        {/* Brand & Outlet Info */}
-        <div className="flex items-center gap-3 shrink-0 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0">
-            <Tv className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-black tracking-tight text-text uppercase whitespace-nowrap">
-                {currentRestaurantName}
-              </h1>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap shrink-0">
-                <Radio className="w-2.5 h-2.5 animate-pulse" />
-                LIVE
-              </span>
+      <div className="px-4 sm:px-5 py-3 rounded-2xl bg-surface border border-border flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 shadow-xs select-none">
+        {/* Row 1 (Mobile/Tablet/1024px) / Left+Center (1280px+): Brand & Clock */}
+        <div className="flex items-center justify-between gap-3 min-w-0 xl:flex-1">
+          {/* Brand & Outlet Info */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0">
+              <Tv className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <p className="text-xs text-muted flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
-              <Store className="w-3 h-3 text-primary shrink-0" />
-              <span>{currentBranchName}</span>
-              <span className="text-muted/60">•</span>
-              <span>Pickup Board</span>
-            </p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <h1 className="text-sm sm:text-lg font-black tracking-tight text-text uppercase truncate">
+                  {currentRestaurantName}
+                </h1>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap shrink-0">
+                  <Radio className="w-2.5 h-2.5 animate-pulse" />
+                  LIVE
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-muted flex items-center gap-1.5 mt-0.5 truncate">
+                <Store className="w-3 h-3 text-primary shrink-0" />
+                <span className="truncate">{currentBranchName}</span>
+                <span className="text-muted/60 shrink-0">•</span>
+                <span className="shrink-0">Pickup Board</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Digital Clock (visible sm+ and aligned cleanly on right of Row 1 or center on xl) */}
+          <div className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-surface-2 border border-border shadow-2xs font-mono shrink-0 xl:mx-auto">
+            <Clock className="w-3.5 h-3.5 text-primary animate-pulse shrink-0" />
+            <span className="text-base sm:text-lg font-black tracking-wider text-text">
+              {new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\s*(AM|PM)/i, '')}
+            </span>
+            <span className="text-xs font-bold text-muted">
+              :{String(new Date(now).getSeconds()).padStart(2, '0')}
+            </span>
+            <span className="text-[10px] font-black uppercase text-primary ml-0.5">
+              {new Date(now).getHours() >= 12 ? 'PM' : 'AM'}
+            </span>
           </div>
         </div>
 
-        {/* Center: Clean Digital Clock */}
-        <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 rounded-xl bg-surface-2 border border-border shadow-2xs font-mono shrink-0">
-          <Clock className="w-3.5 h-3.5 text-primary animate-pulse" />
-          <span className="text-lg font-black tracking-wider text-text">
-            {new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\s*(AM|PM)/i, '')}
-          </span>
-          <span className="text-xs font-bold text-muted">
-            :{String(new Date(now).getSeconds()).padStart(2, '0')}
-          </span>
-          <span className="text-[10px] font-black uppercase text-primary ml-1">
-            {new Date(now).getHours() >= 12 ? 'PM' : 'AM'}
-          </span>
-        </div>
-
-        {/* Right: Sleek Unified TV Controls */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        {/* Row 2 (Mobile/Tablet/1024px) / Right (1280px+): Controls */}
+        <div className="flex flex-wrap items-center justify-between xl:justify-end gap-2 shrink-0 pt-2.5 border-t border-border/60 xl:pt-0 xl:border-t-0">
           {/* Outlet Selector */}
           {filteredBranches.length > 0 && (
-            <div className="flex items-center gap-1 bg-surface-2 border border-border rounded-xl px-2.5 h-9 text-xs">
+            <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-2.5 h-9 text-xs w-full sm:w-auto sm:min-w-[160px]">
               <Store className="w-3.5 h-3.5 text-muted shrink-0" />
               <select
                 aria-label="Select Outlet"
-                className="bg-transparent border-none font-bold text-xs focus:outline-none cursor-pointer text-text"
+                className="bg-transparent border-none font-bold text-xs focus:outline-none cursor-pointer text-text w-full sm:w-auto truncate"
                 value={selectedBranchId}
                 onChange={(e) => setSelectedBranchId(e.target.value)}
               >
@@ -378,6 +381,8 @@ export const TvDisplayPage: React.FC = () => {
               </select>
             </div>
           )}
+
+          <div className="flex items-center gap-1.5 shrink-0">
 
           {/* Voice Announcement Toggle */}
           <button
@@ -454,6 +459,7 @@ export const TvDisplayPage: React.FC = () => {
               <ArrowLeft className="w-4 h-4" />
             </button>
           )}
+          </div>
         </div>
       </div>
 
@@ -464,21 +470,21 @@ export const TvDisplayPage: React.FC = () => {
         {/* ============================================================== */}
         <section className="flex flex-col rounded-2xl bg-surface border border-border shadow-xs overflow-hidden">
           {/* Header */}
-          <div className="px-6 py-4 bg-amber-500/10 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+          <div className="px-3.5 sm:px-6 py-3.5 sm:py-4 bg-amber-500/10 border-b border-border flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                 <Flame className="w-4 h-4 animate-pulse" />
               </div>
-              <div>
-                <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+              <div className="min-w-0">
+                <h2 className="text-xs sm:text-lg font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 truncate">
                   Preparing
                 </h2>
-                <p className="text-[11px] font-semibold text-muted">
+                <p className="text-[11px] font-semibold text-muted truncate">
                   Cooking in Kitchen
                 </p>
               </div>
             </div>
-            <div className="px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 font-mono text-xs font-bold border border-amber-500/25">
+            <div className="px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 font-mono text-xs font-bold border border-amber-500/25 whitespace-nowrap shrink-0">
               {cookingOrders.length} In Progress
             </div>
           </div>
@@ -563,21 +569,21 @@ export const TvDisplayPage: React.FC = () => {
         {/* ============================================================== */}
         <section className="flex flex-col rounded-2xl bg-surface border border-emerald-500/30 shadow-xs overflow-hidden">
           {/* Header */}
-          <div className="px-6 py-4 bg-emerald-500/10 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+          <div className="px-3.5 sm:px-6 py-3.5 sm:py-4 bg-emerald-500/10 border-b border-border flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                 <Bell className="w-4 h-4 animate-bounce" />
               </div>
-              <div>
-                <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              <div className="min-w-0">
+                <h2 className="text-xs sm:text-lg font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 truncate">
                   Ready For Pickup
                 </h2>
-                <p className="text-[11px] font-semibold text-muted">
+                <p className="text-[11px] font-semibold text-muted truncate">
                   Please collect at counter
                 </p>
               </div>
             </div>
-            <div className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-mono text-xs font-bold border border-emerald-500/25">
+            <div className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-mono text-xs font-bold border border-emerald-500/25 whitespace-nowrap shrink-0">
               {readyOrders.length} Ready
             </div>
           </div>
@@ -652,20 +658,20 @@ export const TvDisplayPage: React.FC = () => {
         </section>
       </main>
       {/* Subtle Bottom Footer */}
-      <footer className="pt-3 border-t border-border flex items-center justify-between text-[11px] text-muted font-medium">
-        <div className="flex items-center gap-2">
+      <footer className="pt-3 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-muted font-medium">
+        <div className="hidden sm:flex items-center gap-2 whitespace-nowrap">
           <span>Press</span>
           <kbd className="px-1.5 py-0.5 rounded bg-surface-2 text-text font-mono text-[10px] border border-border">
             F
           </kbd>
           <span>to toggle TV Fullscreen</span>
         </div>
-        <div className="flex items-center gap-3">
-          <span>InstaDine Real-time Order Engine</span>
-          <span className="text-muted/60">•</span>
-          <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-            <Radio className="w-3 h-3 animate-ping" />
-            Audio Callout Active
+        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-2.5 gap-y-1 text-center">
+          <span className="whitespace-nowrap">InstaDine Real-time Order Engine</span>
+          <span className="text-muted/60 hidden xs:inline">•</span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5 whitespace-nowrap">
+            <Radio className="w-3 h-3 animate-ping shrink-0" />
+            <span>Audio Callout Active</span>
           </span>
         </div>
       </footer>

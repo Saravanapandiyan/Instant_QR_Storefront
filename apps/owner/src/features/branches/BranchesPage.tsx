@@ -186,135 +186,27 @@ export const BranchesPage: React.FC = () => {
       restaurantCount={restaurants.length}
     >
       <div className="space-y-4">
-        {/* Compact Single-Tier Header & Brand Filter Toolbar */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 rounded-[12px] bg-surface border border-border shadow-xs">
-          {/* Left: Title + Brand Selector */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-[8px] bg-primary-soft text-primary-soft-text flex items-center justify-center shrink-0 shadow-xs">
-                <Store size={16} />
+        {/* Clean Two-Row Header & Filter Toolbar */}
+        <div className="p-3.5 sm:p-4 rounded-[12px] bg-surface border border-border shadow-xs space-y-3">
+          {/* Row 1: Title + Add Branch Button */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-[8px] bg-primary-soft text-primary-soft-text flex items-center justify-center shrink-0 shadow-xs">
+                <Store size={17} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-sm font-bold text-text leading-tight">Branches & Outlets</h1>
+                  <h1 className="text-sm sm:text-base font-bold text-text leading-tight">
+                    Branches &amp; Outlets
+                  </h1>
                   <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-surface-2 text-muted font-bold">
                     {displayedBranches.length}
                   </span>
                 </div>
                 <p className="text-[11px] text-muted">
-                  Physical restaurant storefronts & digital QR menus
+                  Physical restaurant storefronts &amp; digital QR menus
                 </p>
               </div>
-            </div>
-
-            {/* Brand Filter Tabs */}
-            {restaurants.length > 0 && (
-              <div className="flex items-center gap-1.5 pl-3 border-l border-border overflow-x-auto">
-                <span className="text-[10px] font-bold text-muted uppercase shrink-0">Brand:</span>
-                <div className="flex items-center gap-1">
-                  {/* All Brands Tab */}
-                  <button
-                    type="button"
-                    onClick={() => handleSelectFilter(null)}
-                    className={cn(
-                      'px-2.5 py-1 rounded-[6px] text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 select-none',
-                      !activeRestaurant
-                        ? 'bg-primary-soft text-primary-soft-text border border-primary/25 shadow-xs'
-                        : 'text-muted hover:text-text hover:bg-surface-2 border border-transparent'
-                    )}
-                  >
-                    <span>All Brands</span>
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-surface text-muted">
-                      {allBranches.length}
-                    </span>
-                  </button>
-
-                  {/* Individual Brands */}
-                  {restaurants.map((restaurant) => {
-                    const isSelected = activeRestaurant?.id === restaurant.id;
-                    const count = allBranches.filter((b) => b.restaurantId === restaurant.id).length;
-                    const logoSrc = getMediaUrl(restaurant.logoUrl);
-
-                    return (
-                      <button
-                        key={restaurant.id}
-                        type="button"
-                        onClick={() => handleSelectFilter(restaurant.id)}
-                        className={cn(
-                          'px-2.5 py-1 rounded-[6px] text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 select-none',
-                          isSelected
-                            ? 'bg-primary-soft text-primary-soft-text border border-primary/25 shadow-xs'
-                            : 'text-muted hover:text-text hover:bg-surface-2 border border-transparent'
-                        )}
-                      >
-                        {logoSrc ? (
-                          <img
-                            src={logoSrc}
-                            alt={restaurant.name}
-                            className="w-3.5 h-3.5 rounded-[3px] object-cover shrink-0"
-                          />
-                        ) : (
-                          <Utensils size={12} className="shrink-0" />
-                        )}
-                        <span>{restaurant.name}</span>
-                        <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-surface text-muted">
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right: Search, View Switcher & Add Branch */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Search Input */}
-            <div className="relative min-w-[180px]">
-              <Search
-                size={14}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
-              />
-              <input
-                type="text"
-                placeholder="Search branches..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-2.5 py-1 text-xs bg-surface-2 border border-border rounded-[6px] placeholder:text-muted/60 focus:outline-none focus:border-primary text-text"
-              />
-            </div>
-
-            {/* View Mode Toggle: Grid vs Table */}
-            <div className="flex items-center p-0.5 rounded-[6px] bg-surface-2 border border-border">
-              <button
-                type="button"
-                onClick={() => setViewMode('grid')}
-                className={cn(
-                  'p-1.5 rounded-[5px] transition-colors cursor-pointer flex items-center gap-1 text-xs font-medium',
-                  viewMode === 'grid'
-                    ? 'bg-surface text-text shadow-xs font-semibold'
-                    : 'text-muted hover:text-text'
-                )}
-                title="Grid Cards View"
-              >
-                <LayoutGrid size={13} />
-                <span className="hidden sm:inline">Cards</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('table')}
-                className={cn(
-                  'p-1.5 rounded-[5px] transition-colors cursor-pointer flex items-center gap-1 text-xs font-medium',
-                  viewMode === 'table'
-                    ? 'bg-surface text-text shadow-xs font-semibold'
-                    : 'text-muted hover:text-text'
-                )}
-                title="Compact Table View"
-              >
-                <LayoutList size={13} />
-                <span className="hidden sm:inline">Table</span>
-              </button>
             </div>
 
             {can('branches', 'create') && (
@@ -323,10 +215,100 @@ export const BranchesPage: React.FC = () => {
                 size="sm"
                 icon={<Plus size={14} />}
                 onClick={handleOpenCreateModal}
+                className="whitespace-nowrap shrink-0 w-full sm:w-auto justify-center"
               >
                 Add Branch
               </Button>
             )}
+          </div>
+
+          {/* Row 2: Brand Filter Dropdown + Search & View Switcher */}
+          <div className="pt-3 border-t border-border/60 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+            {/* Brand Filter Dropdown (scales cleanly for 10+ brands) */}
+            {restaurants.length > 0 ? (
+              <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-[8px] px-3 h-9 w-full md:w-[230px] min-w-0">
+                <Utensils size={14} className="text-primary shrink-0" />
+                <span className="text-[11px] font-bold text-muted uppercase shrink-0 leading-none">
+                  Brand:
+                </span>
+                <select
+                  aria-label="Filter by Brand"
+                  value={selectedRestaurantId || 'ALL'}
+                  onChange={(e) =>
+                    handleSelectFilter(e.target.value === 'ALL' ? null : e.target.value)
+                  }
+                  className="bg-transparent border-none text-xs font-semibold text-text focus:outline-none cursor-pointer flex-1 min-w-0 truncate h-full"
+                >
+                  <option value="ALL" className="bg-surface text-text">
+                    All Brands ({allBranches.length})
+                  </option>
+                  {restaurants.map((restaurant) => {
+                    const count = allBranches.filter((b) => b.restaurantId === restaurant.id).length;
+                    return (
+                      <option
+                        key={restaurant.id}
+                        value={restaurant.id}
+                        className="bg-surface text-text"
+                      >
+                        {restaurant.name} ({count})
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            ) : (
+              <div />
+            )}
+
+            {/* Search & View Mode Toggle */}
+            <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+              {/* Search Input */}
+              <div className="relative flex-1 md:w-[220px] min-w-0 h-9">
+                <Search
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Search branches..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-full pl-8 pr-3 text-xs bg-surface-2 border border-border rounded-[8px] placeholder:text-muted/60 focus:outline-none focus:border-primary text-text"
+                />
+              </div>
+
+              {/* View Mode Toggle: Grid vs Table */}
+              <div className="flex items-center p-0.5 rounded-[8px] bg-surface-2 border border-border h-9 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('grid')}
+                  className={cn(
+                    'h-full px-2.5 rounded-[6px] transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-medium',
+                    viewMode === 'grid'
+                      ? 'bg-surface text-text shadow-xs font-semibold'
+                      : 'text-muted hover:text-text'
+                  )}
+                  title="Grid Cards View"
+                >
+                  <LayoutGrid size={13} />
+                  <span className="hidden sm:inline">Cards</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('table')}
+                  className={cn(
+                    'h-full px-2.5 rounded-[6px] transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-medium',
+                    viewMode === 'table'
+                      ? 'bg-surface text-text shadow-xs font-semibold'
+                      : 'text-muted hover:text-text'
+                  )}
+                  title="Compact Table View"
+                >
+                  <LayoutList size={13} />
+                  <span className="hidden sm:inline">Table</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -352,7 +334,7 @@ export const BranchesPage: React.FC = () => {
 
         {/* Content Section: Loading vs Empty vs Grid vs Table */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {[1, 2, 3].map((n) => (
               <div
                 key={n}
@@ -396,7 +378,7 @@ export const BranchesPage: React.FC = () => {
           </div>
         ) : viewMode === 'grid' ? (
           /* High-Density Modern Branch Cards */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {displayedBranches.map((branch) => {
               const parentConcept =
                 branch.restaurant ||
@@ -521,37 +503,37 @@ export const BranchesPage: React.FC = () => {
                   </div>
 
                   {/* Card Bottom Actions */}
-                  <div className="px-4 py-2.5 bg-surface-2/60 border-t border-border flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
+                  <div className="px-2.5 sm:px-4 py-2.5 bg-surface-2/60 border-t border-border flex items-center justify-between gap-1 sm:gap-2">
+                    <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
                       <button
                         type="button"
                         onClick={() => navigate(`${ROUTES.MENU}?tab=branch&branchId=${branch.id}`)}
-                        className="px-2.5 py-1 rounded-[6px] bg-surface border border-border hover:border-primary/40 text-xs font-semibold text-text flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                        className="px-1.5 sm:px-2.5 h-7 sm:h-8 rounded-[6px] bg-surface border border-border hover:border-primary/40 text-[11px] sm:text-xs font-semibold text-text flex items-center gap-1 sm:gap-1.5 transition-colors cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
                       >
-                        <UtensilsCrossed size={12} className="text-primary" />
-                        <span>Stock & Menu</span>
+                        <UtensilsCrossed size={11} className="text-primary shrink-0 sm:w-3 sm:h-3" />
+                        <span>Stock &amp; Menu</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setTableQrBranch(branch)}
-                        className="px-2.5 py-1 rounded-[6px] bg-primary/10 border border-primary/20 hover:bg-primary/20 text-xs font-bold text-primary flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-1.5 sm:px-2.5 h-7 sm:h-8 rounded-[6px] bg-primary/10 border border-primary/20 hover:bg-primary/20 text-[11px] sm:text-xs font-bold text-primary flex items-center gap-1 sm:gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0"
                         title="Download or Print Table QR Codes"
                       >
-                        <QrCode size={12} />
+                        <QrCode size={11} className="shrink-0 sm:w-3 sm:h-3" />
                         <span>Table QRs</span>
                       </button>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                       {can('branches', 'edit') && (
                         <button
                           type="button"
                           onClick={() => handleOpenEditModal(branch)}
-                          className="p-1.5 rounded-[6px] text-muted hover:text-text hover:bg-surface transition-colors cursor-pointer"
+                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-[6px] border border-border bg-surface text-muted hover:text-text flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
                           title="Edit Branch Settings"
                         >
-                          <Pencil size={13} />
+                          <Pencil size={12} />
                         </button>
                       )}
 
@@ -559,10 +541,10 @@ export const BranchesPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setDeletingBranch(branch)}
-                          className="p-1.5 rounded-[6px] text-muted hover:text-danger hover:bg-surface transition-colors cursor-pointer"
+                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-[6px] border border-border bg-surface text-muted hover:text-danger hover:border-danger/30 flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
                           title="Delete Branch"
                         >
-                          <Trash2 size={13} />
+                          <Trash2 size={12} />
                         </button>
                       )}
                     </div>

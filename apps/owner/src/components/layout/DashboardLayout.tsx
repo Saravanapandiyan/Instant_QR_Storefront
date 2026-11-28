@@ -59,7 +59,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const isBillingPage = location.pathname.startsWith('/billing');
 
   return (
-    <div className="min-h-screen w-full flex bg-bg text-text transition-colors">
+    <div className="min-h-screen w-full flex bg-bg text-text transition-colors overflow-x-hidden">
       {/* Sidebar (~248px) */}
       <Sidebar
         isOpen={sidebarOpen}

@@ -249,24 +249,24 @@ export const TranslateMenuModal: React.FC<TranslateMenuModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-3xl rounded-3xl bg-surface border border-border shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="relative w-full max-w-3xl rounded-2xl sm:rounded-3xl bg-surface border border-border shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-border flex items-center justify-between bg-surface-2/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-bold">
-              <Globe className="w-5 h-5" />
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-border flex items-start sm:items-center justify-between gap-2 bg-surface-2/50 shrink-0">
+          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-bold shrink-0">
+              <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-text">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <h2 className="text-sm sm:text-lg font-bold text-text">
                   Multilingual Menu Engine
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 whitespace-nowrap shrink-0">
                   AI FLASH
                 </span>
               </div>
-              <p className="text-xs text-muted">
+              <p className="text-[11px] sm:text-xs text-muted leading-snug mt-0.5">
                 1-click instant menu localization for regional customer storefronts
               </p>
             </div>
@@ -275,42 +275,45 @@ export const TranslateMenuModal: React.FC<TranslateMenuModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
+            aria-label="Close modal"
+            className="p-1.5 sm:p-2 rounded-xl text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Switcher */}
-        <div className="px-6 pt-3 flex border-b border-border bg-surface">
+        <div className="px-4 sm:px-6 pt-2.5 flex items-center gap-1 sm:gap-2 border-b border-border bg-surface overflow-x-auto scrollbar-none shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab('translate')}
-            className={`pb-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+            className={`pb-3 px-2.5 sm:px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'translate'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted hover:text-text'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>AI Translation Setup</span>
+            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+            <span className="sm:hidden">AI Setup</span>
+            <span className="hidden sm:inline">AI Translation Setup</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('review')}
-            className={`pb-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+            className={`pb-3 px-2.5 sm:px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'review'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted hover:text-text'
             }`}
           >
-            <Languages className="w-3.5 h-3.5" />
-            <span>Review & Edit Translations</span>
+            <Languages className="w-3.5 h-3.5 shrink-0" />
+            <span className="sm:hidden">Review & Edit</span>
+            <span className="hidden sm:inline">Review & Edit Translations</span>
           </button>
         </div>
 
         {/* Body Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6">
           {activeTab === 'translate' ? (
             <div className="space-y-6">
               {/* Info Banner */}
@@ -700,18 +703,18 @@ export const TranslateMenuModal: React.FC<TranslateMenuModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border bg-surface-2/40 flex items-center justify-between">
-          <p className="text-xs text-muted">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-t border-border bg-surface-2/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+          <p className="text-[11px] sm:text-xs text-muted leading-snug">
             {activeTab === 'translate'
               ? 'Translating replaces or updates regional texts in the database.'
               : 'Overrides are immediately visible on customer QR scans.'}
           </p>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2 w-full sm:w-auto shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-border bg-surface text-xs font-bold text-muted hover:text-text cursor-pointer"
+              className="px-3.5 sm:px-4 py-2 rounded-xl border border-border bg-surface text-xs font-bold text-muted hover:text-text cursor-pointer whitespace-nowrap shrink-0"
             >
               Close
             </button>
@@ -721,17 +724,18 @@ export const TranslateMenuModal: React.FC<TranslateMenuModalProps> = ({
                 type="button"
                 onClick={handleRunTranslation}
                 disabled={isTranslating || selectedLangs.length === 0}
-                className="px-5 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold flex items-center gap-2 shadow-sm hover:opacity-90 cursor-pointer disabled:opacity-50 transition-all"
+                className="flex-1 sm:flex-none px-4 sm:px-5 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold flex items-center justify-center gap-2 shadow-sm hover:opacity-90 cursor-pointer disabled:opacity-50 transition-all whitespace-nowrap shrink-0"
               >
                 {isTranslating ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Translating Menu with AI...</span>
+                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                    <span>Translating...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Translate ({selectedLangs.length} Languages)</span>
+                    <Sparkles className="w-4 h-4 shrink-0" />
+                    <span className="sm:hidden">Translate ({selectedLangs.length})</span>
+                    <span className="hidden sm:inline">Translate ({selectedLangs.length} Languages)</span>
                   </>
                 )}
               </button>

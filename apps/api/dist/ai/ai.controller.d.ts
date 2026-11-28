@@ -97,10 +97,10 @@ export declare class AiController {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        translations: import("@prisma/client/runtime/library").JsonValue | null;
         categoryId: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
         imageUrl: string | null;
+        translations: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     updateCategoryTranslation(categoryId: string, dto: UpdateTranslationDto): Promise<{
         description: string | null;
@@ -113,7 +113,7 @@ export declare class AiController {
         deletedAt: Date | null;
         deletedBy: string | null;
         restaurantId: string;
-        sortOrder: number;
         translations: import("@prisma/client/runtime/library").JsonValue | null;
+        sortOrder: number;
     }>;
 }

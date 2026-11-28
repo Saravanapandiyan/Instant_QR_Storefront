@@ -23,12 +23,7 @@ const QUICK_TAGS = [
   'Less oil',
 ];
 
-function getAssetUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  const clean = url.replace(/^\/?(uploads\/)?/, '');
-  return `/uploads/${clean}`;
-}
+import { getAssetUrl } from '../../lib/assets.ts';
 
 export function DishDetailModal({
   item,

@@ -25,7 +25,7 @@ import { RestaurantModal } from './components/RestaurantModal';
 import { BranchModal } from '../branches/components/BranchModal';
 import { InstagramQRModal } from '../branches/components/InstagramQRModal';
 import { getMediaUrl, cn } from '../../lib/utils';
-import { getCustomerStorefrontUrl } from '../../lib/urls';
+import { useEncryptedBranchTokens } from '../../lib/urls';
 import { ROUTES } from '../../constants/routes';
 import type { Restaurant, Branch, CreateBranchInput } from '@instant-qr/shared-types';
 
@@ -64,6 +64,9 @@ export const RestaurantsPage: React.FC = () => {
   // QR Modal & copy link state
   const [qrModalBranch, setQrModalBranch] = useState<Branch | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+
+  const allBranchSlugs = restaurants.flatMap((r) => (r.branches || []).map((b) => b.slug));
+  const { getBranchStorefrontHref, getBranchDisplayPath } = useEncryptedBranchTokens(allBranchSlugs);
 
   // Dropdown popover menu state
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -186,7 +189,7 @@ export const RestaurantsPage: React.FC = () => {
   };
 
   const handleCopyUrl = (slug: string) => {
-    const fullUrl = getCustomerStorefrontUrl(slug);
+    const fullUrl = getBranchStorefrontHref(slug);
     navigator.clipboard.writeText(fullUrl);
     setCopiedSlug(slug);
     toast.success('Storefront link copied to clipboard!');
@@ -280,10 +283,10 @@ export const RestaurantsPage: React.FC = () => {
               return (
                 <div
                   key={restaurant.id}
-                  className="rounded-2xl border border-border bg-surface shadow-xs overflow-hidden transition-all"
+                  className="rounded-2xl border border-border bg-surface shadow-xs transition-all"
                 >
                   {/* Top Row: Concept Details & Actions */}
-                  <div className="p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="p-4 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div className="flex items-center gap-4 min-w-0">
                       {/* Avatar Letter Tile or Uploaded Brand Logo */}
                       {logoSrc ? (
@@ -324,12 +327,13 @@ export const RestaurantsPage: React.FC = () => {
                     </div>
 
                     {/* Concept Actions */}
-                    <div className="flex items-center gap-2 self-start md:self-center shrink-0 relative">
+                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 self-start lg:self-center w-full lg:w-auto relative">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleOpenAddBranch(restaurant.id)}
                         icon={<Plus size={14} />}
+                        className="whitespace-nowrap w-full sm:w-auto justify-center"
                       >
                         Add branch
                       </Button>
@@ -339,20 +343,23 @@ export const RestaurantsPage: React.FC = () => {
                         size="sm"
                         onClick={() => handleOpenCustomizeTheme(restaurant)}
                         icon={<Palette size={14} />}
+                        className="whitespace-nowrap w-full sm:w-auto justify-center"
                       >
                         Theme
                       </Button>
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenEditRestaurant(restaurant)}
-                      >
-                        Edit
-                      </Button>
+                      <div className="col-span-2 sm:col-span-1 flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEditRestaurant(restaurant)}
+                          className="whitespace-nowrap flex-1 sm:flex-initial justify-center"
+                        >
+                          Edit
+                        </Button>
 
-                      {/* Dropdown Menu for Restaurant */}
-                      <div className="relative">
+                        {/* Dropdown Menu for Restaurant */}
+                        <div className="relative shrink-0">
                         <button
                           type="button"
                           onClick={() =>
@@ -409,12 +416,13 @@ export const RestaurantsPage: React.FC = () => {
                             </button>
                           </div>
                         )}
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Nested Branches List */}
-                  <div className="border-t border-border/70 bg-surface-2/30 dark:bg-zinc-950/40 p-4 sm:p-5 space-y-3">
+                  <div className="border-t border-border/70 bg-surface-2/30 dark:bg-zinc-950/40 rounded-b-2xl p-4 sm:p-5 space-y-3">
                     {branches.length === 0 ? (
                       <div className="py-6 text-center text-xs text-muted">
                         No branches configured for this concept yet. Click{' '}
@@ -429,12 +437,13 @@ export const RestaurantsPage: React.FC = () => {
                       </div>
                     ) : (
                       branches.map((branch) => {
-                        const fullUrl = getCustomerStorefrontUrl(branch.slug);
+                        const fullUrl = getBranchStorefrontHref(branch.slug);
+                        const displayPath = getBranchDisplayPath(branch.slug);
 
                         return (
                           <div
                             key={branch.id}
-                            className="p-3.5 sm:px-4 sm:py-3.5 rounded-xl border border-border bg-surface dark:bg-zinc-900/90 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs"
+                            className="p-3.5 sm:px-4 sm:py-3.5 rounded-xl border border-border bg-surface dark:bg-zinc-900/90 flex flex-col xl:flex-row xl:items-center justify-between gap-3 shadow-2xs"
                           >
                             {/* Branch Name & Status */}
                             <div className="min-w-0 flex-1">
@@ -460,13 +469,13 @@ export const RestaurantsPage: React.FC = () => {
                             </div>
 
                             {/* Branch Actions & URL Box */}
-                            <div className="flex items-center flex-wrap gap-2.5 sm:gap-3 shrink-0">
+                            <div className="flex items-center flex-wrap gap-2 sm:gap-2.5 w-full xl:w-auto xl:justify-end min-w-0">
                               {/* URL Pill with Copy, QR, External Link */}
-                              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-surface-2/60 dark:bg-zinc-800/80 dark:border-zinc-700/80 text-xs font-mono text-muted dark:text-zinc-300">
-                                <span className="truncate max-w-[170px] sm:max-w-[240px]">
-                                  /r/{branch.slug}
+                              <div className="flex items-center justify-between gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg border border-border bg-surface-2/60 dark:bg-zinc-800/80 dark:border-zinc-700/80 text-xs font-mono text-muted dark:text-zinc-300 w-full sm:w-auto max-w-full min-w-0">
+                                <span className="truncate min-w-0 flex-1 sm:max-w-[220px]">
+                                  {displayPath}
                                 </span>
-                                <div className="flex items-center gap-1 border-l border-border dark:border-zinc-700/80 pl-2">
+                                <div className="flex items-center gap-1 border-l border-border dark:border-zinc-700/80 pl-2 shrink-0">
                                   <button
                                     type="button"
                                     onClick={() => handleCopyUrl(branch.slug)}
@@ -499,33 +508,35 @@ export const RestaurantsPage: React.FC = () => {
                                 </div>
                               </div>
 
-                              {/* Orders Count Badge */}
-                              <span className="text-xs text-muted whitespace-nowrap">
-                                <strong className="text-text font-bold">0</strong> orders today
-                              </span>
+                              {/* Orders Count Badge & Primary Action */}
+                              <div className="flex items-center justify-between sm:justify-start gap-2.5 w-full sm:w-auto">
+                                <span className="text-xs text-muted whitespace-nowrap">
+                                  <strong className="text-text font-bold">0</strong> orders today
+                                </span>
 
-                              {/* Menu & Stock Button */}
-                              <Button
-                                variant="primary-soft"
-                                size="sm"
-                                onClick={() => handleGoToMenuAndStock(restaurant.id, branch.id)}
-                                className="whitespace-nowrap font-semibold"
-                              >
-                                Menu &amp; stock
-                              </Button>
+                                <Button
+                                  variant="primary-soft"
+                                  size="sm"
+                                  onClick={() => handleGoToMenuAndStock(restaurant.id, branch.id)}
+                                  className="whitespace-nowrap font-semibold"
+                                >
+                                  Menu &amp; stock
+                                </Button>
+                              </div>
 
-                              {/* Edit Branch Button */}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenEditBranch(branch)}
-                                className="whitespace-nowrap"
-                              >
-                                Edit
-                              </Button>
+                              {/* Edit Branch & More Menu */}
+                              <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleOpenEditBranch(branch)}
+                                  className="whitespace-nowrap flex-1 sm:flex-initial justify-center"
+                                >
+                                  Edit
+                                </Button>
 
-                              {/* Branch More Menu */}
-                              <div className="relative">
+                                {/* Branch More Menu */}
+                                <div className="relative shrink-0">
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -582,6 +593,7 @@ export const RestaurantsPage: React.FC = () => {
                                     </button>
                                   </div>
                                 )}
+                                </div>
                               </div>
                             </div>
                           </div>

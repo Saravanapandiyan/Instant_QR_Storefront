@@ -38,7 +38,7 @@ import { ThermalReceiptModal } from '../orders/components/ThermalReceiptModal';
 import { QuickSetupWizard } from '../quick-setup/QuickSetupWizard';
 import { getProducts, getCategories } from '../menu/api/menu-api';
 import { ordersApi, type Order } from '../orders/api/ordersApi';
-import { getCustomerStorefrontUrl } from '../../lib/urls';
+import { useEncryptedBranchTokens } from '../../lib/urls';
 import { ROUTES } from '../../constants/routes';
 import type { Branch } from '@instant-qr/shared-types';
 
@@ -176,8 +176,12 @@ export const DashboardPage: React.FC = () => {
     },
   });
 
+  const { getBranchStorefrontHref, getBranchDisplayPath } = useEncryptedBranchTokens(
+    branches.map((b) => b.slug),
+  );
+
   const handleCopyUrl = (slug: string) => {
-    const fullUrl = getCustomerStorefrontUrl(slug);
+    const fullUrl = getBranchStorefrontHref(slug);
     navigator.clipboard.writeText(fullUrl);
     setCopiedSlug(slug);
     toast.success('Customer storefront link copied!');
@@ -388,8 +392,8 @@ export const DashboardPage: React.FC = () => {
     >
       <div className="space-y-6">
         {/* Clean, Compact Dashboard Header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-semibold text-text tracking-tight">
               Overview
             </h1>
@@ -397,19 +401,21 @@ export const DashboardPage: React.FC = () => {
               Manage your branches, digital QR table stands, and orders.
             </p>
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap md:flex-nowrap items-center gap-2.5 w-full md:w-auto shrink-0">
             {/* Prepaid Credits Balance Button */}
             <button
               type="button"
               onClick={() => navigate(ROUTES.BILLING)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border bg-surface text-text hover:bg-surface-2 transition-all cursor-pointer shadow-2xs"
+              className="flex-1 sm:flex-initial flex items-center justify-between sm:justify-start gap-2 px-3.5 py-2 rounded-xl border border-border bg-surface text-text hover:bg-surface-2 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
               title="View Prepaid Credit Balance & Recharge"
             >
-              <Coins className="w-4 h-4 text-primary" />
-              <span className="text-xs font-black">
-                {typeof restaurants[0]?.creditBalance === 'number'
-                  ? `${restaurants[0].creditBalance} Credits`
-                  : 'Credits'}
+              <span className="flex items-center gap-1.5">
+                <Coins className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-xs font-black">
+                  {typeof restaurants[0]?.creditBalance === 'number'
+                    ? `${restaurants[0].creditBalance} Credits`
+                    : 'Credits'}
+                </span>
               </span>
               <span className="text-[10px] text-primary font-bold hover:underline">
                 Recharge &rarr;
@@ -420,34 +426,36 @@ export const DashboardPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-primary text-white font-bold text-xs shadow-md hover:bg-primary/90 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                className="flex-1 sm:flex-initial justify-center px-4 py-2 rounded-xl bg-primary text-white font-bold text-xs shadow-md hover:bg-primary/90 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5" /> New Branch
+                <Plus className="w-3.5 h-3.5 shrink-0" /> New Branch
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => setIsQuickSetupOpen(true)}
-                className="px-4 py-2 rounded-xl bg-primary text-white font-bold text-xs shadow-md hover:bg-primary/90 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                className="flex-1 sm:flex-initial justify-center px-4 py-2 rounded-xl bg-primary text-white font-bold text-xs shadow-md hover:bg-primary/90 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
               >
-                <Sparkles className="w-3.5 h-3.5 animate-pulse" /> 5-Min Setup (AI) &rarr;
+                <Sparkles className="w-3.5 h-3.5 animate-pulse shrink-0" /> 5-Min Setup (AI) &rarr;
               </button>
             )}
           </div>
         </div>
 
         {/* Restaurant Concept & Branch Outlet Selection Filter Toolbar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-surface border border-border rounded-2xl shadow-2xs">
-          <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-3 bg-surface border border-border rounded-2xl shadow-2xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-1 lg:items-center gap-2.5 w-full min-w-0">
             {/* Restaurant Concept Dropdown */}
-            <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-1.5 shadow-2xs">
+            <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-2 shadow-2xs w-full lg:flex-1 lg:max-w-[320px] min-w-0">
               <UtensilsCrossed className="w-3.5 h-3.5 text-primary shrink-0" />
-              <span className="text-[11px] font-bold text-muted uppercase">Concept:</span>
+              <span className="text-[11px] font-bold text-muted uppercase whitespace-nowrap shrink-0">
+                Concept:
+              </span>
               <select
                 aria-label="Filter by Restaurant Concept"
                 value={selectedRestaurantId}
                 onChange={(e) => handleRestaurantFilterChange(e.target.value)}
-                className="bg-transparent text-xs font-bold text-text focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs font-bold text-text focus:outline-none cursor-pointer w-full min-w-0 truncate"
               >
                 <option value="ALL" className="bg-surface text-text">
                   All Restaurant Concepts ({restaurants.length})
@@ -461,14 +469,16 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* Branch Outlet Dropdown */}
-            <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-1.5 shadow-2xs">
+            <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-2 shadow-2xs w-full lg:flex-1 lg:max-w-[320px] min-w-0">
               <Store className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-              <span className="text-[11px] font-bold text-muted uppercase">Branch Outlet:</span>
+              <span className="text-[11px] font-bold text-muted uppercase whitespace-nowrap shrink-0">
+                Outlet:
+              </span>
               <select
                 aria-label="Filter by Branch Outlet"
                 value={selectedBranchId}
                 onChange={(e) => handleBranchFilterChange(e.target.value)}
-                className="bg-transparent text-xs font-bold text-text focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs font-bold text-text focus:outline-none cursor-pointer w-full min-w-0 truncate"
               >
                 <option value="ALL" className="bg-surface text-text">
                   All Outlets & Branches ({availableBranchesForFilter.length})
@@ -487,7 +497,7 @@ export const DashboardPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleRestaurantFilterChange('ALL')}
-              className="text-[11px] font-bold text-primary hover:underline cursor-pointer self-end sm:self-auto flex items-center gap-1"
+              className="text-[11px] font-bold text-primary hover:underline cursor-pointer self-end lg:self-auto flex items-center gap-1 shrink-0 whitespace-nowrap"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Reset to All Concepts</span>
@@ -701,17 +711,17 @@ export const DashboardPage: React.FC = () => {
           <div className={allStepsComplete ? 'lg:col-span-3 space-y-6' : 'lg:col-span-2 space-y-6'}>
             {/* 1) Live Orders Card (Today Only) */}
             <div className="p-5 rounded-[12px] border border-border bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)] dark:shadow-none">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                  <h2 className="text-base font-semibold text-text tracking-tight">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-success animate-pulse shrink-0" />
+                  <h2 className="text-base font-semibold text-text tracking-tight whitespace-nowrap">
                     Live orders
                   </h2>
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-surface-2 text-muted border border-border">
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-surface-2 text-muted border border-border whitespace-nowrap">
                     Today
                   </span>
                   {todayActiveQueueCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary">
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary whitespace-nowrap">
                       {todayActiveQueueCount} active
                     </span>
                   )}
@@ -720,7 +730,7 @@ export const DashboardPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => navigate(ROUTES.ORDERS)}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer whitespace-nowrap shrink-0 self-start sm:self-auto"
                   >
                     <span>Open kitchen queue</span>
                     <ArrowRight size={13} />
@@ -841,10 +851,11 @@ export const DashboardPage: React.FC = () => {
                   <p className="text-xs text-muted mt-0.5 mb-4 max-w-sm mx-auto">
                     Orders placed by diners via QR stands today will appear here in real time.
                   </p>
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex flex-wrap items-center justify-center gap-2">
                     <Button
                       variant="secondary"
                       size="sm"
+                      className="whitespace-nowrap"
                       onClick={() => {
                         if (branches[0]) {
                           setQrModalBranch(branches[0]);
@@ -859,6 +870,7 @@ export const DashboardPage: React.FC = () => {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="whitespace-nowrap"
                         onClick={() => navigate(ROUTES.ORDERS)}
                       >
                         View all orders
@@ -931,9 +943,9 @@ export const DashboardPage: React.FC = () => {
                           </p>
                         )}
 
-                        {/* Slug link in a monospace pill with copy button */}
+                        {/* Encrypted QR storefront link in a monospace pill with copy button */}
                         <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[6px] bg-surface-2 text-muted font-mono text-[11px] mt-2.5 max-w-full">
-                          <span className="truncate">/r/{branch.slug}</span>
+                          <span className="truncate">{getBranchDisplayPath(branch.slug)}</span>
                           <button
                             type="button"
                             onClick={() => handleCopyUrl(branch.slug)}

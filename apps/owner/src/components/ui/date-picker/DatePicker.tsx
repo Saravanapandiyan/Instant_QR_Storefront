@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
@@ -67,14 +67,18 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     left = Math.max(12, Math.min(left, vw - width - 12));
 
     let top = rect.bottom + 8;
-    if (top + POPOVER_HEIGHT_EST > vh - 12 && rect.top - POPOVER_HEIGHT_EST - 8 >= 12) {
-      top = rect.top - POPOVER_HEIGHT_EST - 8;
+    if (top + POPOVER_HEIGHT_EST > vh - 12) {
+      if (rect.top - POPOVER_HEIGHT_EST - 8 >= 12) {
+        top = rect.top - POPOVER_HEIGHT_EST - 8;
+      } else {
+        top = Math.max(12, vh - POPOVER_HEIGHT_EST - 12);
+      }
     }
 
     setCoords({ top, left });
   }, [align]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isOpen) {
       const target = selectedDate || new Date();
       setViewYear(target.getFullYear());
@@ -175,7 +179,12 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       <button
         type="button"
         aria-label={ariaLabel || placeholder}
-        onClick={() => setIsOpen((o) => !o)}
+        onClick={() => {
+          if (!isOpen) {
+            updatePosition();
+          }
+          setIsOpen((o) => !o);
+        }}
         className={`flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer whitespace-nowrap bg-surface-2 ${
           isOpen
             ? 'border-primary ring-2 ring-primary/15 text-text'

@@ -75,6 +75,7 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
   // Step Switcher: 'list' (Table Checklist) vs 'design' (Select Design before Download / Print)
   const [viewStep, setViewStep] = useState<'list' | 'design'>('list');
   const [activeAction, setActiveAction] = useState<'download' | 'print'>('download');
+  const [designMobileTab, setDesignMobileTab] = useState<'customize' | 'preview'>('customize');
 
   const initialDesign = getSavedStandeeDesign(branch?.id);
 
@@ -396,7 +397,8 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+      {createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
         <div
           className="relative w-full max-w-4xl bg-surface border border-border rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
           onClick={(e) => e.stopPropagation()}
@@ -406,29 +408,29 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
               ========================================================================= */}
           {viewStep === 'list' && (
             <>
-              {/* Header */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-surface-2/40">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-                    <QrCode className="w-5 h-5" />
+              {/* Compact Header */}
+              <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 border-b border-border bg-surface-2/40 shrink-0">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
+                    <QrCode className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-text">QR Codes generation</h3>
-                    <p className="text-xs text-muted">
-                      Unique QR codes for tables at <span className="font-semibold text-text">{branch.name}</span>
+                  <div className="min-w-0">
+                    <h3 className="text-sm sm:text-lg font-bold text-text truncate">Table QR Codes</h3>
+                    <p className="text-[11px] sm:text-xs text-muted truncate">
+                      {branch.name}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => openDesignStep('print')}
                     disabled={selectedTables.length === 0}
-                    className="px-3.5 py-2 rounded-xl border border-border bg-surface hover:border-primary/50 text-xs font-bold text-text flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-40"
+                    className="hidden lg:flex px-3.5 py-2 rounded-xl border border-border bg-surface hover:border-primary/50 text-xs font-bold text-text items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-40 whitespace-nowrap shrink-0"
                     title="Select design and print table standees"
                   >
-                    <Printer className="w-4 h-4 text-primary" />
+                    <Printer className="w-4 h-4 text-primary shrink-0" />
                     <span>Print Standees</span>
                   </button>
 
@@ -436,76 +438,94 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
                     type="button"
                     onClick={() => openDesignStep('download')}
                     disabled={selectedTables.length === 0}
-                    className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-on-primary text-xs font-bold flex items-center gap-2 transition-transform active:scale-95 cursor-pointer shadow-md disabled:opacity-40"
+                    className="hidden lg:flex px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-on-primary text-xs font-bold items-center gap-1.5 transition-transform active:scale-95 cursor-pointer shadow-md disabled:opacity-40 whitespace-nowrap shrink-0"
                     title="Select design and download high-res PNG standees"
                   >
-                    <Download className="w-4 h-4" />
-                    <span>DOWNLOAD ({selectedTables.length}) QR CODES</span>
+                    <Download className="w-4 h-4 shrink-0" />
+                    <span>Download ({selectedTables.length}) QR Codes</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={onClose}
-                    className="p-2 rounded-xl text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer ml-1"
+                    aria-label="Close modal"
+                    className="p-1.5 sm:p-2 rounded-xl text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer shrink-0"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
               </div>
 
-              {/* Sub-toolbar: Sections Filter & Add Table toggle */}
-              <div className="px-6 py-3 border-b border-border bg-surface flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                  <span className="text-xs font-bold text-muted uppercase tracking-wider mr-1">
-                    Section:
-                  </span>
+              {/* Scrollable Body */}
+              <div className="flex-1 overflow-y-auto">
+                {/* Mobile Primary Actions (< lg) */}
+                <div className="lg:hidden px-4 pt-3 pb-2.5 border-b border-border bg-surface grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => setFilterSection('ALL')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      filterSection === 'ALL'
-                        ? 'bg-primary text-on-primary shadow-xs'
-                        : 'border border-border bg-surface-2 text-muted hover:text-text'
-                    }`}
+                    onClick={() => openDesignStep('print')}
+                    disabled={selectedTables.length === 0}
+                    className="px-3 py-2 rounded-xl border border-border bg-surface hover:border-primary/50 text-xs font-bold text-text flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-40 whitespace-nowrap"
                   >
-                    All Tables ({tables.length})
+                    <Printer className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span>Print</span>
                   </button>
-                  {sections.map((sec) => (
-                    <button
-                      key={sec}
-                      type="button"
-                      onClick={() => setFilterSection(sec)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        filterSection === sec
-                          ? 'bg-primary text-on-primary shadow-xs'
-                          : 'border border-border bg-surface-2 text-muted hover:text-text'
-                      }`}
-                    >
-                      {sec} ({tables.filter((t) => t.section === sec).length})
-                    </button>
-                  ))}
-                </div>
 
-                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => openDesignStep('download')}
-                    className="px-3 py-1.5 rounded-xl border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                    disabled={selectedTables.length === 0}
+                    className="px-3 py-2 rounded-xl bg-primary hover:bg-primary-hover text-on-primary text-xs font-bold flex items-center justify-center gap-1.5 transition-transform active:scale-95 cursor-pointer shadow-xs disabled:opacity-40 whitespace-nowrap"
                   >
-                    <Palette className="w-3.5 h-3.5" />
-                    <span>Choose Standee Design</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowAddForm(!showAddForm)}
-                    className="px-3 py-1.5 rounded-xl border border-border bg-surface-2 text-text hover:bg-surface text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>{showAddForm ? 'Cancel Add' : '+ Add Tables'}</span>
+                    <Download className="w-3.5 h-3.5 shrink-0" />
+                    <span>Download ({selectedTables.length})</span>
                   </button>
                 </div>
-              </div>
+
+                {/* Sub-toolbar: Section Dropdown & Add Table toggle */}
+                <div className="px-4 sm:px-6 py-3 border-b border-border bg-surface flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <label
+                      htmlFor="qr-section-filter"
+                      className="text-[11px] font-bold text-muted uppercase tracking-wider whitespace-nowrap shrink-0"
+                    >
+                      Section:
+                    </label>
+                    <select
+                      id="qr-section-filter"
+                      value={filterSection}
+                      onChange={(e) => setFilterSection(e.target.value)}
+                      className="flex-1 sm:flex-none sm:min-w-[180px] px-3 py-1.5 rounded-xl border border-border bg-surface-2 text-text text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                    >
+                      <option value="ALL">All Sections ({tables.length})</option>
+                      {sections.map((sec) => (
+                        <option key={sec} value={sec}>
+                          {sec} ({tables.filter((t) => t.section === sec).length})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => openDesignStep('download')}
+                      className="px-2.5 sm:px-3 py-1.5 rounded-xl border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <Palette className="w-3.5 h-3.5 shrink-0" />
+                      <span className="sm:hidden">Design</span>
+                      <span className="hidden sm:inline">Standee Design</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowAddForm(!showAddForm)}
+                      className="px-2.5 sm:px-3 py-1.5 rounded-xl border border-border bg-surface-2 text-text hover:bg-surface text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5 shrink-0" />
+                      <span>{showAddForm ? 'Cancel' : 'Add Tables'}</span>
+                    </button>
+                  </div>
+                </div>
 
               {/* Add / Bulk Generate Form Drawer */}
               {showAddForm && (
@@ -624,8 +644,8 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
                 </form>
               )}
 
-              {/* Tables Checklist Table */}
-              <div className="flex-1 overflow-y-auto">
+              {/* Tables Checklist Table & Mobile Cards */}
+              <div>
                 {isLoading ? (
                   <div className="py-20 text-center text-xs text-muted">
                     Loading table QR codes...
@@ -635,7 +655,189 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
                     No tables in this section.
                   </div>
                 ) : (
-                  <table className="w-full text-left text-xs">
+                  <>
+                    {/* Mobile & Tablet Card List (< lg) */}
+                    <div className="lg:hidden">
+                      <div className="px-4 py-2.5 bg-surface-2/60 border-b border-border flex items-center justify-between text-xs">
+                        <button
+                          type="button"
+                          onClick={toggleSelectAll}
+                          className="inline-flex items-center gap-2 font-semibold text-text cursor-pointer"
+                        >
+                          {allFilteredSelected ? (
+                            <CheckSquare className="w-4 h-4 text-primary" />
+                          ) : (
+                            <Square className="w-4 h-4 text-muted" />
+                          )}
+                          <span>{allFilteredSelected ? 'Deselect All' : 'Select All'}</span>
+                        </button>
+                        <span className="text-[11px] text-muted">{filteredTables.length} tables</span>
+                      </div>
+
+                      <div className="divide-y divide-border md:divide-y-0 md:grid md:grid-cols-2 md:gap-3 md:p-4">
+
+                      {filteredTables.map((table) => {
+                        const isSelected = selectedIds.includes(table.id);
+                        const qrUrl = getTableUrl(table.tableNumber);
+                        const isEditing = editingTableId === table.id;
+
+                        if (isEditing) {
+                          return (
+                            <div key={table.id} className="p-4 bg-primary/5 space-y-2.5 text-xs">
+                              <input
+                                type="text"
+                                value={editNumber}
+                                onChange={(e) => setEditNumber(e.target.value)}
+                                className="w-full px-3 py-1.5 rounded-lg border border-primary bg-surface text-text text-xs font-bold focus:outline-none"
+                                placeholder="Table 1"
+                              />
+                              <div className="grid grid-cols-2 gap-2">
+                                <input
+                                  type="text"
+                                  value={editSection}
+                                  onChange={(e) => setEditSection(e.target.value)}
+                                  className="w-full px-3 py-1.5 rounded-lg border border-border bg-surface text-text text-xs focus:outline-none"
+                                  placeholder="Main Room"
+                                />
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={50}
+                                  value={editCapacity}
+                                  onChange={(e) => setEditCapacity(Number(e.target.value))}
+                                  className="w-full px-3 py-1.5 rounded-lg border border-border bg-surface text-text text-xs font-medium focus:outline-none"
+                                />
+                              </div>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingTableId(null)}
+                                  className="px-3 py-1.5 rounded-lg border border-border bg-surface text-muted text-xs font-semibold cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isSavingEdit}
+                                  onClick={() => handleSaveEdit(table.id)}
+                                  className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-semibold cursor-pointer flex items-center gap-1"
+                                >
+                                  {isSavingEdit ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Check className="w-3.5 h-3.5" />
+                                  )}
+                                  <span>Save</span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={table.id}
+                            className={`p-4 space-y-2 text-xs md:rounded-2xl md:border md:border-border ${
+                              isSelected ? 'bg-primary/5 md:border-primary/40' : 'md:bg-surface'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSelect(table.id)}
+                                  className="text-primary cursor-pointer shrink-0"
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="w-4 h-4 text-primary" />
+                                  ) : (
+                                    <Square className="w-4 h-4 text-muted" />
+                                  )}
+                                </button>
+                                <span className="font-bold text-text truncate">{table.tableNumber}</span>
+                                {table.activeOrder && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                                    #{table.activeOrder.orderNumber}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
+                                Active
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2 text-[11px] text-muted pl-6">
+                              <span>{table.section || 'Main Room'}</span>
+                              <span className="inline-flex items-center gap-1 shrink-0">
+                                <Users className="w-3 h-3" />
+                                {table.capacity || 4} Guests
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2 pl-6 pt-1">
+                              <div className="flex items-center gap-1 font-mono text-[11px] text-muted min-w-0 flex-1">
+                                <span className="truncate">{qrUrl}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(qrUrl);
+                                    toast.success(`Copied ${table.tableNumber} URL!`);
+                                  }}
+                                  className="p-1 hover:text-text cursor-pointer shrink-0"
+                                  title="Copy URL"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                              </div>
+
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPreviewTableId(table.id);
+                                    openDesignStep('download');
+                                  }}
+                                  className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                                  title="Choose Stand Design for this table"
+                                >
+                                  <Palette className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => startEditTable(table)}
+                                  className="p-1.5 rounded-lg text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
+                                  title="Edit Table Name / Capacity"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <a
+                                  href={qrUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="p-1.5 rounded-lg text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
+                                  title="Open Customer Storefront"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteTable(table.id)}
+                                  className="p-1.5 rounded-lg text-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                                  title="Remove Table"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      </div>
+                    </div>
+
+                    {/* Desktop Table (lg+) */}
+                    <div className="hidden lg:block overflow-x-auto">
+                      <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="border-b border-border bg-surface-2/60">
                         <th className="py-3 px-4 w-10 text-center">
@@ -855,12 +1057,15 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
                         );
                       })}
                     </tbody>
-                  </table>
+                      </table>
+                    </div>
+                  </>
                 )}
+              </div>
               </div>
 
               {/* Footer Info */}
-              <div className="px-6 py-4 border-t border-border bg-surface-2/40 flex items-center justify-between text-xs text-muted">
+              <div className="px-4 sm:px-6 py-3 border-t border-border bg-surface-2/40 flex items-center justify-between text-xs text-muted shrink-0">
                 <div>
                   <span>Selected {selectedTables.length} of {tables.length} tables</span>
                 </div>
@@ -885,39 +1090,78 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
           {viewStep === 'design' && (
             <div className="flex flex-col flex-1 overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-surface-2/40">
-                <div className="flex items-center gap-3">
+              <div className="border-b border-border bg-surface-2/40 shrink-0">
+                <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-3 sm:py-4">
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => setViewStep('list')}
+                      className="p-1.5 rounded-xl border border-border bg-surface hover:bg-surface-2 text-text transition-colors cursor-pointer shrink-0"
+                      title="Back to Table List"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                    <div className="min-w-0">
+                      <h3 className="text-sm sm:text-lg font-bold text-text truncate">
+                        <span className="sm:hidden">Standee Design</span>
+                        <span className="hidden sm:inline">Select Standee Design & Export</span>
+                      </h3>
+                      <p className="text-[11px] sm:text-xs text-muted truncate">
+                        <span className="sm:hidden">{selectedTables.length} table(s) selected</span>
+                        <span className="hidden sm:inline">
+                          Customizing design for <span className="font-semibold text-text">{selectedTables.length} selected table(s)</span>
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
                   <button
                     type="button"
-                    onClick={() => setViewStep('list')}
-                    className="p-1.5 rounded-xl border border-border bg-surface hover:bg-surface-2 text-text transition-colors cursor-pointer"
-                    title="Back to Table List"
+                    onClick={onClose}
+                    aria-label="Close modal"
+                    className="p-1.5 sm:p-2 rounded-xl text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer shrink-0"
                   >
-                    <ArrowLeft className="w-4 h-4" />
+                    <X className="w-5 h-5" />
                   </button>
-                  <div>
-                    <h3 className="text-base sm:text-lg font-bold text-text">
-                      Select Standee Design & Export
-                    </h3>
-                    <p className="text-xs text-muted">
-                      Customizing design for <span className="font-semibold text-text">{selectedTables.length} selected table(s)</span>
-                    </p>
-                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="p-2 rounded-xl text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                {/* Mobile Tab Switcher (< lg) */}
+                <div className="lg:hidden px-4 pb-3">
+                  <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-surface-2 border border-border text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setDesignMobileTab('customize')}
+                      className={`py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
+                        designMobileTab === 'customize'
+                          ? 'bg-surface text-text shadow-2xs'
+                          : 'text-muted hover:text-text'
+                      }`}
+                    >
+                      Customize
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDesignMobileTab('preview')}
+                      className={`py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
+                        designMobileTab === 'preview'
+                          ? 'bg-surface text-text shadow-2xs'
+                          : 'text-muted hover:text-text'
+                      }`}
+                    >
+                      Preview & Export
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Two Column Layout: Design Controls (Left) vs Real-Time Preview (Right) */}
               <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
                 {/* Left Controls Column */}
-                <div className="flex-1 p-5 sm:p-6 overflow-y-auto space-y-5 border-b lg:border-b-0 lg:border-r border-border">
+                <div
+                  className={`${
+                    designMobileTab === 'customize' ? 'block' : 'hidden'
+                  } lg:block flex-1 p-4 sm:p-6 overflow-y-auto space-y-5 border-b lg:border-b-0 lg:border-r border-border`}
+                >
                   {/* 1. Stand Template Selection */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-text">
@@ -985,7 +1229,7 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
                       <Layers size={14} className="text-primary" />
                       <span>3. QR Module Pattern</span>
                     </div>
-                    <div className="grid grid-cols-5 gap-1.5">
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
                       {[
                         { id: 'dots', label: '● Dots' },
                         { id: 'tiles', label: '▢ Tiles' },
@@ -1015,7 +1259,7 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
                       <Eye size={14} className="text-primary" />
                       <span>4. Corner Eye Shape</span>
                     </div>
-                    <div className="grid grid-cols-4 gap-1.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                       {[
                         { id: 'squircle', label: 'Squircle' },
                         { id: 'circle', label: 'Circle' },
@@ -1044,7 +1288,7 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
                       <UtensilsCrossed size={14} className="text-primary" />
                       <span>5. Center Badge Icon</span>
                     </div>
-                    <div className="grid grid-cols-5 gap-1.5 text-xs">
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 text-xs">
                       {[
                         { id: 'cutlery', label: '🍽️ Dining' },
                         { id: 'coffee', label: '☕ Café' },
@@ -1070,15 +1314,19 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
                 </div>
 
                 {/* Right Interactive Live Standee Preview Column */}
-                <div className="p-6 bg-surface-2/60 flex flex-col items-center justify-between min-w-[340px] sm:min-w-[420px] overflow-y-auto">
-                  <div className="w-full flex items-center justify-between text-xs pb-3">
-                    <span className="font-bold text-muted uppercase tracking-wider">
-                      Previewing Standee:
+                <div
+                  className={`${
+                    designMobileTab === 'preview' ? 'flex' : 'hidden'
+                  } lg:flex p-4 sm:p-6 bg-surface-2/60 flex-1 lg:flex-none flex-col items-center justify-between lg:min-w-[420px] overflow-y-auto`}
+                >
+                  <div className="w-full flex flex-wrap items-center justify-between gap-2 text-xs pb-3">
+                    <span className="font-bold text-muted uppercase tracking-wider whitespace-nowrap">
+                      Previewing:
                     </span>
                     <select
                       value={activePreviewTable?.id}
                       onChange={(e) => setPreviewTableId(e.target.value)}
-                      className="px-2.5 py-1 rounded-lg border border-border bg-surface text-text font-bold text-xs focus:outline-none"
+                      className="px-2.5 py-1 rounded-lg border border-border bg-surface text-text font-bold text-xs focus:outline-none max-w-full truncate"
                     >
                       {selectedTables.map((t) => (
                         <option key={t.id} value={t.id}>
@@ -1091,7 +1339,7 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
                   {/* Render Selected Standee Card Template Preview */}
                   <div className="my-auto py-2">
                     {template === 'luxury' && activePreviewTable && (
-                      <div className="w-[280px] sm:w-[310px] rounded-3xl p-5 bg-zinc-950 text-white flex flex-col items-center justify-between text-center border-2 border-amber-600/70 shadow-2xl relative overflow-hidden">
+                      <div className="w-full max-w-[280px] sm:w-[310px] sm:max-w-none rounded-3xl p-5 bg-zinc-950 text-white flex flex-col items-center justify-between text-center border-2 border-amber-600/70 shadow-2xl relative overflow-hidden">
                         <div className="space-y-1 w-full relative z-10 pt-1">
                           <span className="text-[9px] tracking-widest uppercase text-amber-300/80 font-serif">
                             Carte du Jour • Fine Dining
@@ -1138,7 +1386,7 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
                     )}
 
                     {template === 'acrylic' && activePreviewTable && (
-                      <div className="w-[280px] sm:w-[310px] rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-200 flex flex-col overflow-hidden">
+                      <div className="w-full max-w-[280px] sm:w-[310px] sm:max-w-none rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-200 flex flex-col overflow-hidden">
                         <div className={`p-3.5 ${currentTheme.cardBg} text-white text-center space-y-0.5`}>
                           <span className="text-[9px] uppercase font-bold tracking-wider opacity-90">
                             Dine-In Storefront
@@ -1194,7 +1442,7 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
 
                     {template === 'badge' && activePreviewTable && (
                       <div
-                        className="w-[280px] h-[280px] rounded-full p-5 bg-white text-zinc-900 shadow-2xl border-6 flex flex-col items-center justify-between text-center relative overflow-hidden"
+                        className="w-[250px] h-[250px] sm:w-[280px] sm:h-[280px] rounded-full p-5 bg-white text-zinc-900 shadow-2xl border-6 flex flex-col items-center justify-between text-center relative overflow-hidden"
                         style={{ borderColor: currentTheme.primaryColor }}
                       >
                         <div className="space-y-0.5 pt-1">
@@ -1248,7 +1496,7 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
                     {template === 'brand' && activePreviewTable && (
                       // SIGNATURE RESTAURANT STANDEE (EXACT MATCH FOR IMAGE 3)
                       <div
-                        className={`w-[280px] sm:w-[310px] rounded-3xl p-5 ${currentTheme.cardBg} ${currentTheme.borderGlow} text-white flex flex-col items-center justify-between text-center transition-all duration-300 relative overflow-hidden`}
+                        className={`w-full max-w-[280px] sm:w-[310px] sm:max-w-none rounded-3xl p-5 ${currentTheme.cardBg} ${currentTheme.borderGlow} text-white flex flex-col items-center justify-between text-center transition-all duration-300 relative overflow-hidden`}
                       >
                         <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-white/10 blur-lg pointer-events-none" />
                         <div className="absolute -bottom-10 -left-10 w-28 h-28 rounded-full bg-black/20 blur-lg pointer-events-none" />
@@ -1372,7 +1620,9 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
             </div>
           )}
         </div>
-      </div>
+      </div>,
+        document.body
+      )}
 
       {/* Hidden Vector Elements for High-Res PNG Standee Rendering */}
       <div className="fixed -left-[9999px] -top-[9999px] pointer-events-none opacity-0">
