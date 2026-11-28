@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict lIMFqzSysuqVpeQqaXFLthIxiXrkd90IADYhmlbi80KmT15sHS51jzkGH7PV9FA
+\restrict oGphHUq8oLDWDAsccpUjYMTJtsiFKH4hpWr9GdVmPtUi02w7ZnbcKq9yZCMzC3q
 
--- Dumped from database version 16.15
--- Dumped by pg_dump version 16.15
+-- Dumped from database version 16.16
+-- Dumped by pg_dump version 16.16
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -18,6 +18,74 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+ALTER TABLE IF EXISTS ONLY public.users DROP CONSTRAINT IF EXISTS "users_deletedBy_fkey";
+ALTER TABLE IF EXISTS ONLY public.staff_members DROP CONSTRAINT IF EXISTS "staff_members_userId_fkey";
+ALTER TABLE IF EXISTS ONLY public.staff_members DROP CONSTRAINT IF EXISTS "staff_members_restaurantId_fkey";
+ALTER TABLE IF EXISTS ONLY public.restaurants DROP CONSTRAINT IF EXISTS "restaurants_ownerId_fkey";
+ALTER TABLE IF EXISTS ONLY public.restaurant_tables DROP CONSTRAINT IF EXISTS "restaurant_tables_branchId_fkey";
+ALTER TABLE IF EXISTS ONLY public.products DROP CONSTRAINT IF EXISTS "products_restaurantId_fkey";
+ALTER TABLE IF EXISTS ONLY public.products DROP CONSTRAINT IF EXISTS "products_categoryId_fkey";
+ALTER TABLE IF EXISTS ONLY public.orders DROP CONSTRAINT IF EXISTS "orders_restaurantId_fkey";
+ALTER TABLE IF EXISTS ONLY public.orders DROP CONSTRAINT IF EXISTS "orders_branchId_fkey";
+ALTER TABLE IF EXISTS ONLY public.order_items DROP CONSTRAINT IF EXISTS "order_items_productId_fkey";
+ALTER TABLE IF EXISTS ONLY public.order_items DROP CONSTRAINT IF EXISTS "order_items_orderId_fkey";
+ALTER TABLE IF EXISTS ONLY public.credit_ledger DROP CONSTRAINT IF EXISTS "credit_ledger_restaurantId_fkey";
+ALTER TABLE IF EXISTS ONLY public.categories DROP CONSTRAINT IF EXISTS "categories_restaurantId_fkey";
+ALTER TABLE IF EXISTS ONLY public.branches DROP CONSTRAINT IF EXISTS "branches_restaurantId_fkey";
+ALTER TABLE IF EXISTS ONLY public.branch_products DROP CONSTRAINT IF EXISTS "branch_products_productId_fkey";
+ALTER TABLE IF EXISTS ONLY public.branch_products DROP CONSTRAINT IF EXISTS "branch_products_branchId_fkey";
+DROP INDEX IF EXISTS public.users_email_key;
+DROP INDEX IF EXISTS public."staff_members_userId_idx";
+DROP INDEX IF EXISTS public."staff_members_restaurantId_userId_key";
+DROP INDEX IF EXISTS public."staff_members_restaurantId_idx";
+DROP INDEX IF EXISTS public.restaurants_slug_key;
+DROP INDEX IF EXISTS public."restaurant_tables_branchId_tableNumber_key";
+DROP INDEX IF EXISTS public."restaurant_tables_branchId_idx";
+DROP INDEX IF EXISTS public.packs_code_key;
+DROP INDEX IF EXISTS public.help_articles_slug_key;
+DROP INDEX IF EXISTS public."credit_ledger_restaurantId_idx";
+DROP INDEX IF EXISTS public.branches_slug_key;
+DROP INDEX IF EXISTS public."branch_products_branchId_productId_key";
+ALTER TABLE IF EXISTS ONLY public.users DROP CONSTRAINT IF EXISTS users_pkey;
+ALTER TABLE IF EXISTS ONLY public.staff_members DROP CONSTRAINT IF EXISTS staff_members_pkey;
+ALTER TABLE IF EXISTS ONLY public.restaurants DROP CONSTRAINT IF EXISTS restaurants_pkey;
+ALTER TABLE IF EXISTS ONLY public.restaurant_tables DROP CONSTRAINT IF EXISTS restaurant_tables_pkey;
+ALTER TABLE IF EXISTS ONLY public.products DROP CONSTRAINT IF EXISTS products_pkey;
+ALTER TABLE IF EXISTS ONLY public.platform_settings DROP CONSTRAINT IF EXISTS platform_settings_pkey;
+ALTER TABLE IF EXISTS ONLY public.packs DROP CONSTRAINT IF EXISTS packs_pkey;
+ALTER TABLE IF EXISTS ONLY public.orders DROP CONSTRAINT IF EXISTS orders_pkey;
+ALTER TABLE IF EXISTS ONLY public.order_items DROP CONSTRAINT IF EXISTS order_items_pkey;
+ALTER TABLE IF EXISTS ONLY public.help_articles DROP CONSTRAINT IF EXISTS help_articles_pkey;
+ALTER TABLE IF EXISTS ONLY public.custom_languages DROP CONSTRAINT IF EXISTS custom_languages_pkey;
+ALTER TABLE IF EXISTS ONLY public.credit_ledger DROP CONSTRAINT IF EXISTS credit_ledger_pkey;
+ALTER TABLE IF EXISTS ONLY public.categories DROP CONSTRAINT IF EXISTS categories_pkey;
+ALTER TABLE IF EXISTS ONLY public.branches DROP CONSTRAINT IF EXISTS branches_pkey;
+ALTER TABLE IF EXISTS ONLY public.branch_products DROP CONSTRAINT IF EXISTS branch_products_pkey;
+ALTER TABLE IF EXISTS ONLY public._prisma_migrations DROP CONSTRAINT IF EXISTS _prisma_migrations_pkey;
+ALTER TABLE IF EXISTS public.orders ALTER COLUMN "orderNumber" DROP DEFAULT;
+DROP TABLE IF EXISTS public.users;
+DROP TABLE IF EXISTS public.staff_members;
+DROP TABLE IF EXISTS public.restaurants;
+DROP TABLE IF EXISTS public.restaurant_tables;
+DROP TABLE IF EXISTS public.products;
+DROP TABLE IF EXISTS public.platform_settings;
+DROP TABLE IF EXISTS public.packs;
+DROP SEQUENCE IF EXISTS public."orders_orderNumber_seq";
+DROP TABLE IF EXISTS public.orders;
+DROP TABLE IF EXISTS public.order_items;
+DROP TABLE IF EXISTS public.help_articles;
+DROP TABLE IF EXISTS public.custom_languages;
+DROP TABLE IF EXISTS public.credit_ledger;
+DROP TABLE IF EXISTS public.categories;
+DROP TABLE IF EXISTS public.branches;
+DROP TABLE IF EXISTS public.branch_products;
+DROP TABLE IF EXISTS public._prisma_migrations;
+DROP TYPE IF EXISTS public."Role";
+DROP TYPE IF EXISTS public."PaymentStatus";
+DROP TYPE IF EXISTS public."PaymentMethod";
+DROP TYPE IF EXISTS public."OrderType";
+DROP TYPE IF EXISTS public."OrderStatus";
+-- *not* dropping schema, since initdb creates it
 --
 -- Name: public; Type: SCHEMA; Schema: -; Owner: qr_admin
 --
@@ -68,7 +136,8 @@ ALTER TYPE public."OrderType" OWNER TO qr_admin;
 
 CREATE TYPE public."PaymentMethod" AS ENUM (
     'CASH',
-    'STRIPE'
+    'STRIPE',
+    'UPI'
 );
 
 
@@ -178,11 +247,67 @@ CREATE TABLE public.categories (
     "updatedAt" timestamp(3) without time zone NOT NULL,
     "isDeleted" boolean DEFAULT false NOT NULL,
     "deletedAt" timestamp(3) without time zone,
-    "deletedBy" text
+    "deletedBy" text,
+    translations jsonb DEFAULT '{}'::jsonb
 );
 
 
 ALTER TABLE public.categories OWNER TO qr_admin;
+
+--
+-- Name: credit_ledger; Type: TABLE; Schema: public; Owner: qr_admin
+--
+
+CREATE TABLE public.credit_ledger (
+    id text NOT NULL,
+    "restaurantId" text NOT NULL,
+    delta integer NOT NULL,
+    reason text NOT NULL,
+    "refId" text,
+    "balanceAfter" integer NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.credit_ledger OWNER TO qr_admin;
+
+--
+-- Name: custom_languages; Type: TABLE; Schema: public; Owner: qr_admin
+--
+
+CREATE TABLE public.custom_languages (
+    code text NOT NULL,
+    name text NOT NULL,
+    "nativeName" text NOT NULL,
+    flag text DEFAULT '🌐'::text NOT NULL,
+    direction text DEFAULT 'ltr'::text NOT NULL,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public.custom_languages OWNER TO qr_admin;
+
+--
+-- Name: help_articles; Type: TABLE; Schema: public; Owner: qr_admin
+--
+
+CREATE TABLE public.help_articles (
+    id text NOT NULL,
+    title text NOT NULL,
+    slug text NOT NULL,
+    content text NOT NULL,
+    audience text DEFAULT 'ALL'::text NOT NULL,
+    category text DEFAULT 'General'::text NOT NULL,
+    "sortOrder" integer DEFAULT 0 NOT NULL,
+    "isPublished" boolean DEFAULT true NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public.help_articles OWNER TO qr_admin;
 
 --
 -- Name: order_items; Type: TABLE; Schema: public; Owner: qr_admin
@@ -225,7 +350,10 @@ CREATE TABLE public.orders (
     "cancelReason" text,
     "cancelledAt" timestamp(3) without time zone,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "updatedAt" timestamp(3) without time zone NOT NULL
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "estimatedReadyAt" timestamp(3) without time zone,
+    "prepStartedAt" timestamp(3) without time zone,
+    "prepTimeMinutes" integer
 );
 
 
@@ -254,6 +382,46 @@ ALTER SEQUENCE public."orders_orderNumber_seq" OWNED BY public.orders."orderNumb
 
 
 --
+-- Name: packs; Type: TABLE; Schema: public; Owner: qr_admin
+--
+
+CREATE TABLE public.packs (
+    id text NOT NULL,
+    code text NOT NULL,
+    name text NOT NULL,
+    "ordersCount" integer NOT NULL,
+    "bonusCredits" integer DEFAULT 0 NOT NULL,
+    "priceUsd" numeric(10,2) NOT NULL,
+    "priceInr" numeric(10,2) NOT NULL,
+    "regionalPricingJson" jsonb,
+    "featuresJson" jsonb,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "sortOrder" integer DEFAULT 0 NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public.packs OWNER TO qr_admin;
+
+--
+-- Name: platform_settings; Type: TABLE; Schema: public; Owner: qr_admin
+--
+
+CREATE TABLE public.platform_settings (
+    key text NOT NULL,
+    value jsonb NOT NULL,
+    description text,
+    "isSecret" boolean DEFAULT false NOT NULL,
+    "updatedBy" text,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.platform_settings OWNER TO qr_admin;
+
+--
 -- Name: products; Type: TABLE; Schema: public; Owner: qr_admin
 --
 
@@ -269,11 +437,30 @@ CREATE TABLE public.products (
     "updatedAt" timestamp(3) without time zone NOT NULL,
     "isDeleted" boolean DEFAULT false NOT NULL,
     "deletedAt" timestamp(3) without time zone,
-    "deletedBy" text
+    "deletedBy" text,
+    translations jsonb DEFAULT '{}'::jsonb
 );
 
 
 ALTER TABLE public.products OWNER TO qr_admin;
+
+--
+-- Name: restaurant_tables; Type: TABLE; Schema: public; Owner: qr_admin
+--
+
+CREATE TABLE public.restaurant_tables (
+    id text NOT NULL,
+    "branchId" text NOT NULL,
+    "tableNumber" text NOT NULL,
+    section text DEFAULT 'Main Room'::text NOT NULL,
+    capacity integer DEFAULT 4 NOT NULL,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public.restaurant_tables OWNER TO qr_admin;
 
 --
 -- Name: restaurants; Type: TABLE; Schema: public; Owner: qr_admin
@@ -294,7 +481,8 @@ CREATE TABLE public.restaurants (
     "deletedBy" text,
     "defaultCurrency" text DEFAULT 'INR'::text NOT NULL,
     "themeConfig" jsonb,
-    "paymentConfig" jsonb
+    "paymentConfig" jsonb,
+    "creditBalance" integer DEFAULT 100 NOT NULL
 );
 
 
@@ -619,27 +807,51 @@ de8718fe-8eed-4c2a-9731-719126c65a46	c7093d5d-30fc-45b9-97a3-06087377d576	Theppa
 -- Data for Name: categories; Type: TABLE DATA; Schema: public; Owner: qr_admin
 --
 
-COPY public.categories (id, "restaurantId", name, description, "sortOrder", "isActive", "createdAt", "updatedAt", "isDeleted", "deletedAt", "deletedBy") FROM stdin;
-26bab23d-b9d6-43a1-b22e-2d5eac220ebc	e75df15d-3735-4332-bc45-ab5a73eef323	Main Dish	Fresh foods	0	t	2026-10-29 09:10:39.307	2026-10-29 09:10:39.307	f	\N	\N
-1bea977f-cf92-4a95-a0e3-172aee08da4e	c7093d5d-30fc-45b9-97a3-06087377d576	Soups & Shorbas	Slow-simmered aromatic broths, traditional country soups and warming bowls	1	t	2026-11-14 07:22:25.266	2026-11-14 07:22:25.266	f	\N	\N
-a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	c7093d5d-30fc-45b9-97a3-06087377d576	Non-Veg Starters & Appetizers	Crispy fried chicken, pan-seared mutton varuval, and fiery dry roasts	2	t	2026-10-29 07:25:37.512	2026-11-14 07:22:25.74	f	\N	\N
-2e0f92dc-9d07-4cb2-a97e-e98eef597edc	c7093d5d-30fc-45b9-97a3-06087377d576	Seafood Delicacies	Fresh sea catches, spiced king fish fry, juicy prawn roasts, and crab curries	3	t	2026-11-14 07:22:26.073	2026-11-14 07:22:26.073	f	\N	\N
-d48051f2-4ff5-46b3-8d71-a92da16deb35	c7093d5d-30fc-45b9-97a3-06087377d576	Biryani & Pulao	Legendary wood-fire dum biryanis made with authentic Seeraga Samba and Basmati rice	4	t	2026-11-14 07:22:26.394	2026-11-14 07:22:26.394	f	\N	\N
-506860ac-7a1f-442a-a9ce-70ef2fd1b44a	c7093d5d-30fc-45b9-97a3-06087377d576	Non-Veg Gravies & Curries	Stone-ground coconut curries, rich mutton korma, and spicy Chettinad gravies	5	t	2026-11-14 07:22:26.613	2026-11-14 07:22:26.613	f	\N	\N
-a6529165-150c-4b01-a51d-0349a2fa1244	c7093d5d-30fc-45b9-97a3-06087377d576	Tandoori & Kebabs	Clay oven delicacies charred over red-hot coals with authentic spices	6	t	2026-11-14 07:22:26.855	2026-11-14 07:22:26.855	f	\N	\N
-7acad2bd-9545-4c8f-af76-8d7b29079f7f	c7093d5d-30fc-45b9-97a3-06087377d576	Breads & Parottas	Flaky layered Malabar parottas, Madurai bun parottas, and piping hot kothus	7	t	2026-11-14 07:22:27.099	2026-11-14 07:22:27.099	f	\N	\N
-440af1f2-61dd-46f1-8017-cac00427f8f5	c7093d5d-30fc-45b9-97a3-06087377d576	Traditional Meals & Combos	Grand festive banana leaf meals, curated biryani platters, and executive feasts	8	t	2026-11-14 07:22:27.333	2026-11-14 07:22:27.333	f	\N	\N
-d7d430c8-0397-4266-9238-8f80ff405af0	c7093d5d-30fc-45b9-97a3-06087377d576	Indo-Chinese Specialties	Flavorsome wok-tossed fried rice, spicy hakka noodles, and Manchurian sauced chicken	9	t	2026-11-14 07:22:27.534	2026-11-14 07:22:27.534	f	\N	\N
-adccb351-0ba9-46a6-859b-6d71aa5acb9e	c7093d5d-30fc-45b9-97a3-06087377d576	Desserts & Sweet Endings	Authentic Madurai Jigarthanda, creamy elaneer payasam, and royal Indian sweets	10	t	2026-11-14 07:22:27.764	2026-11-14 07:22:27.764	f	\N	\N
-86609375-4c2c-452f-8e8a-4fc488262a6d	c7093d5d-30fc-45b9-97a3-06087377d576	Beverages & Coolers	Refreshing traditional thirst quenchers, Madurai degree coffee, and milk coolers	11	t	2026-11-14 07:22:28.005	2026-11-14 07:22:28.005	f	\N	\N
-d20dd5a6-2914-4683-8ccf-64befade0ff3	c7093d5d-30fc-45b9-97a3-06087377d576	Egg Delicacies (Muttai Special)	Iconic Madurai kalaki, fluffy karandi omelettes, and spicy muttai varuval	12	t	2026-11-14 07:33:32.206	2026-11-14 07:33:32.206	f	\N	\N
-a1b14c4c-00fb-4af7-867c-538075ca50d3	c7093d5d-30fc-45b9-97a3-06087377d576	Chef's Tiffin Specials	Madurai kari idli, keema parottas, and coin parotta combos drenched in rich gravy	13	t	2026-11-14 07:33:33.091	2026-11-14 07:33:33.091	f	\N	\N
-31c6b7b4-78fa-4ec9-986a-6798e2929946	c7093d5d-30fc-45b9-97a3-06087377d576	Mutton Offal & Chukka (Aattukkari Special)	Traditional slow-cooked trotters paaya, spiced brain fry, and tender liver chukka	14	t	2026-11-14 07:33:33.78	2026-11-14 07:33:33.78	f	\N	\N
-30a54cb0-0807-4328-aeee-0c7cc26ef960	c7093d5d-30fc-45b9-97a3-06087377d576	Country Chicken Specials (Nattu Kozhi Sirappu)	Pallipalayam chicken, Chinthamani roasts, and free-range Kongunadu delicacies	15	t	2026-11-14 07:33:34.499	2026-11-14 07:33:34.499	f	\N	\N
-9d85564c-2f28-4506-8f20-d2305f598342	c7093d5d-30fc-45b9-97a3-06087377d576	Accompaniments & Dips (Thottukka)	Roadside mutton salna, street-style empty salnas, raitas, and tangy gravies	16	t	2026-11-14 07:33:35.127	2026-11-14 07:33:35.127	f	\N	\N
-3221f85f-3853-4614-8cf3-7b668e487e90	c7093d5d-30fc-45b9-97a3-06087377d576	Quick Rolls & Kebab Wraps	Tandoori chicken kathi rolls, egg parotta wraps, and shawarma pockets	17	t	2026-11-14 07:33:35.698	2026-11-14 07:33:35.698	f	\N	\N
-d529fbfa-f95d-46f4-84d1-0327553b1e22	c7093d5d-30fc-45b9-97a3-06087377d576	Signature Rice Bowls & Combos	Hearty one-bowl meals combining ghee rice, pepper chukka, and biryani blends	18	t	2026-11-14 07:33:36.268	2026-11-14 07:33:36.268	f	\N	\N
-a4f13b66-2945-4946-b193-52b691f31cde	c7093d5d-30fc-45b9-97a3-06087377d576	Evening Snacks & Fry Bites	Crispy fried chicken pakodas, fish fingers, and mutton kola urundais	19	t	2026-11-14 07:33:36.851	2026-11-14 07:33:36.851	f	\N	\N
+COPY public.categories (id, "restaurantId", name, description, "sortOrder", "isActive", "createdAt", "updatedAt", "isDeleted", "deletedAt", "deletedBy", translations) FROM stdin;
+26bab23d-b9d6-43a1-b22e-2d5eac220ebc	e75df15d-3735-4332-bc45-ab5a73eef323	Main Dish	Fresh foods	0	t	2026-10-29 09:10:39.307	2026-10-29 09:10:39.307	f	\N	\N	{}
+1bea977f-cf92-4a95-a0e3-172aee08da4e	c7093d5d-30fc-45b9-97a3-06087377d576	Soups & Shorbas	Slow-simmered aromatic broths, traditional country soups and warming bowls	1	t	2026-11-14 07:22:25.266	2026-11-14 07:22:25.266	f	\N	\N	{}
+a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	c7093d5d-30fc-45b9-97a3-06087377d576	Non-Veg Starters & Appetizers	Crispy fried chicken, pan-seared mutton varuval, and fiery dry roasts	2	t	2026-10-29 07:25:37.512	2026-11-14 07:22:25.74	f	\N	\N	{}
+2e0f92dc-9d07-4cb2-a97e-e98eef597edc	c7093d5d-30fc-45b9-97a3-06087377d576	Seafood Delicacies	Fresh sea catches, spiced king fish fry, juicy prawn roasts, and crab curries	3	t	2026-11-14 07:22:26.073	2026-11-14 07:22:26.073	f	\N	\N	{}
+d48051f2-4ff5-46b3-8d71-a92da16deb35	c7093d5d-30fc-45b9-97a3-06087377d576	Biryani & Pulao	Legendary wood-fire dum biryanis made with authentic Seeraga Samba and Basmati rice	4	t	2026-11-14 07:22:26.394	2026-11-14 07:22:26.394	f	\N	\N	{}
+506860ac-7a1f-442a-a9ce-70ef2fd1b44a	c7093d5d-30fc-45b9-97a3-06087377d576	Non-Veg Gravies & Curries	Stone-ground coconut curries, rich mutton korma, and spicy Chettinad gravies	5	t	2026-11-14 07:22:26.613	2026-11-14 07:22:26.613	f	\N	\N	{}
+a6529165-150c-4b01-a51d-0349a2fa1244	c7093d5d-30fc-45b9-97a3-06087377d576	Tandoori & Kebabs	Clay oven delicacies charred over red-hot coals with authentic spices	6	t	2026-11-14 07:22:26.855	2026-11-14 07:22:26.855	f	\N	\N	{}
+7acad2bd-9545-4c8f-af76-8d7b29079f7f	c7093d5d-30fc-45b9-97a3-06087377d576	Breads & Parottas	Flaky layered Malabar parottas, Madurai bun parottas, and piping hot kothus	7	t	2026-11-14 07:22:27.099	2026-11-14 07:22:27.099	f	\N	\N	{}
+440af1f2-61dd-46f1-8017-cac00427f8f5	c7093d5d-30fc-45b9-97a3-06087377d576	Traditional Meals & Combos	Grand festive banana leaf meals, curated biryani platters, and executive feasts	8	t	2026-11-14 07:22:27.333	2026-11-14 07:22:27.333	f	\N	\N	{}
+d7d430c8-0397-4266-9238-8f80ff405af0	c7093d5d-30fc-45b9-97a3-06087377d576	Indo-Chinese Specialties	Flavorsome wok-tossed fried rice, spicy hakka noodles, and Manchurian sauced chicken	9	t	2026-11-14 07:22:27.534	2026-11-14 07:22:27.534	f	\N	\N	{}
+adccb351-0ba9-46a6-859b-6d71aa5acb9e	c7093d5d-30fc-45b9-97a3-06087377d576	Desserts & Sweet Endings	Authentic Madurai Jigarthanda, creamy elaneer payasam, and royal Indian sweets	10	t	2026-11-14 07:22:27.764	2026-11-14 07:22:27.764	f	\N	\N	{}
+86609375-4c2c-452f-8e8a-4fc488262a6d	c7093d5d-30fc-45b9-97a3-06087377d576	Beverages & Coolers	Refreshing traditional thirst quenchers, Madurai degree coffee, and milk coolers	11	t	2026-11-14 07:22:28.005	2026-11-14 07:22:28.005	f	\N	\N	{}
+d20dd5a6-2914-4683-8ccf-64befade0ff3	c7093d5d-30fc-45b9-97a3-06087377d576	Egg Delicacies (Muttai Special)	Iconic Madurai kalaki, fluffy karandi omelettes, and spicy muttai varuval	12	t	2026-11-14 07:33:32.206	2026-11-14 07:33:32.206	f	\N	\N	{}
+a1b14c4c-00fb-4af7-867c-538075ca50d3	c7093d5d-30fc-45b9-97a3-06087377d576	Chef's Tiffin Specials	Madurai kari idli, keema parottas, and coin parotta combos drenched in rich gravy	13	t	2026-11-14 07:33:33.091	2026-11-14 07:33:33.091	f	\N	\N	{}
+31c6b7b4-78fa-4ec9-986a-6798e2929946	c7093d5d-30fc-45b9-97a3-06087377d576	Mutton Offal & Chukka (Aattukkari Special)	Traditional slow-cooked trotters paaya, spiced brain fry, and tender liver chukka	14	t	2026-11-14 07:33:33.78	2026-11-14 07:33:33.78	f	\N	\N	{}
+30a54cb0-0807-4328-aeee-0c7cc26ef960	c7093d5d-30fc-45b9-97a3-06087377d576	Country Chicken Specials (Nattu Kozhi Sirappu)	Pallipalayam chicken, Chinthamani roasts, and free-range Kongunadu delicacies	15	t	2026-11-14 07:33:34.499	2026-11-14 07:33:34.499	f	\N	\N	{}
+9d85564c-2f28-4506-8f20-d2305f598342	c7093d5d-30fc-45b9-97a3-06087377d576	Accompaniments & Dips (Thottukka)	Roadside mutton salna, street-style empty salnas, raitas, and tangy gravies	16	t	2026-11-14 07:33:35.127	2026-11-14 07:33:35.127	f	\N	\N	{}
+3221f85f-3853-4614-8cf3-7b668e487e90	c7093d5d-30fc-45b9-97a3-06087377d576	Quick Rolls & Kebab Wraps	Tandoori chicken kathi rolls, egg parotta wraps, and shawarma pockets	17	t	2026-11-14 07:33:35.698	2026-11-14 07:33:35.698	f	\N	\N	{}
+d529fbfa-f95d-46f4-84d1-0327553b1e22	c7093d5d-30fc-45b9-97a3-06087377d576	Signature Rice Bowls & Combos	Hearty one-bowl meals combining ghee rice, pepper chukka, and biryani blends	18	t	2026-11-14 07:33:36.268	2026-11-14 07:33:36.268	f	\N	\N	{}
+a4f13b66-2945-4946-b193-52b691f31cde	c7093d5d-30fc-45b9-97a3-06087377d576	Evening Snacks & Fry Bites	Crispy fried chicken pakodas, fish fingers, and mutton kola urundais	19	t	2026-11-14 07:33:36.851	2026-11-14 07:33:36.851	f	\N	\N	{}
+\.
+
+
+--
+-- Data for Name: credit_ledger; Type: TABLE DATA; Schema: public; Owner: qr_admin
+--
+
+COPY public.credit_ledger (id, "restaurantId", delta, reason, "refId", "balanceAfter", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: custom_languages; Type: TABLE DATA; Schema: public; Owner: qr_admin
+--
+
+COPY public.custom_languages (code, name, "nativeName", flag, direction, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: help_articles; Type: TABLE DATA; Schema: public; Owner: qr_admin
+--
+
+COPY public.help_articles (id, title, slug, content, audience, category, "sortOrder", "isPublished", "createdAt", "updatedAt") FROM stdin;
 \.
 
 
@@ -662,14 +874,30 @@ ec7bc693-b3af-44c6-b0e0-ab654b15e6bd	da089701-58b0-4ca1-aff5-b94450de2c2f	c8afc9
 -- Data for Name: orders; Type: TABLE DATA; Schema: public; Owner: qr_admin
 --
 
-COPY public.orders (id, "orderNumber", "restaurantId", "branchId", "tableNumber", "customerName", "customerPhone", "orderNotes", "orderType", status, "paymentMethod", "paymentStatus", subtotal, tax, "totalAmount", "cancelReason", "cancelledAt", "createdAt", "updatedAt") FROM stdin;
-5caaaa09-37ea-4117-acf3-f2ad148b1f61	1	c7093d5d-30fc-45b9-97a3-06087377d576	e143f84d-1a44-4fb6-bdf3-56c1125696ac	Table 5	Ramesh Kumar	9840123456	Extra spicy please	DINE_IN	COMPLETED	CASH	PAID	500.00	25.00	525.00	Out of ingredients	2026-11-06 06:31:52.416	2026-11-14 14:35:39.822	2026-11-06 06:31:52.417
-ea1cdf56-41c2-4bb7-98d8-768b2eb13d1c	2	e75df15d-3735-4332-bc45-ab5a73eef323	cce75ec3-1e9b-4e15-a179-d5b0b43a5808	Table 2	Priya S	9876500000	Mild spices	DINE_IN	CANCELLED	CASH	PENDING	120.00	6.00	126.00	Out of ingredients	2026-11-06 05:38:31.383	2026-11-14 14:35:39.822	2026-11-06 05:38:31.384
-30407cb4-0d09-4be4-88e0-9d1603fe0c0f	3	e75df15d-3735-4332-bc45-ab5a73eef323	cce75ec3-1e9b-4e15-a179-d5b0b43a5808	3	Diner Table 3	N/A	Hot sambar please	DINE_IN	PENDING	CASH	PENDING	240.00	12.00	252.00	\N	\N	2026-11-14 14:35:39.822	2026-11-06 05:59:30.043
-acefd425-a50f-4534-b092-699bd90b9bcd	5	c7093d5d-30fc-45b9-97a3-06087377d576	de8718fe-8eed-4c2a-9731-719126c65a46	12	babu	12345654345	less spicy	DINE_IN	CANCELLED	CASH	PENDING	200.00	10.00	210.00	Cancelled by staff	2026-11-06 06:47:12.451	2026-11-14 14:35:39.822	2026-11-06 06:47:12.453
-da089701-58b0-4ca1-aff5-b94450de2c2f	7	c7093d5d-30fc-45b9-97a3-06087377d576	de8718fe-8eed-4c2a-9731-719126c65a46	1	babu	8765678765	\N	DINE_IN	PENDING	CASH	PAID	200.00	10.00	210.00	\N	\N	2026-11-14 14:35:39.822	2026-11-12 08:27:15.54
-11d87454-a03a-4e4b-9105-586f4ce6c50f	6	c7093d5d-30fc-45b9-97a3-06087377d576	de8718fe-8eed-4c2a-9731-719126c65a46	t1	babu	8765678765	no oil	DINE_IN	PREPARING	CASH	PAID	200.00	10.00	210.00	\N	\N	2026-11-14 14:35:39.822	2026-11-06 07:34:05.464
-1b3c9f30-49ad-4606-bb58-cdd57af82086	4	c7093d5d-30fc-45b9-97a3-06087377d576	de8718fe-8eed-4c2a-9731-719126c65a46	12	babu	12345654345	less spicy	DINE_IN	READY	CASH	PAID	200.00	10.00	210.00	\N	\N	2026-11-14 14:35:39.822	2026-11-06 07:33:31.368
+COPY public.orders (id, "orderNumber", "restaurantId", "branchId", "tableNumber", "customerName", "customerPhone", "orderNotes", "orderType", status, "paymentMethod", "paymentStatus", subtotal, tax, "totalAmount", "cancelReason", "cancelledAt", "createdAt", "updatedAt", "estimatedReadyAt", "prepStartedAt", "prepTimeMinutes") FROM stdin;
+5caaaa09-37ea-4117-acf3-f2ad148b1f61	1	c7093d5d-30fc-45b9-97a3-06087377d576	e143f84d-1a44-4fb6-bdf3-56c1125696ac	Table 5	Ramesh Kumar	9840123456	Extra spicy please	DINE_IN	COMPLETED	CASH	PAID	500.00	25.00	525.00	Out of ingredients	2026-11-06 06:31:52.416	2026-11-14 14:35:39.822	2026-11-06 06:31:52.417	\N	\N	\N
+ea1cdf56-41c2-4bb7-98d8-768b2eb13d1c	2	e75df15d-3735-4332-bc45-ab5a73eef323	cce75ec3-1e9b-4e15-a179-d5b0b43a5808	Table 2	Priya S	9876500000	Mild spices	DINE_IN	CANCELLED	CASH	PENDING	120.00	6.00	126.00	Out of ingredients	2026-11-06 05:38:31.383	2026-11-14 14:35:39.822	2026-11-06 05:38:31.384	\N	\N	\N
+30407cb4-0d09-4be4-88e0-9d1603fe0c0f	3	e75df15d-3735-4332-bc45-ab5a73eef323	cce75ec3-1e9b-4e15-a179-d5b0b43a5808	3	Diner Table 3	N/A	Hot sambar please	DINE_IN	PENDING	CASH	PENDING	240.00	12.00	252.00	\N	\N	2026-11-14 14:35:39.822	2026-11-06 05:59:30.043	\N	\N	\N
+acefd425-a50f-4534-b092-699bd90b9bcd	5	c7093d5d-30fc-45b9-97a3-06087377d576	de8718fe-8eed-4c2a-9731-719126c65a46	12	babu	12345654345	less spicy	DINE_IN	CANCELLED	CASH	PENDING	200.00	10.00	210.00	Cancelled by staff	2026-11-06 06:47:12.451	2026-11-14 14:35:39.822	2026-11-06 06:47:12.453	\N	\N	\N
+da089701-58b0-4ca1-aff5-b94450de2c2f	7	c7093d5d-30fc-45b9-97a3-06087377d576	de8718fe-8eed-4c2a-9731-719126c65a46	1	babu	8765678765	\N	DINE_IN	PENDING	CASH	PAID	200.00	10.00	210.00	\N	\N	2026-11-14 14:35:39.822	2026-11-12 08:27:15.54	\N	\N	\N
+11d87454-a03a-4e4b-9105-586f4ce6c50f	6	c7093d5d-30fc-45b9-97a3-06087377d576	de8718fe-8eed-4c2a-9731-719126c65a46	t1	babu	8765678765	no oil	DINE_IN	PREPARING	CASH	PAID	200.00	10.00	210.00	\N	\N	2026-11-14 14:35:39.822	2026-11-06 07:34:05.464	\N	\N	\N
+1b3c9f30-49ad-4606-bb58-cdd57af82086	4	c7093d5d-30fc-45b9-97a3-06087377d576	de8718fe-8eed-4c2a-9731-719126c65a46	12	babu	12345654345	less spicy	DINE_IN	READY	CASH	PAID	200.00	10.00	210.00	\N	\N	2026-11-14 14:35:39.822	2026-11-06 07:33:31.368	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: packs; Type: TABLE DATA; Schema: public; Owner: qr_admin
+--
+
+COPY public.packs (id, code, name, "ordersCount", "bonusCredits", "priceUsd", "priceInr", "regionalPricingJson", "featuresJson", "isActive", "sortOrder", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: platform_settings; Type: TABLE DATA; Schema: public; Owner: qr_admin
+--
+
+COPY public.platform_settings (key, value, description, "isSecret", "updatedBy", "updatedAt", "createdAt") FROM stdin;
 \.
 
 
@@ -677,124 +905,132 @@ da089701-58b0-4ca1-aff5-b94450de2c2f	7	c7093d5d-30fc-45b9-97a3-06087377d576	de87
 -- Data for Name: products; Type: TABLE DATA; Schema: public; Owner: qr_admin
 --
 
-COPY public.products (id, "restaurantId", "categoryId", name, description, "basePrice", "imageUrl", "createdAt", "updatedAt", "isDeleted", "deletedAt", "deletedBy") FROM stdin;
-ca92a1ab-26ac-44f7-a3f1-0690a7d5b9ad	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Masala Dosa	Served with coconut chutney	20.00	products/1793258852075-267b8910-c3c1-410b-8e64-eb2264984666.jpeg	2026-10-29 07:27:32.077	2026-10-29 07:29:44.227	t	2026-10-29 07:29:44.224	c8b82f45-4ebe-48b3-9024-1466158c6177
-6a15f672-5c46-48f0-84e8-1ca30ae609a5	e75df15d-3735-4332-bc45-ab5a73eef323	26bab23d-b9d6-43a1-b22e-2d5eac220ebc	Meals	Served with rice and differnt type sauce	200.00	products/1793265202409-44bb94ea-440e-4853-931f-c6524542983c.png	2026-10-29 09:13:22.412	2026-10-30 12:26:04.508	f	\N	\N
-b0699d36-2967-42d9-b46c-86ee549f5915	c7093d5d-30fc-45b9-97a3-06087377d576	1bea977f-cf92-4a95-a0e3-172aee08da4e	Mutton Bone Shorba	Slow-simmered rich mutton bone marrow broth infused with crushed black pepper, shallots, and fragrant Chettinad spices.	180.00	products/mutton-bone-shorba.jpg	2026-11-14 07:22:25.524	2026-11-14 07:22:25.524	f	\N	\N
-41eb35a9-418b-4a7d-8283-50a2e9bb5679	c7093d5d-30fc-45b9-97a3-06087377d576	1bea977f-cf92-4a95-a0e3-172aee08da4e	Nattu Kozhi Soup	Traditional free-range country chicken broth simmered with roasted coriander seeds, garlic cloves, and fresh curry leaves.	160.00	products/nattu-kozhi-soup.jpg	2026-11-14 07:22:25.582	2026-11-14 07:22:25.582	f	\N	\N
-9e37bb27-3769-46c7-a5bc-5b5fe41f70e0	c7093d5d-30fc-45b9-97a3-06087377d576	1bea977f-cf92-4a95-a0e3-172aee08da4e	Crab Pepper Soup	Fiery aromatic mud crab soup infused with crushed Tellicherry black pepper, cumin, and fresh cilantro.	190.00	products/crab-pepper-soup.jpg	2026-11-14 07:22:25.62	2026-11-14 07:22:25.62	f	\N	\N
-f46892a1-0c84-4249-8c04-a239ce23128a	c7093d5d-30fc-45b9-97a3-06087377d576	1bea977f-cf92-4a95-a0e3-172aee08da4e	Chicken Sweet Corn Soup	Warm comforting creamy sweet corn soup with shredded chicken breast and velvety egg drop ribbons.	150.00	products/chicken-sweet-corn-soup.jpg	2026-11-14 07:22:25.662	2026-11-14 07:22:25.662	f	\N	\N
-878ae9fb-a74f-4fea-971f-c07b4f3de7a7	c7093d5d-30fc-45b9-97a3-06087377d576	1bea977f-cf92-4a95-a0e3-172aee08da4e	Chicken Hot & Sour Soup	Tangy and spicy thick broth packed with tender chicken strips, black fungus, bamboo shoots, and green chili.	150.00	products/chicken-hot-sour-soup.jpg	2026-11-14 07:22:25.697	2026-11-14 07:22:25.697	f	\N	\N
-80368e9c-cb18-45eb-97c0-425ee0d053d5	c7093d5d-30fc-45b9-97a3-06087377d576	1bea977f-cf92-4a95-a0e3-172aee08da4e	Chicken Manchow Soup	Spicy Indo-Chinese chicken garlic soup served piping hot, crowned with crisp fried noodles and scallions.	160.00	products/chicken-manchow-soup.jpg	2026-11-14 07:22:25.733	2026-11-14 07:22:25.733	f	\N	\N
-c8afc9c4-0a22-4d93-9e8e-f4a776c02496	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Dragon chicken	Crispy tender chicken strips tossed in fiery sweet-spicy sauce with roasted cashews, bell peppers, and scallions.	200.00	products/1793264878600-b6aa5f99-a40f-4939-8ab9-e13580cedfa6.jpg	2026-10-29 09:07:58.605	2026-11-14 07:22:25.746	f	\N	\N
-86470c06-8469-4aef-926f-e3544432fbc8	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Chicken 65	Authentic Chennai style deep-fried boneless chicken bites marinated in spiced curd, Kashmiri chili, and curry leaves.	190.00	products/chicken-65.jpg	2026-11-14 07:22:25.779	2026-11-14 07:22:25.779	f	\N	\N
-bca19ba9-9020-417c-9564-4c6424d76e2a	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Pepper Chicken Sukka	Tender pan-seared chicken chunks roasted dry with freshly cracked black pepper, fennel seeds, and caramelized shallots.	220.00	products/pepper-chicken-sukka.jpg	2026-11-14 07:22:25.818	2026-11-14 07:22:25.818	f	\N	\N
-bdc15e9e-9651-46b1-b212-d458ef736ab4	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Madurai Mutton Chukka	Iconic tender goat meat slow-roasted in an iron skillet with stone-ground spices, curry leaves, and country shallots.	320.00	products/madurai-mutton-chukka.jpg	2026-11-14 07:22:25.854	2026-11-14 07:22:25.854	f	\N	\N
-2b850d11-b9a1-4410-a361-e8a4822d885a	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Madurai Mutton Kola Urundai	Crispy golden fried meatballs made from spiced minced lamb, roasted gram flour, and fresh herbs.	260.00	products/madurai-mutton-kola-urundai.jpg	2026-11-14 07:22:25.967	2026-11-14 07:22:25.967	f	\N	\N
-2a1f61e7-02fc-448d-8aea-14cf0d37622c	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Nattu Kozhi Varuval	Free-range country chicken stir-fried dry in rustic village style with freshly pounded masala and gingelly oil.	240.00	products/nattu-kozhi-varuval.jpg	2026-11-14 07:22:26.02	2026-11-14 07:22:26.02	f	\N	\N
-14f83dd4-6cc2-4398-8309-8d3af7b3aea9	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Crispy Chicken Lollipop	Indo-Chinese style frenched chicken winglets marinated in chili garlic, battered, and fried until crunchily golden.	210.00	products/crispy-chicken-lollipop.jpg	2026-11-14 07:22:26.061	2026-11-14 07:22:26.061	f	\N	\N
-cd54daab-fc70-4bfd-b3e6-da47b1b21803	c7093d5d-30fc-45b9-97a3-06087377d576	2e0f92dc-9d07-4cb2-a97e-e98eef597edc	Vanjaram Fish Fry (King Fish)	Prime cut seer fish steak seasoned in spicy red chili lemon marinade and shallow-fried crisp on an iron tawa.	360.00	products/vanjaram-fish-fry-king-fish.jpg	2026-11-14 07:22:26.106	2026-11-14 07:22:26.106	f	\N	\N
-334c09bc-05a1-4125-9dfd-a65c51b23949	c7093d5d-30fc-45b9-97a3-06087377d576	2e0f92dc-9d07-4cb2-a97e-e98eef597edc	Prawn Ghee Roast	Plump tiger prawns cooked to perfection in rich golden dairy ghee with tangy Byadgi chili masala paste.	340.00	products/prawn-ghee-roast.jpg	2026-11-14 07:22:26.141	2026-11-14 07:22:26.141	f	\N	\N
-e0179bc7-0c3f-4215-9776-45324ce91ee5	c7093d5d-30fc-45b9-97a3-06087377d576	2e0f92dc-9d07-4cb2-a97e-e98eef597edc	Chettinad Crab Masala	Fresh mud crab braised semi-dry in a fiery Chettinad shallot, garlic, and freshly cracked black pepper gravy.	350.00	products/chettinad-crab-masala.jpg	2026-11-14 07:22:26.196	2026-11-14 07:22:26.196	f	\N	\N
-e8a0b2aa-645a-4423-b675-b23a61227297	c7093d5d-30fc-45b9-97a3-06087377d576	2e0f92dc-9d07-4cb2-a97e-e98eef597edc	Crispy Nethili Fish Fry	Crispy shallow-fried golden anchovies coated in aromatic spice blend with fried green chilies and curry leaves.	190.00	products/crispy-nethili-fish-fry.jpg	2026-11-14 07:22:26.236	2026-11-14 07:22:26.236	f	\N	\N
-8f700e21-6b46-4a52-a8ed-72f1fb49388d	c7093d5d-30fc-45b9-97a3-06087377d576	2e0f92dc-9d07-4cb2-a97e-e98eef597edc	Squid Pepper Fry	Tender calamari rings flash-sautéed with cracked Tellicherry black pepper, curry leaves, and sweet onions.	290.00	products/squid-pepper-fry.jpg	2026-11-14 07:22:26.311	2026-11-14 07:22:26.311	f	\N	\N
-fba6f1cc-7026-4285-9088-e09b40e3a028	c7093d5d-30fc-45b9-97a3-06087377d576	2e0f92dc-9d07-4cb2-a97e-e98eef597edc	Meen Pollichathu	Fresh coastal fish coated in rich masala, wrapped in tender banana leaves, and pan-charred over low flame.	380.00	products/meen-pollichathu.jpg	2026-11-14 07:22:26.387	2026-11-14 07:22:26.387	f	\N	\N
-60a78c4a-9f03-4545-8e2c-ac4408bed34b	c7093d5d-30fc-45b9-97a3-06087377d576	d48051f2-4ff5-46b3-8d71-a92da16deb35	Dindigul Seeraga Samba Chicken Biryani	Signature aromatic short-grain Seeraga Samba rice simmered with tender chicken, curd, mint, and secret whole spices.	240.00	products/dindigul-seeraga-samba-chicken-biryani.jpg	2026-11-14 07:22:26.421	2026-11-14 07:22:26.421	f	\N	\N
-a914607f-964e-4c1d-b396-63a2f329abb1	c7093d5d-30fc-45b9-97a3-06087377d576	d48051f2-4ff5-46b3-8d71-a92da16deb35	Thalassery Mutton Biryani	Fragrant kaima rice biryani with succulent bone-in lamb, garnished with golden fried cashews and raisins.	340.00	products/thalassery-mutton-biryani.jpg	2026-11-14 07:22:26.455	2026-11-14 07:22:26.455	f	\N	\N
-b24d4437-966f-4dc6-924e-a0fc8ec7b19c	c7093d5d-30fc-45b9-97a3-06087377d576	d48051f2-4ff5-46b3-8d71-a92da16deb35	Hyderabadi Dum Chicken Biryani	Aromatic basmati rice sealed and slow dum-cooked with saffron, rose water, and yogurt-marinated spicy chicken.	260.00	products/hyderabadi-dum-chicken-biryani.jpg	2026-11-14 07:22:26.491	2026-11-14 07:22:26.491	f	\N	\N
-5b9d78e7-244d-4436-b62b-01e574b3140d	c7093d5d-30fc-45b9-97a3-06087377d576	d48051f2-4ff5-46b3-8d71-a92da16deb35	Special Prawn Biryani	Seeraga Samba rice layered with juicy masala-spiced ocean prawns, coriander, and caramelized shallots.	360.00	products/special-prawn-biryani.jpg	2026-11-14 07:22:26.53	2026-11-14 07:22:26.53	f	\N	\N
-196caa42-2c5b-46e4-a84b-27e49089606b	c7093d5d-30fc-45b9-97a3-06087377d576	d48051f2-4ff5-46b3-8d71-a92da16deb35	Madurai Mutton Kari Soru	Traditional Madurai meat-infused rice cooked in rich lamb marrow stock, tender mutton cubes, and ghee.	350.00	products/madurai-mutton-kari-soru.jpg	2026-11-14 07:22:26.57	2026-11-14 07:22:26.57	f	\N	\N
-0186fca2-0eb9-44f1-8809-678ab6ba148d	c7093d5d-30fc-45b9-97a3-06087377d576	d48051f2-4ff5-46b3-8d71-a92da16deb35	Egg Biryani	Flavorful biryani rice served with two golden pan-roasted boiled eggs, spiced brinjal salna, and creamy onion raita.	180.00	products/egg-biryani.jpg	2026-11-14 07:22:26.605	2026-11-14 07:22:26.605	f	\N	\N
-2640ef66-b105-40a2-aa73-2b9efd37328f	c7093d5d-30fc-45b9-97a3-06087377d576	506860ac-7a1f-442a-a9ce-70ef2fd1b44a	Chettinad Chicken Curry	Tender chicken simmered slowly in stone-ground coconut, fennel, star anise, and whole red chili gravy.	230.00	products/chettinad-chicken-curry.jpg	2026-11-14 07:22:26.649	2026-11-14 07:22:26.649	f	\N	\N
-4780d9b3-23d7-4fda-88c0-03a9e4179ded	c7093d5d-30fc-45b9-97a3-06087377d576	506860ac-7a1f-442a-a9ce-70ef2fd1b44a	Madurai Kari Kuzhambu	Authentic Madurai style rustic mutton curry with bone marrow and tender goat chunks in rich spiced broth.	330.00	products/madurai-kari-kuzhambu.jpg	2026-11-14 07:22:26.686	2026-11-14 07:22:26.686	f	\N	\N
-85ccc978-df08-46c7-8e30-5da8c8f57dbf	c7093d5d-30fc-45b9-97a3-06087377d576	506860ac-7a1f-442a-a9ce-70ef2fd1b44a	Butter Chicken Masala	Charcoal-tandoor grilled chicken tikka simmered in a velvety smooth buttery tomato-cashew makhani gravy.	250.00	products/butter-chicken-masala.jpg	2026-11-14 07:22:26.723	2026-11-14 07:22:26.723	f	\N	\N
-d24f214d-54b4-4602-9a69-e35e4b2f3106	c7093d5d-30fc-45b9-97a3-06087377d576	506860ac-7a1f-442a-a9ce-70ef2fd1b44a	Alleppey Fish Curry	Fresh catch cooked in delicate coconut milk sauce infused with raw green mangoes, mustard, and curry leaves.	310.00	products/alleppey-fish-curry.jpg	2026-11-14 07:22:26.765	2026-11-14 07:22:26.765	f	\N	\N
-4f2440b7-b5aa-476d-8149-22f73c5d30c6	c7093d5d-30fc-45b9-97a3-06087377d576	506860ac-7a1f-442a-a9ce-70ef2fd1b44a	Kadai Chicken	Juicy chicken pieces tossed in wok with crunchy bell peppers, onions, and freshly roasted coriander spice mix.	240.00	products/kadai-chicken.jpg	2026-11-14 07:22:26.804	2026-11-14 07:22:26.804	f	\N	\N
-d4b16dee-5993-49ae-b5e2-cf3f7323e586	c7093d5d-30fc-45b9-97a3-06087377d576	506860ac-7a1f-442a-a9ce-70ef2fd1b44a	Nalli Elumbu Kuzhambu	Decadent slow-cooked mutton shank marrow bones simmered in thick peppery village-style gravy.	380.00	products/nalli-elumbu-kuzhambu.jpg	2026-11-14 07:22:26.844	2026-11-14 07:22:26.844	f	\N	\N
-043b301a-61c5-4095-af9a-4f20f3bf67b1	c7093d5d-30fc-45b9-97a3-06087377d576	a6529165-150c-4b01-a51d-0349a2fa1244	Tandoori Chicken (Half)	Tender bone-in chicken marinated in spiced hung yogurt, Kashmiri degi mirch, and roasted in high-heat clay tandoor.	260.00	products/tandoori-chicken-half.jpg	2026-11-14 07:22:26.887	2026-11-14 07:22:26.887	f	\N	\N
-6936a866-1999-49c3-beb5-eb0f92121769	c7093d5d-30fc-45b9-97a3-06087377d576	a6529165-150c-4b01-a51d-0349a2fa1244	Murgh Malai Tikka	Boneless chicken cubes steeped in fresh dairy cream, hung curd, melted cheese, and fragrant green cardamom.	270.00	products/murgh-malai-tikka.jpg	2026-11-14 07:22:26.929	2026-11-14 07:22:26.929	f	\N	\N
-912ee97c-0d6a-4954-ba3d-a4eff9897119	c7093d5d-30fc-45b9-97a3-06087377d576	a6529165-150c-4b01-a51d-0349a2fa1244	Mutton Seekh Kebab	Spiced minced goat meat blended with chopped mint, coriander, and ginger, skewers grilled over glowing coals.	320.00	products/mutton-seekh-kebab.jpg	2026-11-14 07:22:26.971	2026-11-14 07:22:26.971	f	\N	\N
-6b5c41b3-673e-4353-ba80-10c106f1a1f7	c7093d5d-30fc-45b9-97a3-06087377d576	a6529165-150c-4b01-a51d-0349a2fa1244	Hariyali Chicken Kebab	Juicy chicken bites coated in emerald green marinade of fresh garden mint, coriander leaves, and green chilies.	250.00	products/hariyali-chicken-kebab.jpg	2026-11-14 07:22:27.011	2026-11-14 07:22:27.011	f	\N	\N
-9470580d-5519-455f-914d-8e4e740ce529	c7093d5d-30fc-45b9-97a3-06087377d576	a6529165-150c-4b01-a51d-0349a2fa1244	Fish Tikka	Boneless fish cubes marinated in roasted gram flour, carom seeds (ajwain), and mustard oil, grilled in tandoor.	330.00	products/fish-tikka.jpg	2026-11-14 07:22:27.048	2026-11-14 07:22:27.048	f	\N	\N
-1d015b19-410d-43f3-bc46-5c1537d0742c	c7093d5d-30fc-45b9-97a3-06087377d576	a6529165-150c-4b01-a51d-0349a2fa1244	Tangdi Kebab	Plump chicken drumsticks stuffed with savory minced meat, cheese, and grilled to juicy golden perfection.	280.00	products/tangdi-kebab.jpg	2026-11-14 07:22:27.089	2026-11-14 07:22:27.089	f	\N	\N
-0c1e01dc-a7fe-4a58-853b-76b3b9285b44	c7093d5d-30fc-45b9-97a3-06087377d576	7acad2bd-9545-4c8f-af76-8d7b29079f7f	Malabar Parotta (2 Pcs)	Signature flaky, golden, layered flatbread beaten hot and served with complimentary non-veg salna.	60.00	products/malabar-parotta-2-pcs.jpg	2026-11-14 07:22:27.128	2026-11-14 07:22:27.128	f	\N	\N
-71ec03b6-9c23-4a24-b7a8-223baa103d1d	c7093d5d-30fc-45b9-97a3-06087377d576	7acad2bd-9545-4c8f-af76-8d7b29079f7f	Madurai Bun Parotta	Iconic Madurai spiral layered bread, deeply fried golden-crisp on outside and soft pillowy inside.	50.00	products/madurai-bun-parotta.jpg	2026-11-14 07:22:27.172	2026-11-14 07:22:27.172	f	\N	\N
-e300ec77-4ed2-4f9b-8964-4669d20b0ca7	c7093d5d-30fc-45b9-97a3-06087377d576	7acad2bd-9545-4c8f-af76-8d7b29079f7f	Ceylon Egg Kothu Parotta	Flaky parotta shredded and vigorously beaten on hot tawa with fluffy eggs, onions, green chili, and chicken salna.	180.00	products/ceylon-egg-kothu-parotta.jpg	2026-11-14 07:22:27.216	2026-11-14 07:22:27.216	f	\N	\N
-e4da9777-a1ca-4bb2-927e-128dc2a3caa1	c7093d5d-30fc-45b9-97a3-06087377d576	7acad2bd-9545-4c8f-af76-8d7b29079f7f	Chicken Kothu Parotta	Tawa-shredded flaky parotta stir-fried with tender chicken chunks, scrambled egg, curry leaves, and spicy salna.	220.00	products/chicken-kothu-parotta.jpg	2026-11-14 07:22:27.249	2026-11-14 07:22:27.249	f	\N	\N
-46cb2c24-97af-47e3-b86c-e825f5eeb766	c7093d5d-30fc-45b9-97a3-06087377d576	7acad2bd-9545-4c8f-af76-8d7b29079f7f	Madurai Mutton Kari Dosa	Thick savory sponge dosa layered with fluffy beaten egg and generous topping of fiery minced mutton chukka.	260.00	products/madurai-mutton-kari-dosa.jpg	2026-11-14 07:22:27.285	2026-11-14 07:22:27.285	f	\N	\N
-2906d765-1138-4c76-885e-77b2b29c382a	c7093d5d-30fc-45b9-97a3-06087377d576	7acad2bd-9545-4c8f-af76-8d7b29079f7f	Garlic Butter Naan	Tandoor baked leavened bread brushed generously with minced garlic and melted salted dairy butter.	70.00	products/garlic-butter-naan.jpg	2026-11-14 07:22:27.323	2026-11-14 07:22:27.323	f	\N	\N
-12f16a86-c59f-4bf8-9f38-96d6cd5136d1	c7093d5d-30fc-45b9-97a3-06087377d576	440af1f2-61dd-46f1-8017-cac00427f8f5	Ananda Non-Veg Special Thali	Grand banana leaf feast with Ponni rice, mutton gravy, chicken curry, fish curry, rasam, curd, and appalam.	360.00	products/ananda-non-veg-special-thali.jpg	2026-11-14 07:22:27.364	2026-11-14 07:22:27.364	f	\N	\N
-c1fa132a-898d-4c53-bbf0-835a80de1958	c7093d5d-30fc-45b9-97a3-06087377d576	440af1f2-61dd-46f1-8017-cac00427f8f5	Chicken Biryani Combo Meal	Dindigul chicken biryani served with crispy chicken 65 (2 pcs), spiced boiled egg, salna, raita, and sweet.	310.00	products/chicken-biryani-combo-meal.jpg	2026-11-14 07:22:27.398	2026-11-14 07:22:27.398	f	\N	\N
-4d9a5264-0a40-438b-ba5e-5d64a28a6bed	c7093d5d-30fc-45b9-97a3-06087377d576	440af1f2-61dd-46f1-8017-cac00427f8f5	Mutton Feast Meal	Complete South Indian meals served with side of Madurai mutton chukka, bone broth, and fluffy egg omelette.	440.00	products/mutton-feast-meal.jpg	2026-11-14 07:22:27.429	2026-11-14 07:22:27.429	f	\N	\N
-72128d74-865a-4935-bfc1-275a7f6e8f5b	c7093d5d-30fc-45b9-97a3-06087377d576	440af1f2-61dd-46f1-8017-cac00427f8f5	Seafood Platter Combo	Steamed rice with Alleppey fish curry, Vanjaram fish fry steak, crispy prawn masala, and pepper rasam.	480.00	products/seafood-platter-combo.jpg	2026-11-14 07:22:27.461	2026-11-14 07:22:27.461	f	\N	\N
-84688a0f-e586-4b4c-a1ad-6bb5ba1c8add	c7093d5d-30fc-45b9-97a3-06087377d576	440af1f2-61dd-46f1-8017-cac00427f8f5	Executive Chicken Meal Box	Single diner box with steamed rice, home-style chicken curry, boiled egg, Malabar parotta (1 pc), and sweet.	240.00	products/executive-chicken-meal-box.jpg	2026-11-14 07:22:27.494	2026-11-14 07:22:27.494	f	\N	\N
-468f1247-44de-4b61-b9f6-2978ae91fe28	c7093d5d-30fc-45b9-97a3-06087377d576	440af1f2-61dd-46f1-8017-cac00427f8f5	Country Chicken Feast	Rustic Nattu Kozhi curry, hot white rice, traditional pepper rasam, and country chicken sukka side.	380.00	products/country-chicken-feast.jpg	2026-11-14 07:22:27.527	2026-11-14 07:22:27.527	f	\N	\N
-3dbee714-f008-46e8-8de3-1fcce0a3ee17	c7093d5d-30fc-45b9-97a3-06087377d576	d7d430c8-0397-4266-9238-8f80ff405af0	Chilli Chicken Gravy	Tender wok-tossed chicken chunks with crunchy capsicum, sweet onions, green chilies, and dark soy reduction.	220.00	products/chilli-chicken-gravy.jpg	2026-11-14 07:22:27.564	2026-11-14 07:22:27.564	f	\N	\N
-95090903-0552-4e7b-8c92-3748b7189e0a	c7093d5d-30fc-45b9-97a3-06087377d576	d7d430c8-0397-4266-9238-8f80ff405af0	Chicken Fried Rice	Fragrant long-grain rice tossed in piping wok with scrambled egg, shredded chicken, and spring onions.	210.00	products/chicken-fried-rice.jpg	2026-11-14 07:22:27.599	2026-11-14 07:22:27.599	f	\N	\N
-5bdc7d40-18b1-4ca7-8bc4-44ba491c39c2	c7093d5d-30fc-45b9-97a3-06087377d576	d7d430c8-0397-4266-9238-8f80ff405af0	Schezwan Chicken Noodles	Wok-fried Hakka noodles stir-fried with juicy chicken strips, cabbage, and homemade spicy Schezwan sauce.	220.00	products/schezwan-chicken-noodles.jpg	2026-11-14 07:22:27.636	2026-11-14 07:22:27.636	f	\N	\N
-6d87e097-9f09-43c8-a881-c3c50541f97d	c7093d5d-30fc-45b9-97a3-06087377d576	d7d430c8-0397-4266-9238-8f80ff405af0	Prawn Fried Rice	Classic wok-tossed rice loaded with plump butter-fried tiger prawns, egg shreds, and garlic scallions.	260.00	products/prawn-fried-rice.jpg	2026-11-14 07:22:27.692	2026-11-14 07:22:27.692	f	\N	\N
-869fcf50-b938-4b83-a029-45d0d0fb423f	c7093d5d-30fc-45b9-97a3-06087377d576	d7d430c8-0397-4266-9238-8f80ff405af0	Crispy Honey Chilli Chicken	Crunchy batter-fried chicken tossed in a glossy glaze of spicy red chili paste, toasted sesame, and honey.	230.00	products/crispy-honey-chilli-chicken.jpg	2026-11-14 07:22:27.724	2026-11-14 07:22:27.724	f	\N	\N
-25d01cf4-eee4-4b15-a247-3b356edea9a6	c7093d5d-30fc-45b9-97a3-06087377d576	d7d430c8-0397-4266-9238-8f80ff405af0	Chicken Manchurian	Tender chicken meatballs wok-simmered in tangy soy-garlic coriander gravy with green chilies.	220.00	products/chicken-manchurian.jpg	2026-11-14 07:22:27.757	2026-11-14 07:22:27.757	f	\N	\N
-a767bd96-bb65-44a0-b738-f73fc6718985	c7093d5d-30fc-45b9-97a3-06087377d576	adccb351-0ba9-46a6-859b-6d71aa5acb9e	Madurai Jigarthanda Special	Iconic Madurai dessert drink prepared with almond gum (badam pisin), nannari syrup, basundi, and ice cream.	110.00	products/madurai-jigarthanda-special.jpg	2026-11-14 07:22:27.792	2026-11-14 07:22:27.792	f	\N	\N
-09294bda-5d4a-4990-ac57-b84d11d53ad1	c7093d5d-30fc-45b9-97a3-06087377d576	adccb351-0ba9-46a6-859b-6d71aa5acb9e	Elaneer Payasam	Creamy luxurious pudding prepared with freshly harvested tender coconut pulp, coconut milk, and cardamom.	130.00	products/elaneer-payasam.jpg	2026-11-14 07:22:27.831	2026-11-14 07:22:27.831	f	\N	\N
-e26e2caa-6667-4794-9fac-950de2b16a76	c7093d5d-30fc-45b9-97a3-06087377d576	adccb351-0ba9-46a6-859b-6d71aa5acb9e	Gulab Jamun with Ice Cream	Warm golden khoya dumplings steeped in rose cardamom syrup served beside a scoop of vanilla ice cream.	100.00	products/gulab-jamun-with-ice-cream.jpg	2026-11-14 07:22:27.891	2026-11-14 07:22:27.891	f	\N	\N
-74a672ba-6289-42d5-911d-dc546f43b3ed	c7093d5d-30fc-45b9-97a3-06087377d576	adccb351-0ba9-46a6-859b-6d71aa5acb9e	Royal Shahi Tukda	Crispy ghee-fried bread triangles soaked in saffron sugar syrup, smothered in rich thickened rabri and pistachios.	120.00	products/royal-shahi-tukda.jpg	2026-11-14 07:22:27.922	2026-11-14 07:22:27.922	f	\N	\N
-73ad2b46-d61f-4bb1-9889-4179d21c96e9	c7093d5d-30fc-45b9-97a3-06087377d576	adccb351-0ba9-46a6-859b-6d71aa5acb9e	Matka Kulfi	Traditional slow-churned creamy dense Indian ice cream infused with saffron and pistachios in a clay pot.	90.00	products/matka-kulfi.jpg	2026-11-14 07:22:27.96	2026-11-14 07:22:27.96	f	\N	\N
-01315247-057f-4b57-8a7b-fae54e135196	c7093d5d-30fc-45b9-97a3-06087377d576	adccb351-0ba9-46a6-859b-6d71aa5acb9e	Mango Malai Kulfi	Rich creamy kulfi stick made with 100% natural Alphonso mango pulp and condensed milk.	100.00	products/mango-malai-kulfi.jpg	2026-11-14 07:22:27.998	2026-11-14 07:22:27.998	f	\N	\N
-78134583-a0e9-4043-91cd-9a4b1e90e5c0	c7093d5d-30fc-45b9-97a3-06087377d576	86609375-4c2c-452f-8e8a-4fc488262a6d	Nannari Sarbath	Traditional Ayurvedic cooling root syrup beverage served ice-cold with freshly squeezed lime juice.	60.00	products/nannari-sarbath.jpg	2026-11-14 07:22:28.033	2026-11-14 07:22:28.033	f	\N	\N
-b39e6b7f-320a-4833-8b2c-decf82428aac	c7093d5d-30fc-45b9-97a3-06087377d576	86609375-4c2c-452f-8e8a-4fc488262a6d	Masala Butter Milk (Neer Mor)	Refreshing churned yogurt cooler tempered with crushed ginger, green chili, asafoetida, and curry leaves.	50.00	products/masala-butter-milk-neer-mor.jpg	2026-11-14 07:22:28.064	2026-11-14 07:22:28.064	f	\N	\N
-83a99826-8a1f-4bb6-abb5-27a17465ae5b	c7093d5d-30fc-45b9-97a3-06087377d576	86609375-4c2c-452f-8e8a-4fc488262a6d	Fresh Lime Soda	Effervescent chilled soda stirred with fresh lime juice, mint leaves, and a pinch of black rock salt.	50.00	products/fresh-lime-soda.jpg	2026-11-14 07:22:28.096	2026-11-14 07:22:28.096	f	\N	\N
-d35feaf3-6d0a-48f3-bcf4-3d2d1605688e	c7093d5d-30fc-45b9-97a3-06087377d576	86609375-4c2c-452f-8e8a-4fc488262a6d	Madurai Degree Filter Coffee	Freshly brewed dark chicory decoction whipped with hot foaming full-cream milk in traditional brass davarah.	45.00	products/madurai-degree-filter-coffee.jpg	2026-11-14 07:22:28.127	2026-11-14 07:22:28.127	f	\N	\N
-c909aac4-ace2-49e1-ac72-5579792fdbed	c7093d5d-30fc-45b9-97a3-06087377d576	86609375-4c2c-452f-8e8a-4fc488262a6d	Mango Lassi	Thick luscious chilled yogurt smoothie blended with ripe Alphonso mangoes and a touch of cardamom.	90.00	products/mango-lassi.jpg	2026-11-14 07:22:28.162	2026-11-14 07:22:28.162	f	\N	\N
-6a5b7629-b685-4d14-90cf-8157a06f1b50	c7093d5d-30fc-45b9-97a3-06087377d576	86609375-4c2c-452f-8e8a-4fc488262a6d	Rose Milk Cooler	Fragrant vintage rose syrup blended with chilled milk and soaked sweet sabja basil seeds.	60.00	products/rose-milk-cooler.jpg	2026-11-14 07:22:28.193	2026-11-14 07:22:28.193	f	\N	\N
-34471e01-e9f9-42e7-ac71-0dadde477753	c7093d5d-30fc-45b9-97a3-06087377d576	d20dd5a6-2914-4683-8ccf-64befade0ff3	Madurai Muttai Kalaki	Soft, creamy half-cooked egg pouch infused with rich mutton salna and freshly cracked black pepper.	50.00	products/madurai-muttai-kalaki.jpg	2026-11-14 07:33:32.644	2026-11-14 07:33:32.644	f	\N	\N
-674bd64e-afc9-4fa4-b5ec-d8ca36d0e34f	c7093d5d-30fc-45b9-97a3-06087377d576	d20dd5a6-2914-4683-8ccf-64befade0ff3	Karandi Omelette	Fluffy spherical country egg omelette fried in a deep iron ladle with shallots, curry leaves, and green chilies.	70.00	products/karandi-omelette.jpg	2026-11-14 07:33:32.732	2026-11-14 07:33:32.732	f	\N	\N
-11fed668-0b2c-4bbe-b012-31648f01271c	c7093d5d-30fc-45b9-97a3-06087377d576	d20dd5a6-2914-4683-8ccf-64befade0ff3	Spicy Muttai Podimas	Country eggs scrambled dry on iron tawa with crushed pepper, cumin, chopped onions, and curry leaves.	90.00	products/spicy-muttai-podimas.jpg	2026-11-14 07:33:32.8	2026-11-14 07:33:32.8	f	\N	\N
-e197490e-523e-48cd-b896-41d92028e3a7	c7093d5d-30fc-45b9-97a3-06087377d576	d20dd5a6-2914-4683-8ccf-64befade0ff3	Boiled Egg Pepper Fry	Golden pan-seared hard boiled eggs coated in roasted Tellicherry pepper and caramelized shallot paste.	100.00	products/boiled-egg-pepper-fry.jpg	2026-11-14 07:33:32.895	2026-11-14 07:33:32.895	f	\N	\N
-05739c0e-9302-414b-b0e8-640d1b41ebcd	c7093d5d-30fc-45b9-97a3-06087377d576	d20dd5a6-2914-4683-8ccf-64befade0ff3	Nattu Kozhi Muttai Omelette	Double free-range country egg omelette whipped with crushed peppercorns and cold-pressed sesame oil.	80.00	products/nattu-kozhi-muttai-omelette.jpg	2026-11-14 07:33:32.997	2026-11-14 07:33:32.997	f	\N	\N
-ded33dd5-a5f6-4c11-a41b-bc4748c51bd1	c7093d5d-30fc-45b9-97a3-06087377d576	d20dd5a6-2914-4683-8ccf-64befade0ff3	Muttai Salna Roast	Pan-roasted boiled eggs simmered semi-dry in aromatic spiced coconut-shallot salna gravy.	110.00	products/muttai-salna-roast.jpg	2026-11-14 07:33:33.081	2026-11-14 07:33:33.081	f	\N	\N
-9671ee99-c2f0-4541-a49b-c7c3d42a5c9f	c7093d5d-30fc-45b9-97a3-06087377d576	a1b14c4c-00fb-4af7-867c-538075ca50d3	Madurai Kari Idli (3 Pcs)	Steaming soft rice idlis generously drenched in slow-simmered rich mutton bone gravy.	180.00	products/madurai-kari-idli-3-pcs.jpg	2026-11-14 07:33:33.171	2026-11-14 07:33:33.171	f	\N	\N
-4dfe9fe9-0c59-4fc1-ae67-7c484d343703	c7093d5d-30fc-45b9-97a3-06087377d576	a1b14c4c-00fb-4af7-867c-538075ca50d3	Stuffed Keema Parotta	Flaky golden layered parotta stuffed with spiced minced mutton keema, served with thick salna.	210.00	products/stuffed-keema-parotta.jpg	2026-11-14 07:33:33.302	2026-11-14 07:33:33.302	f	\N	\N
-639ad892-e843-430a-8577-933d23085a8e	c7093d5d-30fc-45b9-97a3-06087377d576	a1b14c4c-00fb-4af7-867c-538075ca50d3	Chicken Podi Dosa	Crisp ghee roast dosa smeared with signature spicy non-veg gun powder and shredded chicken.	190.00	products/chicken-podi-dosa.jpg	2026-11-14 07:33:33.434	2026-11-14 07:33:33.434	f	\N	\N
-a92b5f46-cbb0-40e4-aa49-c74cf99df6ea	c7093d5d-30fc-45b9-97a3-06087377d576	a1b14c4c-00fb-4af7-867c-538075ca50d3	Coin Parotta with Salna (5 Pcs)	Bite-sized crispy flaky layered parottas served with steaming piping-hot roadside salna.	120.00	products/coin-parotta-with-salna-5-pcs.jpg	2026-11-14 07:33:33.553	2026-11-14 07:33:33.553	f	\N	\N
-72d3c4ec-6294-48e3-9449-d1da20dc563e	c7093d5d-30fc-45b9-97a3-06087377d576	a1b14c4c-00fb-4af7-867c-538075ca50d3	Muttai Veechu Parotta	Air-stretched thin gossamer parotta folded with seasoned egg, pepper, and diced shallots.	130.00	products/muttai-veechu-parotta.jpg	2026-11-14 07:33:33.647	2026-11-14 07:33:33.647	f	\N	\N
-4f67c495-150e-434b-90cd-e96baf6d1e53	c7093d5d-30fc-45b9-97a3-06087377d576	a1b14c4c-00fb-4af7-867c-538075ca50d3	Idiyappam with Mutton Paaya	Delicate steamed rice string hoppers served with rich, fragrant slow-simmered trotters broth.	240.00	products/idiyappam-with-mutton-paaya.jpg	2026-11-14 07:33:33.758	2026-11-14 07:33:33.758	f	\N	\N
-9b5a4870-a1f5-4cac-a04e-b628c4b0f5e5	c7093d5d-30fc-45b9-97a3-06087377d576	31c6b7b4-78fa-4ec9-986a-6798e2929946	Mutton Paaya Gravy	Traditional slow-cooked goat trotters stew simmered overnight with stone-ground whole aromatic spices.	310.00	products/mutton-paaya-gravy.jpg	2026-11-14 07:33:33.866	2026-11-14 07:33:33.866	f	\N	\N
-8f802668-0e5d-4d2e-bd34-119dc3632ef4	c7093d5d-30fc-45b9-97a3-06087377d576	31c6b7b4-78fa-4ec9-986a-6798e2929946	Madurai Mutton Brain Fry	Delicately poached goat brain sautéed with country shallots, crushed pepper, and turmeric.	260.00	products/madurai-mutton-brain-fry.jpg	2026-11-14 07:33:33.952	2026-11-14 07:33:33.952	f	\N	\N
-f66fa165-02a6-4994-a03e-ee039684ca2e	c7093d5d-30fc-45b9-97a3-06087377d576	31c6b7b4-78fa-4ec9-986a-6798e2929946	Mutton Boti Fry	Rustic country-style goat tripe dry-roasted with fiery red chili, crushed garlic, and curry leaves.	220.00	products/mutton-boti-fry.jpg	2026-11-14 07:33:34.182	2026-11-14 07:33:34.182	f	\N	\N
-b86ae786-7ebc-4bce-9d27-c5f7704a5d94	c7093d5d-30fc-45b9-97a3-06087377d576	31c6b7b4-78fa-4ec9-986a-6798e2929946	Mutton Liver Pepper Fry	Tender succulent lamb liver pan-seared in roasted Malabar black pepper and shallots.	240.00	products/mutton-liver-pepper-fry.jpg	2026-11-14 07:33:34.318	2026-11-14 07:33:34.318	f	\N	\N
-e84b14f0-ca8b-425b-97f0-df7ce75032ff	c7093d5d-30fc-45b9-97a3-06087377d576	31c6b7b4-78fa-4ec9-986a-6798e2929946	Mutton Thala Kari Varuval	Tender goat head meat roasted dry with rustic spices and cold-pressed gingelly oil.	270.00	products/mutton-thala-kari-varuval.jpg	2026-11-14 07:33:34.413	2026-11-14 07:33:34.413	f	\N	\N
-fb650082-3d32-4048-b914-32ce922f0a4a	c7093d5d-30fc-45b9-97a3-06087377d576	31c6b7b4-78fa-4ec9-986a-6798e2929946	Nalli Chukka Varuval	Braised mutton shank marrow bones tossed on high-heat iron tawa with fiery Chettinad masala.	360.00	products/nalli-chukka-varuval.jpg	2026-11-14 07:33:34.489	2026-11-14 07:33:34.489	f	\N	\N
-f60bd9b7-465f-4903-8635-8f02a46a818e	c7093d5d-30fc-45b9-97a3-06087377d576	30a54cb0-0807-4328-aeee-0c7cc26ef960	Pallipalayam Chicken	Erode specialty rustic chicken shallow-fried with loads of shallots, garlic, and dry red chili flakes.	260.00	products/pallipalayam-chicken.jpg	2026-11-14 07:33:34.619	2026-11-14 07:33:34.619	f	\N	\N
-3a2d87d4-c032-494d-9d27-c0ea466dabeb	c7093d5d-30fc-45b9-97a3-06087377d576	30a54cb0-0807-4328-aeee-0c7cc26ef960	Chinthamani Chicken	Kongunadu style boneless rustic chicken sautéed with broken whole red chilies and fresh curry leaves.	250.00	products/chinthamani-chicken.jpg	2026-11-14 07:33:34.731	2026-11-14 07:33:34.731	f	\N	\N
-94e172ad-6678-44d5-8021-ebd46ea3cd61	c7093d5d-30fc-45b9-97a3-06087377d576	30a54cb0-0807-4328-aeee-0c7cc26ef960	Nattu Kozhi Milagu Varuval	Tender country chicken dry roast heavily seasoned with stone-ground black pepper and shallots.	270.00	products/nattu-kozhi-milagu-varuval.jpg	2026-11-14 07:33:34.831	2026-11-14 07:33:34.831	f	\N	\N
-cfdc2823-559b-4fae-ae65-f22db521c611	c7093d5d-30fc-45b9-97a3-06087377d576	30a54cb0-0807-4328-aeee-0c7cc26ef960	Nattu Kozhi Rasam Soru	Comforting bowl of hot Ponni rice mixed with piping hot country chicken pepper broth and ghee.	220.00	products/nattu-kozhi-rasam-soru.jpg	2026-11-14 07:33:34.949	2026-11-14 07:33:34.949	f	\N	\N
-a6d9bd36-2ae7-48f6-bdda-42a85fe8f74d	c7093d5d-30fc-45b9-97a3-06087377d576	30a54cb0-0807-4328-aeee-0c7cc26ef960	Nattu Kozhi Chettinad Masala	Free-range country chicken cooked in an 18-spice freshly roasted Chettinad masala gravy.	280.00	products/nattu-kozhi-chettinad-masala.jpg	2026-11-14 07:33:35.04	2026-11-14 07:33:35.04	f	\N	\N
-374001d2-a123-4e0d-becb-0335135cdf5d	c7093d5d-30fc-45b9-97a3-06087377d576	30a54cb0-0807-4328-aeee-0c7cc26ef960	Kongu Nattu Kozhi Biryani	Fragrant Seeraga Samba rice dum-cooked with tender rustic country chicken chunks and mint.	310.00	products/kongu-nattu-kozhi-biryani.jpg	2026-11-14 07:33:35.119	2026-11-14 07:33:35.119	f	\N	\N
-c9d0909f-79ff-4d07-8122-4158d5bd5cae	c7093d5d-30fc-45b9-97a3-06087377d576	9d85564c-2f28-4506-8f20-d2305f598342	Special Mutton Salna (Bowl)	Signature spicy thin street-style non-veg gravy infused with poppy seeds, fennel, and coconut.	90.00	products/special-mutton-salna-bowl.jpg	2026-11-14 07:33:35.214	2026-11-14 07:33:35.214	f	\N	\N
-0fa770cb-2c43-4e75-9b1b-57df5415061a	c7093d5d-30fc-45b9-97a3-06087377d576	9d85564c-2f28-4506-8f20-d2305f598342	Chicken Salna (Bowl)	Rich aromatic street-cart chicken dipping gravy made fresh for parottas and dosas.	70.00	products/chicken-salna-bowl.jpg	2026-11-14 07:33:35.348	2026-11-14 07:33:35.348	f	\N	\N
-88420665-bada-422c-9c3a-03f5d3fdeae1	c7093d5d-30fc-45b9-97a3-06087377d576	9d85564c-2f28-4506-8f20-d2305f598342	Street-Style Plain Salna	Legendary empty roadside salna with authentic tomato, onion, and roasted spice base.	50.00	products/street-style-plain-salna.jpg	2026-11-14 07:33:35.432	2026-11-14 07:33:35.432	f	\N	\N
-75e7f8c8-48fa-4946-a468-70b9c9425c18	c7093d5d-30fc-45b9-97a3-06087377d576	9d85564c-2f28-4506-8f20-d2305f598342	Madurai Onion Curd Raita	Chilled fresh yogurt whipped with crunchy chopped shallots, green chilies, and fresh coriander.	40.00	products/madurai-onion-curd-raita.jpg	2026-11-14 07:33:35.512	2026-11-14 07:33:35.512	f	\N	\N
-c70aead0-4c0b-4c08-a100-2eeed3700494	c7093d5d-30fc-45b9-97a3-06087377d576	9d85564c-2f28-4506-8f20-d2305f598342	Ennai Kathirikai Gravy	Tender baby eggplants slow-braised in a tangy tamarind, sesame, and non-veg flavored gravy.	80.00	products/ennai-kathirikai-gravy.jpg	2026-11-14 07:33:35.618	2026-11-14 07:33:35.618	f	\N	\N
-a247d3d4-e0a3-49db-bb3f-7a9a433f6819	c7093d5d-30fc-45b9-97a3-06087377d576	9d85564c-2f28-4506-8f20-d2305f598342	Non-Veg Meals Sambar & Rasam Set	Piping hot lentil sambar and spicy crushed pepper garlic rasam served with papad.	60.00	products/non-veg-meals-sambar-rasam-set.jpg	2026-11-14 07:33:35.689	2026-11-14 07:33:35.689	f	\N	\N
-d8a3569f-1ba0-44f6-a2f2-44c6f712fbb5	c7093d5d-30fc-45b9-97a3-06087377d576	3221f85f-3853-4614-8cf3-7b668e487e90	Chicken Tikka Kathi Roll	Flaky parotta rolled with clay-oven charred chicken tikka, pickled onions, and mint chutney.	170.00	products/chicken-tikka-kathi-roll.jpg	2026-11-14 07:33:35.769	2026-11-14 07:33:35.769	f	\N	\N
-52aeaf42-f293-4c08-9fec-94cdcb499551	c7093d5d-30fc-45b9-97a3-06087377d576	3221f85f-3853-4614-8cf3-7b668e487e90	Mutton Keema Roll	Spiced minced lamb keema and fluffy beaten egg wrapped inside a crisp hot parotta.	210.00	products/mutton-keema-roll.jpg	2026-11-14 07:33:35.85	2026-11-14 07:33:35.85	f	\N	\N
-a45359f9-3d2c-4a9b-a3f8-b6ebc55dc925	c7093d5d-30fc-45b9-97a3-06087377d576	3221f85f-3853-4614-8cf3-7b668e487e90	Double Egg Parotta Roll	Crispy parotta lined with two whisked eggs, tangy chaat masala, and crunchy red onions.	110.00	products/double-egg-parotta-roll.jpg	2026-11-14 07:33:35.923	2026-11-14 07:33:35.923	f	\N	\N
-0da667c4-3088-4e38-bfdf-212472f6719c	c7093d5d-30fc-45b9-97a3-06087377d576	3221f85f-3853-4614-8cf3-7b668e487e90	Crispy Chicken Shawarma Roll	Thin rumali wrap packed with spiced grilled chicken shavings, garlic toum, and pickled veggies.	160.00	products/crispy-chicken-shawarma-roll.jpg	2026-11-14 07:33:36	2026-11-14 07:33:36	f	\N	\N
-a5ccd467-6369-4631-a5dc-39293394fb51	c7093d5d-30fc-45b9-97a3-06087377d576	3221f85f-3853-4614-8cf3-7b668e487e90	Chettinad Chicken Wrap	Spicy shredded Chettinad chicken and capsicum wrapped with homemade garlic mayo.	170.00	products/chettinad-chicken-wrap.jpg	2026-11-14 07:33:36.07	2026-11-14 07:33:36.07	f	\N	\N
-dbc3cec7-b232-4f25-94fb-82b670bde493	c7093d5d-30fc-45b9-97a3-06087377d576	3221f85f-3853-4614-8cf3-7b668e487e90	Fiery Dragon Chicken Wrap	Crispy tossed Indo-Chinese dragon chicken strips bundled in a warm golden wrap.	180.00	products/fiery-dragon-chicken-wrap.jpg	2026-11-14 07:33:36.252	2026-11-14 07:33:36.252	f	\N	\N
-9067ec6e-df04-4116-8463-96f0195db394	c7093d5d-30fc-45b9-97a3-06087377d576	d529fbfa-f95d-46f4-84d1-0327553b1e22	Ghee Rice with Chicken Pepper Chukka	Fragrant Seeraga Samba ghee rice served with hot pepper chicken sukka and gravy.	260.00	products/ghee-rice-with-chicken-pepper-chukka.jpg	2026-11-14 07:33:36.352	2026-11-14 07:33:36.352	f	\N	\N
-d7aa2b52-58c7-40b3-86cc-9aa1b0cd053a	c7093d5d-30fc-45b9-97a3-06087377d576	d529fbfa-f95d-46f4-84d1-0327553b1e22	Kothu Biryani Special	Signature fusion of shredded flaky parotta and aromatic mutton biryani tossed on hot tawa.	270.00	products/kothu-biryani-special.jpg	2026-11-14 07:33:36.451	2026-11-14 07:33:36.451	f	\N	\N
-f16a3d11-4fdd-4b99-b323-5e410d2e3485	c7093d5d-30fc-45b9-97a3-06087377d576	d529fbfa-f95d-46f4-84d1-0327553b1e22	Curd Rice with Mutton Chukka	Chilled comforting tempered curd rice served alongside fiery dry-roasted tender mutton chukka.	280.00	products/curd-rice-with-mutton-chukka.jpg	2026-11-14 07:33:36.548	2026-11-14 07:33:36.548	f	\N	\N
-6f80f510-7258-4cb7-bb49-df77deab70bc	c7093d5d-30fc-45b9-97a3-06087377d576	d529fbfa-f95d-46f4-84d1-0327553b1e22	Sambar Rice with Vanjaram Fry	Hot ghee-laced lentil rice served with a crispy tawa-seared king fish fry steak.	340.00	products/sambar-rice-with-vanjaram-fry.jpg	2026-11-14 07:33:36.644	2026-11-14 07:33:36.644	f	\N	\N
-825ee7fd-2c6a-4245-9f5c-634d6d779d15	c7093d5d-30fc-45b9-97a3-06087377d576	d529fbfa-f95d-46f4-84d1-0327553b1e22	Jeera Basmati Rice with Butter Chicken	Cumin-tempered long grain basmati rice accompanied by silky butter chicken makhani.	270.00	products/jeera-basmati-rice-with-butter-chicken.jpg	2026-11-14 07:33:36.729	2026-11-14 07:33:36.729	f	\N	\N
-286d2750-a377-4aa1-90fa-cc28f7a585b0	c7093d5d-30fc-45b9-97a3-06087377d576	d529fbfa-f95d-46f4-84d1-0327553b1e22	Schezwan Rice with Chilli Chicken Bowl	Wok-tossed spicy chicken fried rice paired with rich gravy chilli chicken.	250.00	products/schezwan-rice-with-chilli-chicken-bowl.jpg	2026-11-14 07:33:36.821	2026-11-14 07:33:36.821	f	\N	\N
-12d41c7b-881d-4b07-9472-f770e2f6e65e	c7093d5d-30fc-45b9-97a3-06087377d576	a4f13b66-2945-4946-b193-52b691f31cde	Madurai Chicken Pakoda	Crispy, crunchy bone-in chicken fritters fried with crushed spices, cashew bits, and curry leaves.	180.00	products/madurai-chicken-pakoda.jpg	2026-11-14 07:33:36.946	2026-11-14 07:33:36.946	f	\N	\N
-5a23b98a-739f-4e6e-954e-07c8a703bc92	c7093d5d-30fc-45b9-97a3-06087377d576	a4f13b66-2945-4946-b193-52b691f31cde	Crispy Chicken Popcorn	Tender bite-sized chicken breast poppers seasoned with smoky peri-peri spice dust.	160.00	products/crispy-chicken-popcorn.jpg	2026-11-14 07:33:37.069	2026-11-14 07:33:37.069	f	\N	\N
-02ca1b9c-2839-4aaf-a00e-087578f6cd43	c7093d5d-30fc-45b9-97a3-06087377d576	a4f13b66-2945-4946-b193-52b691f31cde	Crispy Mutton Kola Balls (4 Pcs)	Minced mutton spiced balls with crisp golden outer crust and soft flavorful core.	200.00	products/crispy-mutton-kola-balls-4-pcs.jpg	2026-11-14 07:33:37.193	2026-11-14 07:33:37.193	f	\N	\N
-c7490432-9c5b-4cb0-bd12-ac8b2e70109f	c7093d5d-30fc-45b9-97a3-06087377d576	a4f13b66-2945-4946-b193-52b691f31cde	Fish Finger Fries	Crispy crumb-coated sea fish batons served with homemade tartar dipping sauce.	220.00	products/fish-finger-fries.jpg	2026-11-14 07:33:37.29	2026-11-14 07:33:37.29	f	\N	\N
-69f9ea59-2c0b-4cec-b8a2-85fbf330ecd1	c7093d5d-30fc-45b9-97a3-06087377d576	a4f13b66-2945-4946-b193-52b691f31cde	Golden Prawn Tempura	Plump butterflied ocean prawns fried in light crisp batter with sweet chili dip.	290.00	products/golden-prawn-tempura.jpg	2026-11-14 07:33:37.372	2026-11-14 07:33:37.372	f	\N	\N
-bfdc9bdc-bd8f-4d6c-bab7-64a781eac750	c7093d5d-30fc-45b9-97a3-06087377d576	a4f13b66-2945-4946-b193-52b691f31cde	Chicken Keema Samosa (3 Pcs)	Flaky pastry pockets stuffed with minced spiced chicken, onions, and fresh mint.	110.00	products/chicken-keema-samosa-3-pcs.jpg	2026-11-14 07:33:37.454	2026-11-14 07:33:37.454	f	\N	\N
+COPY public.products (id, "restaurantId", "categoryId", name, description, "basePrice", "imageUrl", "createdAt", "updatedAt", "isDeleted", "deletedAt", "deletedBy", translations) FROM stdin;
+ca92a1ab-26ac-44f7-a3f1-0690a7d5b9ad	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Masala Dosa	Served with coconut chutney	20.00	products/1793258852075-267b8910-c3c1-410b-8e64-eb2264984666.jpeg	2026-10-29 07:27:32.077	2026-10-29 07:29:44.227	t	2026-10-29 07:29:44.224	c8b82f45-4ebe-48b3-9024-1466158c6177	{}
+6a15f672-5c46-48f0-84e8-1ca30ae609a5	e75df15d-3735-4332-bc45-ab5a73eef323	26bab23d-b9d6-43a1-b22e-2d5eac220ebc	Meals	Served with rice and differnt type sauce	200.00	products/1793265202409-44bb94ea-440e-4853-931f-c6524542983c.png	2026-10-29 09:13:22.412	2026-10-30 12:26:04.508	f	\N	\N	{}
+b0699d36-2967-42d9-b46c-86ee549f5915	c7093d5d-30fc-45b9-97a3-06087377d576	1bea977f-cf92-4a95-a0e3-172aee08da4e	Mutton Bone Shorba	Slow-simmered rich mutton bone marrow broth infused with crushed black pepper, shallots, and fragrant Chettinad spices.	180.00	products/mutton-bone-shorba.jpg	2026-11-14 07:22:25.524	2026-11-14 07:22:25.524	f	\N	\N	{}
+41eb35a9-418b-4a7d-8283-50a2e9bb5679	c7093d5d-30fc-45b9-97a3-06087377d576	1bea977f-cf92-4a95-a0e3-172aee08da4e	Nattu Kozhi Soup	Traditional free-range country chicken broth simmered with roasted coriander seeds, garlic cloves, and fresh curry leaves.	160.00	products/nattu-kozhi-soup.jpg	2026-11-14 07:22:25.582	2026-11-14 07:22:25.582	f	\N	\N	{}
+9e37bb27-3769-46c7-a5bc-5b5fe41f70e0	c7093d5d-30fc-45b9-97a3-06087377d576	1bea977f-cf92-4a95-a0e3-172aee08da4e	Crab Pepper Soup	Fiery aromatic mud crab soup infused with crushed Tellicherry black pepper, cumin, and fresh cilantro.	190.00	products/crab-pepper-soup.jpg	2026-11-14 07:22:25.62	2026-11-14 07:22:25.62	f	\N	\N	{}
+f46892a1-0c84-4249-8c04-a239ce23128a	c7093d5d-30fc-45b9-97a3-06087377d576	1bea977f-cf92-4a95-a0e3-172aee08da4e	Chicken Sweet Corn Soup	Warm comforting creamy sweet corn soup with shredded chicken breast and velvety egg drop ribbons.	150.00	products/chicken-sweet-corn-soup.jpg	2026-11-14 07:22:25.662	2026-11-14 07:22:25.662	f	\N	\N	{}
+878ae9fb-a74f-4fea-971f-c07b4f3de7a7	c7093d5d-30fc-45b9-97a3-06087377d576	1bea977f-cf92-4a95-a0e3-172aee08da4e	Chicken Hot & Sour Soup	Tangy and spicy thick broth packed with tender chicken strips, black fungus, bamboo shoots, and green chili.	150.00	products/chicken-hot-sour-soup.jpg	2026-11-14 07:22:25.697	2026-11-14 07:22:25.697	f	\N	\N	{}
+80368e9c-cb18-45eb-97c0-425ee0d053d5	c7093d5d-30fc-45b9-97a3-06087377d576	1bea977f-cf92-4a95-a0e3-172aee08da4e	Chicken Manchow Soup	Spicy Indo-Chinese chicken garlic soup served piping hot, crowned with crisp fried noodles and scallions.	160.00	products/chicken-manchow-soup.jpg	2026-11-14 07:22:25.733	2026-11-14 07:22:25.733	f	\N	\N	{}
+c8afc9c4-0a22-4d93-9e8e-f4a776c02496	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Dragon chicken	Crispy tender chicken strips tossed in fiery sweet-spicy sauce with roasted cashews, bell peppers, and scallions.	200.00	products/1793264878600-b6aa5f99-a40f-4939-8ab9-e13580cedfa6.jpg	2026-10-29 09:07:58.605	2026-11-14 07:22:25.746	f	\N	\N	{}
+86470c06-8469-4aef-926f-e3544432fbc8	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Chicken 65	Authentic Chennai style deep-fried boneless chicken bites marinated in spiced curd, Kashmiri chili, and curry leaves.	190.00	products/chicken-65.jpg	2026-11-14 07:22:25.779	2026-11-14 07:22:25.779	f	\N	\N	{}
+bca19ba9-9020-417c-9564-4c6424d76e2a	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Pepper Chicken Sukka	Tender pan-seared chicken chunks roasted dry with freshly cracked black pepper, fennel seeds, and caramelized shallots.	220.00	products/pepper-chicken-sukka.jpg	2026-11-14 07:22:25.818	2026-11-14 07:22:25.818	f	\N	\N	{}
+bdc15e9e-9651-46b1-b212-d458ef736ab4	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Madurai Mutton Chukka	Iconic tender goat meat slow-roasted in an iron skillet with stone-ground spices, curry leaves, and country shallots.	320.00	products/madurai-mutton-chukka.jpg	2026-11-14 07:22:25.854	2026-11-14 07:22:25.854	f	\N	\N	{}
+2b850d11-b9a1-4410-a361-e8a4822d885a	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Madurai Mutton Kola Urundai	Crispy golden fried meatballs made from spiced minced lamb, roasted gram flour, and fresh herbs.	260.00	products/madurai-mutton-kola-urundai.jpg	2026-11-14 07:22:25.967	2026-11-14 07:22:25.967	f	\N	\N	{}
+2a1f61e7-02fc-448d-8aea-14cf0d37622c	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Nattu Kozhi Varuval	Free-range country chicken stir-fried dry in rustic village style with freshly pounded masala and gingelly oil.	240.00	products/nattu-kozhi-varuval.jpg	2026-11-14 07:22:26.02	2026-11-14 07:22:26.02	f	\N	\N	{}
+14f83dd4-6cc2-4398-8309-8d3af7b3aea9	c7093d5d-30fc-45b9-97a3-06087377d576	a868ce1b-cb60-4ec8-8d6c-ef515cd1feb6	Crispy Chicken Lollipop	Indo-Chinese style frenched chicken winglets marinated in chili garlic, battered, and fried until crunchily golden.	210.00	products/crispy-chicken-lollipop.jpg	2026-11-14 07:22:26.061	2026-11-14 07:22:26.061	f	\N	\N	{}
+cd54daab-fc70-4bfd-b3e6-da47b1b21803	c7093d5d-30fc-45b9-97a3-06087377d576	2e0f92dc-9d07-4cb2-a97e-e98eef597edc	Vanjaram Fish Fry (King Fish)	Prime cut seer fish steak seasoned in spicy red chili lemon marinade and shallow-fried crisp on an iron tawa.	360.00	products/vanjaram-fish-fry-king-fish.jpg	2026-11-14 07:22:26.106	2026-11-14 07:22:26.106	f	\N	\N	{}
+334c09bc-05a1-4125-9dfd-a65c51b23949	c7093d5d-30fc-45b9-97a3-06087377d576	2e0f92dc-9d07-4cb2-a97e-e98eef597edc	Prawn Ghee Roast	Plump tiger prawns cooked to perfection in rich golden dairy ghee with tangy Byadgi chili masala paste.	340.00	products/prawn-ghee-roast.jpg	2026-11-14 07:22:26.141	2026-11-14 07:22:26.141	f	\N	\N	{}
+e0179bc7-0c3f-4215-9776-45324ce91ee5	c7093d5d-30fc-45b9-97a3-06087377d576	2e0f92dc-9d07-4cb2-a97e-e98eef597edc	Chettinad Crab Masala	Fresh mud crab braised semi-dry in a fiery Chettinad shallot, garlic, and freshly cracked black pepper gravy.	350.00	products/chettinad-crab-masala.jpg	2026-11-14 07:22:26.196	2026-11-14 07:22:26.196	f	\N	\N	{}
+e8a0b2aa-645a-4423-b675-b23a61227297	c7093d5d-30fc-45b9-97a3-06087377d576	2e0f92dc-9d07-4cb2-a97e-e98eef597edc	Crispy Nethili Fish Fry	Crispy shallow-fried golden anchovies coated in aromatic spice blend with fried green chilies and curry leaves.	190.00	products/crispy-nethili-fish-fry.jpg	2026-11-14 07:22:26.236	2026-11-14 07:22:26.236	f	\N	\N	{}
+8f700e21-6b46-4a52-a8ed-72f1fb49388d	c7093d5d-30fc-45b9-97a3-06087377d576	2e0f92dc-9d07-4cb2-a97e-e98eef597edc	Squid Pepper Fry	Tender calamari rings flash-sautéed with cracked Tellicherry black pepper, curry leaves, and sweet onions.	290.00	products/squid-pepper-fry.jpg	2026-11-14 07:22:26.311	2026-11-14 07:22:26.311	f	\N	\N	{}
+fba6f1cc-7026-4285-9088-e09b40e3a028	c7093d5d-30fc-45b9-97a3-06087377d576	2e0f92dc-9d07-4cb2-a97e-e98eef597edc	Meen Pollichathu	Fresh coastal fish coated in rich masala, wrapped in tender banana leaves, and pan-charred over low flame.	380.00	products/meen-pollichathu.jpg	2026-11-14 07:22:26.387	2026-11-14 07:22:26.387	f	\N	\N	{}
+60a78c4a-9f03-4545-8e2c-ac4408bed34b	c7093d5d-30fc-45b9-97a3-06087377d576	d48051f2-4ff5-46b3-8d71-a92da16deb35	Dindigul Seeraga Samba Chicken Biryani	Signature aromatic short-grain Seeraga Samba rice simmered with tender chicken, curd, mint, and secret whole spices.	240.00	products/dindigul-seeraga-samba-chicken-biryani.jpg	2026-11-14 07:22:26.421	2026-11-14 07:22:26.421	f	\N	\N	{}
+a914607f-964e-4c1d-b396-63a2f329abb1	c7093d5d-30fc-45b9-97a3-06087377d576	d48051f2-4ff5-46b3-8d71-a92da16deb35	Thalassery Mutton Biryani	Fragrant kaima rice biryani with succulent bone-in lamb, garnished with golden fried cashews and raisins.	340.00	products/thalassery-mutton-biryani.jpg	2026-11-14 07:22:26.455	2026-11-14 07:22:26.455	f	\N	\N	{}
+b24d4437-966f-4dc6-924e-a0fc8ec7b19c	c7093d5d-30fc-45b9-97a3-06087377d576	d48051f2-4ff5-46b3-8d71-a92da16deb35	Hyderabadi Dum Chicken Biryani	Aromatic basmati rice sealed and slow dum-cooked with saffron, rose water, and yogurt-marinated spicy chicken.	260.00	products/hyderabadi-dum-chicken-biryani.jpg	2026-11-14 07:22:26.491	2026-11-14 07:22:26.491	f	\N	\N	{}
+5b9d78e7-244d-4436-b62b-01e574b3140d	c7093d5d-30fc-45b9-97a3-06087377d576	d48051f2-4ff5-46b3-8d71-a92da16deb35	Special Prawn Biryani	Seeraga Samba rice layered with juicy masala-spiced ocean prawns, coriander, and caramelized shallots.	360.00	products/special-prawn-biryani.jpg	2026-11-14 07:22:26.53	2026-11-14 07:22:26.53	f	\N	\N	{}
+196caa42-2c5b-46e4-a84b-27e49089606b	c7093d5d-30fc-45b9-97a3-06087377d576	d48051f2-4ff5-46b3-8d71-a92da16deb35	Madurai Mutton Kari Soru	Traditional Madurai meat-infused rice cooked in rich lamb marrow stock, tender mutton cubes, and ghee.	350.00	products/madurai-mutton-kari-soru.jpg	2026-11-14 07:22:26.57	2026-11-14 07:22:26.57	f	\N	\N	{}
+0186fca2-0eb9-44f1-8809-678ab6ba148d	c7093d5d-30fc-45b9-97a3-06087377d576	d48051f2-4ff5-46b3-8d71-a92da16deb35	Egg Biryani	Flavorful biryani rice served with two golden pan-roasted boiled eggs, spiced brinjal salna, and creamy onion raita.	180.00	products/egg-biryani.jpg	2026-11-14 07:22:26.605	2026-11-14 07:22:26.605	f	\N	\N	{}
+2640ef66-b105-40a2-aa73-2b9efd37328f	c7093d5d-30fc-45b9-97a3-06087377d576	506860ac-7a1f-442a-a9ce-70ef2fd1b44a	Chettinad Chicken Curry	Tender chicken simmered slowly in stone-ground coconut, fennel, star anise, and whole red chili gravy.	230.00	products/chettinad-chicken-curry.jpg	2026-11-14 07:22:26.649	2026-11-14 07:22:26.649	f	\N	\N	{}
+4780d9b3-23d7-4fda-88c0-03a9e4179ded	c7093d5d-30fc-45b9-97a3-06087377d576	506860ac-7a1f-442a-a9ce-70ef2fd1b44a	Madurai Kari Kuzhambu	Authentic Madurai style rustic mutton curry with bone marrow and tender goat chunks in rich spiced broth.	330.00	products/madurai-kari-kuzhambu.jpg	2026-11-14 07:22:26.686	2026-11-14 07:22:26.686	f	\N	\N	{}
+85ccc978-df08-46c7-8e30-5da8c8f57dbf	c7093d5d-30fc-45b9-97a3-06087377d576	506860ac-7a1f-442a-a9ce-70ef2fd1b44a	Butter Chicken Masala	Charcoal-tandoor grilled chicken tikka simmered in a velvety smooth buttery tomato-cashew makhani gravy.	250.00	products/butter-chicken-masala.jpg	2026-11-14 07:22:26.723	2026-11-14 07:22:26.723	f	\N	\N	{}
+d24f214d-54b4-4602-9a69-e35e4b2f3106	c7093d5d-30fc-45b9-97a3-06087377d576	506860ac-7a1f-442a-a9ce-70ef2fd1b44a	Alleppey Fish Curry	Fresh catch cooked in delicate coconut milk sauce infused with raw green mangoes, mustard, and curry leaves.	310.00	products/alleppey-fish-curry.jpg	2026-11-14 07:22:26.765	2026-11-14 07:22:26.765	f	\N	\N	{}
+4f2440b7-b5aa-476d-8149-22f73c5d30c6	c7093d5d-30fc-45b9-97a3-06087377d576	506860ac-7a1f-442a-a9ce-70ef2fd1b44a	Kadai Chicken	Juicy chicken pieces tossed in wok with crunchy bell peppers, onions, and freshly roasted coriander spice mix.	240.00	products/kadai-chicken.jpg	2026-11-14 07:22:26.804	2026-11-14 07:22:26.804	f	\N	\N	{}
+d4b16dee-5993-49ae-b5e2-cf3f7323e586	c7093d5d-30fc-45b9-97a3-06087377d576	506860ac-7a1f-442a-a9ce-70ef2fd1b44a	Nalli Elumbu Kuzhambu	Decadent slow-cooked mutton shank marrow bones simmered in thick peppery village-style gravy.	380.00	products/nalli-elumbu-kuzhambu.jpg	2026-11-14 07:22:26.844	2026-11-14 07:22:26.844	f	\N	\N	{}
+043b301a-61c5-4095-af9a-4f20f3bf67b1	c7093d5d-30fc-45b9-97a3-06087377d576	a6529165-150c-4b01-a51d-0349a2fa1244	Tandoori Chicken (Half)	Tender bone-in chicken marinated in spiced hung yogurt, Kashmiri degi mirch, and roasted in high-heat clay tandoor.	260.00	products/tandoori-chicken-half.jpg	2026-11-14 07:22:26.887	2026-11-14 07:22:26.887	f	\N	\N	{}
+6936a866-1999-49c3-beb5-eb0f92121769	c7093d5d-30fc-45b9-97a3-06087377d576	a6529165-150c-4b01-a51d-0349a2fa1244	Murgh Malai Tikka	Boneless chicken cubes steeped in fresh dairy cream, hung curd, melted cheese, and fragrant green cardamom.	270.00	products/murgh-malai-tikka.jpg	2026-11-14 07:22:26.929	2026-11-14 07:22:26.929	f	\N	\N	{}
+912ee97c-0d6a-4954-ba3d-a4eff9897119	c7093d5d-30fc-45b9-97a3-06087377d576	a6529165-150c-4b01-a51d-0349a2fa1244	Mutton Seekh Kebab	Spiced minced goat meat blended with chopped mint, coriander, and ginger, skewers grilled over glowing coals.	320.00	products/mutton-seekh-kebab.jpg	2026-11-14 07:22:26.971	2026-11-14 07:22:26.971	f	\N	\N	{}
+6b5c41b3-673e-4353-ba80-10c106f1a1f7	c7093d5d-30fc-45b9-97a3-06087377d576	a6529165-150c-4b01-a51d-0349a2fa1244	Hariyali Chicken Kebab	Juicy chicken bites coated in emerald green marinade of fresh garden mint, coriander leaves, and green chilies.	250.00	products/hariyali-chicken-kebab.jpg	2026-11-14 07:22:27.011	2026-11-14 07:22:27.011	f	\N	\N	{}
+9470580d-5519-455f-914d-8e4e740ce529	c7093d5d-30fc-45b9-97a3-06087377d576	a6529165-150c-4b01-a51d-0349a2fa1244	Fish Tikka	Boneless fish cubes marinated in roasted gram flour, carom seeds (ajwain), and mustard oil, grilled in tandoor.	330.00	products/fish-tikka.jpg	2026-11-14 07:22:27.048	2026-11-14 07:22:27.048	f	\N	\N	{}
+1d015b19-410d-43f3-bc46-5c1537d0742c	c7093d5d-30fc-45b9-97a3-06087377d576	a6529165-150c-4b01-a51d-0349a2fa1244	Tangdi Kebab	Plump chicken drumsticks stuffed with savory minced meat, cheese, and grilled to juicy golden perfection.	280.00	products/tangdi-kebab.jpg	2026-11-14 07:22:27.089	2026-11-14 07:22:27.089	f	\N	\N	{}
+0c1e01dc-a7fe-4a58-853b-76b3b9285b44	c7093d5d-30fc-45b9-97a3-06087377d576	7acad2bd-9545-4c8f-af76-8d7b29079f7f	Malabar Parotta (2 Pcs)	Signature flaky, golden, layered flatbread beaten hot and served with complimentary non-veg salna.	60.00	products/malabar-parotta-2-pcs.jpg	2026-11-14 07:22:27.128	2026-11-14 07:22:27.128	f	\N	\N	{}
+71ec03b6-9c23-4a24-b7a8-223baa103d1d	c7093d5d-30fc-45b9-97a3-06087377d576	7acad2bd-9545-4c8f-af76-8d7b29079f7f	Madurai Bun Parotta	Iconic Madurai spiral layered bread, deeply fried golden-crisp on outside and soft pillowy inside.	50.00	products/madurai-bun-parotta.jpg	2026-11-14 07:22:27.172	2026-11-14 07:22:27.172	f	\N	\N	{}
+e300ec77-4ed2-4f9b-8964-4669d20b0ca7	c7093d5d-30fc-45b9-97a3-06087377d576	7acad2bd-9545-4c8f-af76-8d7b29079f7f	Ceylon Egg Kothu Parotta	Flaky parotta shredded and vigorously beaten on hot tawa with fluffy eggs, onions, green chili, and chicken salna.	180.00	products/ceylon-egg-kothu-parotta.jpg	2026-11-14 07:22:27.216	2026-11-14 07:22:27.216	f	\N	\N	{}
+e4da9777-a1ca-4bb2-927e-128dc2a3caa1	c7093d5d-30fc-45b9-97a3-06087377d576	7acad2bd-9545-4c8f-af76-8d7b29079f7f	Chicken Kothu Parotta	Tawa-shredded flaky parotta stir-fried with tender chicken chunks, scrambled egg, curry leaves, and spicy salna.	220.00	products/chicken-kothu-parotta.jpg	2026-11-14 07:22:27.249	2026-11-14 07:22:27.249	f	\N	\N	{}
+46cb2c24-97af-47e3-b86c-e825f5eeb766	c7093d5d-30fc-45b9-97a3-06087377d576	7acad2bd-9545-4c8f-af76-8d7b29079f7f	Madurai Mutton Kari Dosa	Thick savory sponge dosa layered with fluffy beaten egg and generous topping of fiery minced mutton chukka.	260.00	products/madurai-mutton-kari-dosa.jpg	2026-11-14 07:22:27.285	2026-11-14 07:22:27.285	f	\N	\N	{}
+2906d765-1138-4c76-885e-77b2b29c382a	c7093d5d-30fc-45b9-97a3-06087377d576	7acad2bd-9545-4c8f-af76-8d7b29079f7f	Garlic Butter Naan	Tandoor baked leavened bread brushed generously with minced garlic and melted salted dairy butter.	70.00	products/garlic-butter-naan.jpg	2026-11-14 07:22:27.323	2026-11-14 07:22:27.323	f	\N	\N	{}
+12f16a86-c59f-4bf8-9f38-96d6cd5136d1	c7093d5d-30fc-45b9-97a3-06087377d576	440af1f2-61dd-46f1-8017-cac00427f8f5	Ananda Non-Veg Special Thali	Grand banana leaf feast with Ponni rice, mutton gravy, chicken curry, fish curry, rasam, curd, and appalam.	360.00	products/ananda-non-veg-special-thali.jpg	2026-11-14 07:22:27.364	2026-11-14 07:22:27.364	f	\N	\N	{}
+c1fa132a-898d-4c53-bbf0-835a80de1958	c7093d5d-30fc-45b9-97a3-06087377d576	440af1f2-61dd-46f1-8017-cac00427f8f5	Chicken Biryani Combo Meal	Dindigul chicken biryani served with crispy chicken 65 (2 pcs), spiced boiled egg, salna, raita, and sweet.	310.00	products/chicken-biryani-combo-meal.jpg	2026-11-14 07:22:27.398	2026-11-14 07:22:27.398	f	\N	\N	{}
+4d9a5264-0a40-438b-ba5e-5d64a28a6bed	c7093d5d-30fc-45b9-97a3-06087377d576	440af1f2-61dd-46f1-8017-cac00427f8f5	Mutton Feast Meal	Complete South Indian meals served with side of Madurai mutton chukka, bone broth, and fluffy egg omelette.	440.00	products/mutton-feast-meal.jpg	2026-11-14 07:22:27.429	2026-11-14 07:22:27.429	f	\N	\N	{}
+72128d74-865a-4935-bfc1-275a7f6e8f5b	c7093d5d-30fc-45b9-97a3-06087377d576	440af1f2-61dd-46f1-8017-cac00427f8f5	Seafood Platter Combo	Steamed rice with Alleppey fish curry, Vanjaram fish fry steak, crispy prawn masala, and pepper rasam.	480.00	products/seafood-platter-combo.jpg	2026-11-14 07:22:27.461	2026-11-14 07:22:27.461	f	\N	\N	{}
+84688a0f-e586-4b4c-a1ad-6bb5ba1c8add	c7093d5d-30fc-45b9-97a3-06087377d576	440af1f2-61dd-46f1-8017-cac00427f8f5	Executive Chicken Meal Box	Single diner box with steamed rice, home-style chicken curry, boiled egg, Malabar parotta (1 pc), and sweet.	240.00	products/executive-chicken-meal-box.jpg	2026-11-14 07:22:27.494	2026-11-14 07:22:27.494	f	\N	\N	{}
+468f1247-44de-4b61-b9f6-2978ae91fe28	c7093d5d-30fc-45b9-97a3-06087377d576	440af1f2-61dd-46f1-8017-cac00427f8f5	Country Chicken Feast	Rustic Nattu Kozhi curry, hot white rice, traditional pepper rasam, and country chicken sukka side.	380.00	products/country-chicken-feast.jpg	2026-11-14 07:22:27.527	2026-11-14 07:22:27.527	f	\N	\N	{}
+3dbee714-f008-46e8-8de3-1fcce0a3ee17	c7093d5d-30fc-45b9-97a3-06087377d576	d7d430c8-0397-4266-9238-8f80ff405af0	Chilli Chicken Gravy	Tender wok-tossed chicken chunks with crunchy capsicum, sweet onions, green chilies, and dark soy reduction.	220.00	products/chilli-chicken-gravy.jpg	2026-11-14 07:22:27.564	2026-11-14 07:22:27.564	f	\N	\N	{}
+95090903-0552-4e7b-8c92-3748b7189e0a	c7093d5d-30fc-45b9-97a3-06087377d576	d7d430c8-0397-4266-9238-8f80ff405af0	Chicken Fried Rice	Fragrant long-grain rice tossed in piping wok with scrambled egg, shredded chicken, and spring onions.	210.00	products/chicken-fried-rice.jpg	2026-11-14 07:22:27.599	2026-11-14 07:22:27.599	f	\N	\N	{}
+5bdc7d40-18b1-4ca7-8bc4-44ba491c39c2	c7093d5d-30fc-45b9-97a3-06087377d576	d7d430c8-0397-4266-9238-8f80ff405af0	Schezwan Chicken Noodles	Wok-fried Hakka noodles stir-fried with juicy chicken strips, cabbage, and homemade spicy Schezwan sauce.	220.00	products/schezwan-chicken-noodles.jpg	2026-11-14 07:22:27.636	2026-11-14 07:22:27.636	f	\N	\N	{}
+6d87e097-9f09-43c8-a881-c3c50541f97d	c7093d5d-30fc-45b9-97a3-06087377d576	d7d430c8-0397-4266-9238-8f80ff405af0	Prawn Fried Rice	Classic wok-tossed rice loaded with plump butter-fried tiger prawns, egg shreds, and garlic scallions.	260.00	products/prawn-fried-rice.jpg	2026-11-14 07:22:27.692	2026-11-14 07:22:27.692	f	\N	\N	{}
+869fcf50-b938-4b83-a029-45d0d0fb423f	c7093d5d-30fc-45b9-97a3-06087377d576	d7d430c8-0397-4266-9238-8f80ff405af0	Crispy Honey Chilli Chicken	Crunchy batter-fried chicken tossed in a glossy glaze of spicy red chili paste, toasted sesame, and honey.	230.00	products/crispy-honey-chilli-chicken.jpg	2026-11-14 07:22:27.724	2026-11-14 07:22:27.724	f	\N	\N	{}
+25d01cf4-eee4-4b15-a247-3b356edea9a6	c7093d5d-30fc-45b9-97a3-06087377d576	d7d430c8-0397-4266-9238-8f80ff405af0	Chicken Manchurian	Tender chicken meatballs wok-simmered in tangy soy-garlic coriander gravy with green chilies.	220.00	products/chicken-manchurian.jpg	2026-11-14 07:22:27.757	2026-11-14 07:22:27.757	f	\N	\N	{}
+a767bd96-bb65-44a0-b738-f73fc6718985	c7093d5d-30fc-45b9-97a3-06087377d576	adccb351-0ba9-46a6-859b-6d71aa5acb9e	Madurai Jigarthanda Special	Iconic Madurai dessert drink prepared with almond gum (badam pisin), nannari syrup, basundi, and ice cream.	110.00	products/madurai-jigarthanda-special.jpg	2026-11-14 07:22:27.792	2026-11-14 07:22:27.792	f	\N	\N	{}
+09294bda-5d4a-4990-ac57-b84d11d53ad1	c7093d5d-30fc-45b9-97a3-06087377d576	adccb351-0ba9-46a6-859b-6d71aa5acb9e	Elaneer Payasam	Creamy luxurious pudding prepared with freshly harvested tender coconut pulp, coconut milk, and cardamom.	130.00	products/elaneer-payasam.jpg	2026-11-14 07:22:27.831	2026-11-14 07:22:27.831	f	\N	\N	{}
+e26e2caa-6667-4794-9fac-950de2b16a76	c7093d5d-30fc-45b9-97a3-06087377d576	adccb351-0ba9-46a6-859b-6d71aa5acb9e	Gulab Jamun with Ice Cream	Warm golden khoya dumplings steeped in rose cardamom syrup served beside a scoop of vanilla ice cream.	100.00	products/gulab-jamun-with-ice-cream.jpg	2026-11-14 07:22:27.891	2026-11-14 07:22:27.891	f	\N	\N	{}
+74a672ba-6289-42d5-911d-dc546f43b3ed	c7093d5d-30fc-45b9-97a3-06087377d576	adccb351-0ba9-46a6-859b-6d71aa5acb9e	Royal Shahi Tukda	Crispy ghee-fried bread triangles soaked in saffron sugar syrup, smothered in rich thickened rabri and pistachios.	120.00	products/royal-shahi-tukda.jpg	2026-11-14 07:22:27.922	2026-11-14 07:22:27.922	f	\N	\N	{}
+73ad2b46-d61f-4bb1-9889-4179d21c96e9	c7093d5d-30fc-45b9-97a3-06087377d576	adccb351-0ba9-46a6-859b-6d71aa5acb9e	Matka Kulfi	Traditional slow-churned creamy dense Indian ice cream infused with saffron and pistachios in a clay pot.	90.00	products/matka-kulfi.jpg	2026-11-14 07:22:27.96	2026-11-14 07:22:27.96	f	\N	\N	{}
+01315247-057f-4b57-8a7b-fae54e135196	c7093d5d-30fc-45b9-97a3-06087377d576	adccb351-0ba9-46a6-859b-6d71aa5acb9e	Mango Malai Kulfi	Rich creamy kulfi stick made with 100% natural Alphonso mango pulp and condensed milk.	100.00	products/mango-malai-kulfi.jpg	2026-11-14 07:22:27.998	2026-11-14 07:22:27.998	f	\N	\N	{}
+78134583-a0e9-4043-91cd-9a4b1e90e5c0	c7093d5d-30fc-45b9-97a3-06087377d576	86609375-4c2c-452f-8e8a-4fc488262a6d	Nannari Sarbath	Traditional Ayurvedic cooling root syrup beverage served ice-cold with freshly squeezed lime juice.	60.00	products/nannari-sarbath.jpg	2026-11-14 07:22:28.033	2026-11-14 07:22:28.033	f	\N	\N	{}
+b39e6b7f-320a-4833-8b2c-decf82428aac	c7093d5d-30fc-45b9-97a3-06087377d576	86609375-4c2c-452f-8e8a-4fc488262a6d	Masala Butter Milk (Neer Mor)	Refreshing churned yogurt cooler tempered with crushed ginger, green chili, asafoetida, and curry leaves.	50.00	products/masala-butter-milk-neer-mor.jpg	2026-11-14 07:22:28.064	2026-11-14 07:22:28.064	f	\N	\N	{}
+83a99826-8a1f-4bb6-abb5-27a17465ae5b	c7093d5d-30fc-45b9-97a3-06087377d576	86609375-4c2c-452f-8e8a-4fc488262a6d	Fresh Lime Soda	Effervescent chilled soda stirred with fresh lime juice, mint leaves, and a pinch of black rock salt.	50.00	products/fresh-lime-soda.jpg	2026-11-14 07:22:28.096	2026-11-14 07:22:28.096	f	\N	\N	{}
+d35feaf3-6d0a-48f3-bcf4-3d2d1605688e	c7093d5d-30fc-45b9-97a3-06087377d576	86609375-4c2c-452f-8e8a-4fc488262a6d	Madurai Degree Filter Coffee	Freshly brewed dark chicory decoction whipped with hot foaming full-cream milk in traditional brass davarah.	45.00	products/madurai-degree-filter-coffee.jpg	2026-11-14 07:22:28.127	2026-11-14 07:22:28.127	f	\N	\N	{}
+c909aac4-ace2-49e1-ac72-5579792fdbed	c7093d5d-30fc-45b9-97a3-06087377d576	86609375-4c2c-452f-8e8a-4fc488262a6d	Mango Lassi	Thick luscious chilled yogurt smoothie blended with ripe Alphonso mangoes and a touch of cardamom.	90.00	products/mango-lassi.jpg	2026-11-14 07:22:28.162	2026-11-14 07:22:28.162	f	\N	\N	{}
+6a5b7629-b685-4d14-90cf-8157a06f1b50	c7093d5d-30fc-45b9-97a3-06087377d576	86609375-4c2c-452f-8e8a-4fc488262a6d	Rose Milk Cooler	Fragrant vintage rose syrup blended with chilled milk and soaked sweet sabja basil seeds.	60.00	products/rose-milk-cooler.jpg	2026-11-14 07:22:28.193	2026-11-14 07:22:28.193	f	\N	\N	{}
+34471e01-e9f9-42e7-ac71-0dadde477753	c7093d5d-30fc-45b9-97a3-06087377d576	d20dd5a6-2914-4683-8ccf-64befade0ff3	Madurai Muttai Kalaki	Soft, creamy half-cooked egg pouch infused with rich mutton salna and freshly cracked black pepper.	50.00	products/madurai-muttai-kalaki.jpg	2026-11-14 07:33:32.644	2026-11-14 07:33:32.644	f	\N	\N	{}
+674bd64e-afc9-4fa4-b5ec-d8ca36d0e34f	c7093d5d-30fc-45b9-97a3-06087377d576	d20dd5a6-2914-4683-8ccf-64befade0ff3	Karandi Omelette	Fluffy spherical country egg omelette fried in a deep iron ladle with shallots, curry leaves, and green chilies.	70.00	products/karandi-omelette.jpg	2026-11-14 07:33:32.732	2026-11-14 07:33:32.732	f	\N	\N	{}
+11fed668-0b2c-4bbe-b012-31648f01271c	c7093d5d-30fc-45b9-97a3-06087377d576	d20dd5a6-2914-4683-8ccf-64befade0ff3	Spicy Muttai Podimas	Country eggs scrambled dry on iron tawa with crushed pepper, cumin, chopped onions, and curry leaves.	90.00	products/spicy-muttai-podimas.jpg	2026-11-14 07:33:32.8	2026-11-14 07:33:32.8	f	\N	\N	{}
+e197490e-523e-48cd-b896-41d92028e3a7	c7093d5d-30fc-45b9-97a3-06087377d576	d20dd5a6-2914-4683-8ccf-64befade0ff3	Boiled Egg Pepper Fry	Golden pan-seared hard boiled eggs coated in roasted Tellicherry pepper and caramelized shallot paste.	100.00	products/boiled-egg-pepper-fry.jpg	2026-11-14 07:33:32.895	2026-11-14 07:33:32.895	f	\N	\N	{}
+05739c0e-9302-414b-b0e8-640d1b41ebcd	c7093d5d-30fc-45b9-97a3-06087377d576	d20dd5a6-2914-4683-8ccf-64befade0ff3	Nattu Kozhi Muttai Omelette	Double free-range country egg omelette whipped with crushed peppercorns and cold-pressed sesame oil.	80.00	products/nattu-kozhi-muttai-omelette.jpg	2026-11-14 07:33:32.997	2026-11-14 07:33:32.997	f	\N	\N	{}
+ded33dd5-a5f6-4c11-a41b-bc4748c51bd1	c7093d5d-30fc-45b9-97a3-06087377d576	d20dd5a6-2914-4683-8ccf-64befade0ff3	Muttai Salna Roast	Pan-roasted boiled eggs simmered semi-dry in aromatic spiced coconut-shallot salna gravy.	110.00	products/muttai-salna-roast.jpg	2026-11-14 07:33:33.081	2026-11-14 07:33:33.081	f	\N	\N	{}
+9671ee99-c2f0-4541-a49b-c7c3d42a5c9f	c7093d5d-30fc-45b9-97a3-06087377d576	a1b14c4c-00fb-4af7-867c-538075ca50d3	Madurai Kari Idli (3 Pcs)	Steaming soft rice idlis generously drenched in slow-simmered rich mutton bone gravy.	180.00	products/madurai-kari-idli-3-pcs.jpg	2026-11-14 07:33:33.171	2026-11-14 07:33:33.171	f	\N	\N	{}
+4dfe9fe9-0c59-4fc1-ae67-7c484d343703	c7093d5d-30fc-45b9-97a3-06087377d576	a1b14c4c-00fb-4af7-867c-538075ca50d3	Stuffed Keema Parotta	Flaky golden layered parotta stuffed with spiced minced mutton keema, served with thick salna.	210.00	products/stuffed-keema-parotta.jpg	2026-11-14 07:33:33.302	2026-11-14 07:33:33.302	f	\N	\N	{}
+639ad892-e843-430a-8577-933d23085a8e	c7093d5d-30fc-45b9-97a3-06087377d576	a1b14c4c-00fb-4af7-867c-538075ca50d3	Chicken Podi Dosa	Crisp ghee roast dosa smeared with signature spicy non-veg gun powder and shredded chicken.	190.00	products/chicken-podi-dosa.jpg	2026-11-14 07:33:33.434	2026-11-14 07:33:33.434	f	\N	\N	{}
+a92b5f46-cbb0-40e4-aa49-c74cf99df6ea	c7093d5d-30fc-45b9-97a3-06087377d576	a1b14c4c-00fb-4af7-867c-538075ca50d3	Coin Parotta with Salna (5 Pcs)	Bite-sized crispy flaky layered parottas served with steaming piping-hot roadside salna.	120.00	products/coin-parotta-with-salna-5-pcs.jpg	2026-11-14 07:33:33.553	2026-11-14 07:33:33.553	f	\N	\N	{}
+72d3c4ec-6294-48e3-9449-d1da20dc563e	c7093d5d-30fc-45b9-97a3-06087377d576	a1b14c4c-00fb-4af7-867c-538075ca50d3	Muttai Veechu Parotta	Air-stretched thin gossamer parotta folded with seasoned egg, pepper, and diced shallots.	130.00	products/muttai-veechu-parotta.jpg	2026-11-14 07:33:33.647	2026-11-14 07:33:33.647	f	\N	\N	{}
+4f67c495-150e-434b-90cd-e96baf6d1e53	c7093d5d-30fc-45b9-97a3-06087377d576	a1b14c4c-00fb-4af7-867c-538075ca50d3	Idiyappam with Mutton Paaya	Delicate steamed rice string hoppers served with rich, fragrant slow-simmered trotters broth.	240.00	products/idiyappam-with-mutton-paaya.jpg	2026-11-14 07:33:33.758	2026-11-14 07:33:33.758	f	\N	\N	{}
+9b5a4870-a1f5-4cac-a04e-b628c4b0f5e5	c7093d5d-30fc-45b9-97a3-06087377d576	31c6b7b4-78fa-4ec9-986a-6798e2929946	Mutton Paaya Gravy	Traditional slow-cooked goat trotters stew simmered overnight with stone-ground whole aromatic spices.	310.00	products/mutton-paaya-gravy.jpg	2026-11-14 07:33:33.866	2026-11-14 07:33:33.866	f	\N	\N	{}
+8f802668-0e5d-4d2e-bd34-119dc3632ef4	c7093d5d-30fc-45b9-97a3-06087377d576	31c6b7b4-78fa-4ec9-986a-6798e2929946	Madurai Mutton Brain Fry	Delicately poached goat brain sautéed with country shallots, crushed pepper, and turmeric.	260.00	products/madurai-mutton-brain-fry.jpg	2026-11-14 07:33:33.952	2026-11-14 07:33:33.952	f	\N	\N	{}
+f66fa165-02a6-4994-a03e-ee039684ca2e	c7093d5d-30fc-45b9-97a3-06087377d576	31c6b7b4-78fa-4ec9-986a-6798e2929946	Mutton Boti Fry	Rustic country-style goat tripe dry-roasted with fiery red chili, crushed garlic, and curry leaves.	220.00	products/mutton-boti-fry.jpg	2026-11-14 07:33:34.182	2026-11-14 07:33:34.182	f	\N	\N	{}
+b86ae786-7ebc-4bce-9d27-c5f7704a5d94	c7093d5d-30fc-45b9-97a3-06087377d576	31c6b7b4-78fa-4ec9-986a-6798e2929946	Mutton Liver Pepper Fry	Tender succulent lamb liver pan-seared in roasted Malabar black pepper and shallots.	240.00	products/mutton-liver-pepper-fry.jpg	2026-11-14 07:33:34.318	2026-11-14 07:33:34.318	f	\N	\N	{}
+e84b14f0-ca8b-425b-97f0-df7ce75032ff	c7093d5d-30fc-45b9-97a3-06087377d576	31c6b7b4-78fa-4ec9-986a-6798e2929946	Mutton Thala Kari Varuval	Tender goat head meat roasted dry with rustic spices and cold-pressed gingelly oil.	270.00	products/mutton-thala-kari-varuval.jpg	2026-11-14 07:33:34.413	2026-11-14 07:33:34.413	f	\N	\N	{}
+fb650082-3d32-4048-b914-32ce922f0a4a	c7093d5d-30fc-45b9-97a3-06087377d576	31c6b7b4-78fa-4ec9-986a-6798e2929946	Nalli Chukka Varuval	Braised mutton shank marrow bones tossed on high-heat iron tawa with fiery Chettinad masala.	360.00	products/nalli-chukka-varuval.jpg	2026-11-14 07:33:34.489	2026-11-14 07:33:34.489	f	\N	\N	{}
+f60bd9b7-465f-4903-8635-8f02a46a818e	c7093d5d-30fc-45b9-97a3-06087377d576	30a54cb0-0807-4328-aeee-0c7cc26ef960	Pallipalayam Chicken	Erode specialty rustic chicken shallow-fried with loads of shallots, garlic, and dry red chili flakes.	260.00	products/pallipalayam-chicken.jpg	2026-11-14 07:33:34.619	2026-11-14 07:33:34.619	f	\N	\N	{}
+3a2d87d4-c032-494d-9d27-c0ea466dabeb	c7093d5d-30fc-45b9-97a3-06087377d576	30a54cb0-0807-4328-aeee-0c7cc26ef960	Chinthamani Chicken	Kongunadu style boneless rustic chicken sautéed with broken whole red chilies and fresh curry leaves.	250.00	products/chinthamani-chicken.jpg	2026-11-14 07:33:34.731	2026-11-14 07:33:34.731	f	\N	\N	{}
+94e172ad-6678-44d5-8021-ebd46ea3cd61	c7093d5d-30fc-45b9-97a3-06087377d576	30a54cb0-0807-4328-aeee-0c7cc26ef960	Nattu Kozhi Milagu Varuval	Tender country chicken dry roast heavily seasoned with stone-ground black pepper and shallots.	270.00	products/nattu-kozhi-milagu-varuval.jpg	2026-11-14 07:33:34.831	2026-11-14 07:33:34.831	f	\N	\N	{}
+cfdc2823-559b-4fae-ae65-f22db521c611	c7093d5d-30fc-45b9-97a3-06087377d576	30a54cb0-0807-4328-aeee-0c7cc26ef960	Nattu Kozhi Rasam Soru	Comforting bowl of hot Ponni rice mixed with piping hot country chicken pepper broth and ghee.	220.00	products/nattu-kozhi-rasam-soru.jpg	2026-11-14 07:33:34.949	2026-11-14 07:33:34.949	f	\N	\N	{}
+a6d9bd36-2ae7-48f6-bdda-42a85fe8f74d	c7093d5d-30fc-45b9-97a3-06087377d576	30a54cb0-0807-4328-aeee-0c7cc26ef960	Nattu Kozhi Chettinad Masala	Free-range country chicken cooked in an 18-spice freshly roasted Chettinad masala gravy.	280.00	products/nattu-kozhi-chettinad-masala.jpg	2026-11-14 07:33:35.04	2026-11-14 07:33:35.04	f	\N	\N	{}
+374001d2-a123-4e0d-becb-0335135cdf5d	c7093d5d-30fc-45b9-97a3-06087377d576	30a54cb0-0807-4328-aeee-0c7cc26ef960	Kongu Nattu Kozhi Biryani	Fragrant Seeraga Samba rice dum-cooked with tender rustic country chicken chunks and mint.	310.00	products/kongu-nattu-kozhi-biryani.jpg	2026-11-14 07:33:35.119	2026-11-14 07:33:35.119	f	\N	\N	{}
+c9d0909f-79ff-4d07-8122-4158d5bd5cae	c7093d5d-30fc-45b9-97a3-06087377d576	9d85564c-2f28-4506-8f20-d2305f598342	Special Mutton Salna (Bowl)	Signature spicy thin street-style non-veg gravy infused with poppy seeds, fennel, and coconut.	90.00	products/special-mutton-salna-bowl.jpg	2026-11-14 07:33:35.214	2026-11-14 07:33:35.214	f	\N	\N	{}
+0fa770cb-2c43-4e75-9b1b-57df5415061a	c7093d5d-30fc-45b9-97a3-06087377d576	9d85564c-2f28-4506-8f20-d2305f598342	Chicken Salna (Bowl)	Rich aromatic street-cart chicken dipping gravy made fresh for parottas and dosas.	70.00	products/chicken-salna-bowl.jpg	2026-11-14 07:33:35.348	2026-11-14 07:33:35.348	f	\N	\N	{}
+88420665-bada-422c-9c3a-03f5d3fdeae1	c7093d5d-30fc-45b9-97a3-06087377d576	9d85564c-2f28-4506-8f20-d2305f598342	Street-Style Plain Salna	Legendary empty roadside salna with authentic tomato, onion, and roasted spice base.	50.00	products/street-style-plain-salna.jpg	2026-11-14 07:33:35.432	2026-11-14 07:33:35.432	f	\N	\N	{}
+75e7f8c8-48fa-4946-a468-70b9c9425c18	c7093d5d-30fc-45b9-97a3-06087377d576	9d85564c-2f28-4506-8f20-d2305f598342	Madurai Onion Curd Raita	Chilled fresh yogurt whipped with crunchy chopped shallots, green chilies, and fresh coriander.	40.00	products/madurai-onion-curd-raita.jpg	2026-11-14 07:33:35.512	2026-11-14 07:33:35.512	f	\N	\N	{}
+c70aead0-4c0b-4c08-a100-2eeed3700494	c7093d5d-30fc-45b9-97a3-06087377d576	9d85564c-2f28-4506-8f20-d2305f598342	Ennai Kathirikai Gravy	Tender baby eggplants slow-braised in a tangy tamarind, sesame, and non-veg flavored gravy.	80.00	products/ennai-kathirikai-gravy.jpg	2026-11-14 07:33:35.618	2026-11-14 07:33:35.618	f	\N	\N	{}
+a247d3d4-e0a3-49db-bb3f-7a9a433f6819	c7093d5d-30fc-45b9-97a3-06087377d576	9d85564c-2f28-4506-8f20-d2305f598342	Non-Veg Meals Sambar & Rasam Set	Piping hot lentil sambar and spicy crushed pepper garlic rasam served with papad.	60.00	products/non-veg-meals-sambar-rasam-set.jpg	2026-11-14 07:33:35.689	2026-11-14 07:33:35.689	f	\N	\N	{}
+d8a3569f-1ba0-44f6-a2f2-44c6f712fbb5	c7093d5d-30fc-45b9-97a3-06087377d576	3221f85f-3853-4614-8cf3-7b668e487e90	Chicken Tikka Kathi Roll	Flaky parotta rolled with clay-oven charred chicken tikka, pickled onions, and mint chutney.	170.00	products/chicken-tikka-kathi-roll.jpg	2026-11-14 07:33:35.769	2026-11-14 07:33:35.769	f	\N	\N	{}
+52aeaf42-f293-4c08-9fec-94cdcb499551	c7093d5d-30fc-45b9-97a3-06087377d576	3221f85f-3853-4614-8cf3-7b668e487e90	Mutton Keema Roll	Spiced minced lamb keema and fluffy beaten egg wrapped inside a crisp hot parotta.	210.00	products/mutton-keema-roll.jpg	2026-11-14 07:33:35.85	2026-11-14 07:33:35.85	f	\N	\N	{}
+a45359f9-3d2c-4a9b-a3f8-b6ebc55dc925	c7093d5d-30fc-45b9-97a3-06087377d576	3221f85f-3853-4614-8cf3-7b668e487e90	Double Egg Parotta Roll	Crispy parotta lined with two whisked eggs, tangy chaat masala, and crunchy red onions.	110.00	products/double-egg-parotta-roll.jpg	2026-11-14 07:33:35.923	2026-11-14 07:33:35.923	f	\N	\N	{}
+0da667c4-3088-4e38-bfdf-212472f6719c	c7093d5d-30fc-45b9-97a3-06087377d576	3221f85f-3853-4614-8cf3-7b668e487e90	Crispy Chicken Shawarma Roll	Thin rumali wrap packed with spiced grilled chicken shavings, garlic toum, and pickled veggies.	160.00	products/crispy-chicken-shawarma-roll.jpg	2026-11-14 07:33:36	2026-11-14 07:33:36	f	\N	\N	{}
+a5ccd467-6369-4631-a5dc-39293394fb51	c7093d5d-30fc-45b9-97a3-06087377d576	3221f85f-3853-4614-8cf3-7b668e487e90	Chettinad Chicken Wrap	Spicy shredded Chettinad chicken and capsicum wrapped with homemade garlic mayo.	170.00	products/chettinad-chicken-wrap.jpg	2026-11-14 07:33:36.07	2026-11-14 07:33:36.07	f	\N	\N	{}
+dbc3cec7-b232-4f25-94fb-82b670bde493	c7093d5d-30fc-45b9-97a3-06087377d576	3221f85f-3853-4614-8cf3-7b668e487e90	Fiery Dragon Chicken Wrap	Crispy tossed Indo-Chinese dragon chicken strips bundled in a warm golden wrap.	180.00	products/fiery-dragon-chicken-wrap.jpg	2026-11-14 07:33:36.252	2026-11-14 07:33:36.252	f	\N	\N	{}
+9067ec6e-df04-4116-8463-96f0195db394	c7093d5d-30fc-45b9-97a3-06087377d576	d529fbfa-f95d-46f4-84d1-0327553b1e22	Ghee Rice with Chicken Pepper Chukka	Fragrant Seeraga Samba ghee rice served with hot pepper chicken sukka and gravy.	260.00	products/ghee-rice-with-chicken-pepper-chukka.jpg	2026-11-14 07:33:36.352	2026-11-14 07:33:36.352	f	\N	\N	{}
+d7aa2b52-58c7-40b3-86cc-9aa1b0cd053a	c7093d5d-30fc-45b9-97a3-06087377d576	d529fbfa-f95d-46f4-84d1-0327553b1e22	Kothu Biryani Special	Signature fusion of shredded flaky parotta and aromatic mutton biryani tossed on hot tawa.	270.00	products/kothu-biryani-special.jpg	2026-11-14 07:33:36.451	2026-11-14 07:33:36.451	f	\N	\N	{}
+f16a3d11-4fdd-4b99-b323-5e410d2e3485	c7093d5d-30fc-45b9-97a3-06087377d576	d529fbfa-f95d-46f4-84d1-0327553b1e22	Curd Rice with Mutton Chukka	Chilled comforting tempered curd rice served alongside fiery dry-roasted tender mutton chukka.	280.00	products/curd-rice-with-mutton-chukka.jpg	2026-11-14 07:33:36.548	2026-11-14 07:33:36.548	f	\N	\N	{}
+6f80f510-7258-4cb7-bb49-df77deab70bc	c7093d5d-30fc-45b9-97a3-06087377d576	d529fbfa-f95d-46f4-84d1-0327553b1e22	Sambar Rice with Vanjaram Fry	Hot ghee-laced lentil rice served with a crispy tawa-seared king fish fry steak.	340.00	products/sambar-rice-with-vanjaram-fry.jpg	2026-11-14 07:33:36.644	2026-11-14 07:33:36.644	f	\N	\N	{}
+825ee7fd-2c6a-4245-9f5c-634d6d779d15	c7093d5d-30fc-45b9-97a3-06087377d576	d529fbfa-f95d-46f4-84d1-0327553b1e22	Jeera Basmati Rice with Butter Chicken	Cumin-tempered long grain basmati rice accompanied by silky butter chicken makhani.	270.00	products/jeera-basmati-rice-with-butter-chicken.jpg	2026-11-14 07:33:36.729	2026-11-14 07:33:36.729	f	\N	\N	{}
+286d2750-a377-4aa1-90fa-cc28f7a585b0	c7093d5d-30fc-45b9-97a3-06087377d576	d529fbfa-f95d-46f4-84d1-0327553b1e22	Schezwan Rice with Chilli Chicken Bowl	Wok-tossed spicy chicken fried rice paired with rich gravy chilli chicken.	250.00	products/schezwan-rice-with-chilli-chicken-bowl.jpg	2026-11-14 07:33:36.821	2026-11-14 07:33:36.821	f	\N	\N	{}
+12d41c7b-881d-4b07-9472-f770e2f6e65e	c7093d5d-30fc-45b9-97a3-06087377d576	a4f13b66-2945-4946-b193-52b691f31cde	Madurai Chicken Pakoda	Crispy, crunchy bone-in chicken fritters fried with crushed spices, cashew bits, and curry leaves.	180.00	products/madurai-chicken-pakoda.jpg	2026-11-14 07:33:36.946	2026-11-14 07:33:36.946	f	\N	\N	{}
+5a23b98a-739f-4e6e-954e-07c8a703bc92	c7093d5d-30fc-45b9-97a3-06087377d576	a4f13b66-2945-4946-b193-52b691f31cde	Crispy Chicken Popcorn	Tender bite-sized chicken breast poppers seasoned with smoky peri-peri spice dust.	160.00	products/crispy-chicken-popcorn.jpg	2026-11-14 07:33:37.069	2026-11-14 07:33:37.069	f	\N	\N	{}
+02ca1b9c-2839-4aaf-a00e-087578f6cd43	c7093d5d-30fc-45b9-97a3-06087377d576	a4f13b66-2945-4946-b193-52b691f31cde	Crispy Mutton Kola Balls (4 Pcs)	Minced mutton spiced balls with crisp golden outer crust and soft flavorful core.	200.00	products/crispy-mutton-kola-balls-4-pcs.jpg	2026-11-14 07:33:37.193	2026-11-14 07:33:37.193	f	\N	\N	{}
+c7490432-9c5b-4cb0-bd12-ac8b2e70109f	c7093d5d-30fc-45b9-97a3-06087377d576	a4f13b66-2945-4946-b193-52b691f31cde	Fish Finger Fries	Crispy crumb-coated sea fish batons served with homemade tartar dipping sauce.	220.00	products/fish-finger-fries.jpg	2026-11-14 07:33:37.29	2026-11-14 07:33:37.29	f	\N	\N	{}
+69f9ea59-2c0b-4cec-b8a2-85fbf330ecd1	c7093d5d-30fc-45b9-97a3-06087377d576	a4f13b66-2945-4946-b193-52b691f31cde	Golden Prawn Tempura	Plump butterflied ocean prawns fried in light crisp batter with sweet chili dip.	290.00	products/golden-prawn-tempura.jpg	2026-11-14 07:33:37.372	2026-11-14 07:33:37.372	f	\N	\N	{}
+bfdc9bdc-bd8f-4d6c-bab7-64a781eac750	c7093d5d-30fc-45b9-97a3-06087377d576	a4f13b66-2945-4946-b193-52b691f31cde	Chicken Keema Samosa (3 Pcs)	Flaky pastry pockets stuffed with minced spiced chicken, onions, and fresh mint.	110.00	products/chicken-keema-samosa-3-pcs.jpg	2026-11-14 07:33:37.454	2026-11-14 07:33:37.454	f	\N	\N	{}
+\.
+
+
+--
+-- Data for Name: restaurant_tables; Type: TABLE DATA; Schema: public; Owner: qr_admin
+--
+
+COPY public.restaurant_tables (id, "branchId", "tableNumber", section, capacity, "isActive", "createdAt", "updatedAt") FROM stdin;
 \.
 
 
@@ -802,9 +1038,9 @@ bfdc9bdc-bd8f-4d6c-bab7-64a781eac750	c7093d5d-30fc-45b9-97a3-06087377d576	a4f13b
 -- Data for Name: restaurants; Type: TABLE DATA; Schema: public; Owner: qr_admin
 --
 
-COPY public.restaurants (id, "ownerId", name, slug, description, "logoUrl", "isActive", "createdAt", "updatedAt", "isDeleted", "deletedAt", "deletedBy", "defaultCurrency", "themeConfig", "paymentConfig") FROM stdin;
-e75df15d-3735-4332-bc45-ab5a73eef323	c8b82f45-4ebe-48b3-9024-1466158c6177	Ananda Pure veg	ananda-pure-veg	Authentic south indian vegetariian cousine	restaurants/1793256189926-de1b7b23-0b11-483a-9546-4f222192b27f.jpeg	t	2026-10-29 06:43:09.931	2026-11-06 06:06:53.96	f	\N	\N	INR	\N	{"enableCash": true, "enableStripe": false}
-c7093d5d-30fc-45b9-97a3-06087377d576	c8b82f45-4ebe-48b3-9024-1466158c6177	Ananda Non veg	ananda-non-veg	Authentic south indian non veg cousine	restaurants/1793256475992-eaea3ff7-8d55-4342-bced-a20681ad52ce.png	t	2026-10-29 06:47:55.994	2026-11-06 06:30:19.152	f	\N	\N	INR	{"dark": {"text": "#fafaf9", "primary": "#f43f5e", "surface": "#1c1014", "textMuted": "#a8a29e", "background": "#09090b"}, "light": {"text": "#1c1917", "primary": "#be123c", "surface": "#ffffff", "textMuted": "#78716c", "background": "#fff1f2"}, "presetId": "crimson"}	{"taxRate": 5, "enableTax": true, "gstNumber": "23456ESDFGHD23", "enableCash": true, "enableStripe": false}
+COPY public.restaurants (id, "ownerId", name, slug, description, "logoUrl", "isActive", "createdAt", "updatedAt", "isDeleted", "deletedAt", "deletedBy", "defaultCurrency", "themeConfig", "paymentConfig", "creditBalance") FROM stdin;
+e75df15d-3735-4332-bc45-ab5a73eef323	c8b82f45-4ebe-48b3-9024-1466158c6177	Ananda Pure veg	ananda-pure-veg	Authentic south indian vegetariian cousine	restaurants/1793256189926-de1b7b23-0b11-483a-9546-4f222192b27f.jpeg	t	2026-10-29 06:43:09.931	2026-11-06 06:06:53.96	f	\N	\N	INR	\N	{"enableCash": true, "enableStripe": false}	100
+c7093d5d-30fc-45b9-97a3-06087377d576	c8b82f45-4ebe-48b3-9024-1466158c6177	Ananda Non veg	ananda-non-veg	Authentic south indian non veg cousine	restaurants/1793256475992-eaea3ff7-8d55-4342-bced-a20681ad52ce.png	t	2026-10-29 06:47:55.994	2026-11-06 06:30:19.152	f	\N	\N	INR	{"dark": {"text": "#fafaf9", "primary": "#f43f5e", "surface": "#1c1014", "textMuted": "#a8a29e", "background": "#09090b"}, "light": {"text": "#1c1917", "primary": "#be123c", "surface": "#ffffff", "textMuted": "#78716c", "background": "#fff1f2"}, "presetId": "crimson"}	{"taxRate": 5, "enableTax": true, "gstNumber": "23456ESDFGHD23", "enableCash": true, "enableStripe": false}	100
 \.
 
 
@@ -869,6 +1105,30 @@ ALTER TABLE ONLY public.categories
 
 
 --
+-- Name: credit_ledger credit_ledger_pkey; Type: CONSTRAINT; Schema: public; Owner: qr_admin
+--
+
+ALTER TABLE ONLY public.credit_ledger
+    ADD CONSTRAINT credit_ledger_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: custom_languages custom_languages_pkey; Type: CONSTRAINT; Schema: public; Owner: qr_admin
+--
+
+ALTER TABLE ONLY public.custom_languages
+    ADD CONSTRAINT custom_languages_pkey PRIMARY KEY (code);
+
+
+--
+-- Name: help_articles help_articles_pkey; Type: CONSTRAINT; Schema: public; Owner: qr_admin
+--
+
+ALTER TABLE ONLY public.help_articles
+    ADD CONSTRAINT help_articles_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: order_items order_items_pkey; Type: CONSTRAINT; Schema: public; Owner: qr_admin
 --
 
@@ -885,11 +1145,35 @@ ALTER TABLE ONLY public.orders
 
 
 --
+-- Name: packs packs_pkey; Type: CONSTRAINT; Schema: public; Owner: qr_admin
+--
+
+ALTER TABLE ONLY public.packs
+    ADD CONSTRAINT packs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: platform_settings platform_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: qr_admin
+--
+
+ALTER TABLE ONLY public.platform_settings
+    ADD CONSTRAINT platform_settings_pkey PRIMARY KEY (key);
+
+
+--
 -- Name: products products_pkey; Type: CONSTRAINT; Schema: public; Owner: qr_admin
 --
 
 ALTER TABLE ONLY public.products
     ADD CONSTRAINT products_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: restaurant_tables restaurant_tables_pkey; Type: CONSTRAINT; Schema: public; Owner: qr_admin
+--
+
+ALTER TABLE ONLY public.restaurant_tables
+    ADD CONSTRAINT restaurant_tables_pkey PRIMARY KEY (id);
 
 
 --
@@ -928,6 +1212,41 @@ CREATE UNIQUE INDEX "branch_products_branchId_productId_key" ON public.branch_pr
 --
 
 CREATE UNIQUE INDEX branches_slug_key ON public.branches USING btree (slug);
+
+
+--
+-- Name: credit_ledger_restaurantId_idx; Type: INDEX; Schema: public; Owner: qr_admin
+--
+
+CREATE INDEX "credit_ledger_restaurantId_idx" ON public.credit_ledger USING btree ("restaurantId");
+
+
+--
+-- Name: help_articles_slug_key; Type: INDEX; Schema: public; Owner: qr_admin
+--
+
+CREATE UNIQUE INDEX help_articles_slug_key ON public.help_articles USING btree (slug);
+
+
+--
+-- Name: packs_code_key; Type: INDEX; Schema: public; Owner: qr_admin
+--
+
+CREATE UNIQUE INDEX packs_code_key ON public.packs USING btree (code);
+
+
+--
+-- Name: restaurant_tables_branchId_idx; Type: INDEX; Schema: public; Owner: qr_admin
+--
+
+CREATE INDEX "restaurant_tables_branchId_idx" ON public.restaurant_tables USING btree ("branchId");
+
+
+--
+-- Name: restaurant_tables_branchId_tableNumber_key; Type: INDEX; Schema: public; Owner: qr_admin
+--
+
+CREATE UNIQUE INDEX "restaurant_tables_branchId_tableNumber_key" ON public.restaurant_tables USING btree ("branchId", "tableNumber");
 
 
 --
@@ -998,6 +1317,14 @@ ALTER TABLE ONLY public.categories
 
 
 --
+-- Name: credit_ledger credit_ledger_restaurantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: qr_admin
+--
+
+ALTER TABLE ONLY public.credit_ledger
+    ADD CONSTRAINT "credit_ledger_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES public.restaurants(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
 -- Name: order_items order_items_orderId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: qr_admin
 --
 
@@ -1046,6 +1373,14 @@ ALTER TABLE ONLY public.products
 
 
 --
+-- Name: restaurant_tables restaurant_tables_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: qr_admin
+--
+
+ALTER TABLE ONLY public.restaurant_tables
+    ADD CONSTRAINT "restaurant_tables_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public.branches(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
 -- Name: restaurants restaurants_ownerId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: qr_admin
 --
 
@@ -1089,5 +1424,5 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict lIMFqzSysuqVpeQqaXFLthIxiXrkd90IADYhmlbi80KmT15sHS51jzkGH7PV9FA
+\unrestrict oGphHUq8oLDWDAsccpUjYMTJtsiFKH4hpWr9GdVmPtUi02w7ZnbcKq9yZCMzC3q
 
